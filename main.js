@@ -23,6 +23,9 @@ async function loadCitations() {
   ${citation.case_link ? `<p><strong>Case Link:</strong> <a href="${citation.case_link}" target="_blank">${citation.case_link}</a></p>` : ""}
   ${citation.full_case_text ? `<details><summary><strong>Full Case Text</strong></summary><pre>${citation.full_case_text}</pre></details>` : ""}
   <p><strong>Printable:</strong> ${citation.printable ? "Yes" : "No"}</p>
+  <button onclick="printCard(this)">🖨️ Print</button>
+  <button onclick="editCard('${citation.id}')">✏️ Edit</button>
+  <button onclick="deleteCard('${citation.id}')">🗑️ Delete</button>
 `;
       container.appendChild(div);
     });
