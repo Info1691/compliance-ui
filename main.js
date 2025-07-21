@@ -1,8 +1,11 @@
+let currentData = [];
+
 async function loadCitations() {
   try {
     const response = await fetch('citations.json');
     if (!response.ok) throw new Error('Failed to load JSON');
     const data = await response.json();
+    currentData = data;
     renderCards(data);
 
     const searchBox = document.getElementById("searchBox");
