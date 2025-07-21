@@ -2,9 +2,12 @@ let currentData = [];
 
 async function loadCitations() {
   try {
+    // ✅ Use absolute path for GitHub Pages JSON loading
     const response = await fetch('https://info1691.github.io/compliance-ui/citations.json');
     if (!response.ok) throw new Error('Failed to load JSON');
+
     const data = await response.json();
+    console.log("✅ JSON loaded:", data);
     currentData = data;
     renderCards(data);
 
@@ -20,7 +23,7 @@ async function loadCitations() {
     });
   } catch (error) {
     document.body.innerHTML = `<h2 style="padding:2rem;color:red;">Error loading citations.json:<br>${error.message}</h2>`;
-    console.error('Load error:', error);
+    console.error('❌ Load error:', error);
   }
 }
 
