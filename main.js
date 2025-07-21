@@ -20,8 +20,17 @@ async function loadCitations() {
   <p><strong>Compliance Flags:</strong> ${citation.compliance_flags.join(", ")}</p>
   <p><strong>Key Points:</strong> ${citation.key_points.join(", ")}</p>
   <p><strong>Tags:</strong> ${citation.tags.join(", ")}</p>
-  ${citation.case_link ? `<p><strong>Case Link:</strong> <a href="${citation.case_link}" target="_blank">${citation.case_link}</a></p>` : ""}
-  ${citation.full_case_text ? `<details><summary><strong>Full Case Text</strong></summary><pre>${citation.full_case_text}</pre></details>` : ""}
+  ${citation.case_link ? `
+  <p><strong>Case Link:</strong> 
+    <a href="${citation.case_link}" target="_blank" rel="noopener noreferrer">
+      View Source
+    </a>
+  </p>` : ""}
+  ${citation.full_case_text ? `
+  <details>
+    <summary><strong>Full Case Text</strong></summary>
+    <div class="full-text">${citation.full_case_text.replace(/\n/g, '<br>')}</div>
+  </details>` : ""}
   <p><strong>Printable:</strong> ${citation.printable ? "Yes" : "No"}</p>
   <button onclick="printCard(this)">🖨️ Print</button>
   <button onclick="editCard('${citation.id}')">✏️ Edit</button>
