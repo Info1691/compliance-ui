@@ -30,3 +30,14 @@ main {
   border-radius: 6px;
   padding: 4px;
 }
+.full-text {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #f9f9f9;
+  white-space: normal;
+  line-height: 1.5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-family: serif;
+  font-size: 14px;
+}
