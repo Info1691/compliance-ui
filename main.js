@@ -68,7 +68,44 @@ function printCard(button) {
 }
 
 function editCard(id) {
-  alert("Edit not implemented yet.\n\nCard ID: " + id);
+  const citation = currentData.find(c => c.id === id);
+  if (!citation) return;
+
+  const fields = Object.keys(citation).filter(k => k !== "id");
+  let formHTML = `<form id="editForm"><h3>Edit: ${citation.case_name}</h3>`;
+  fields.forEach(key => {
+    const value = Array.isArray(citation[key]) ? citation[key].join("\n") : citation[key];
+    formHTML += `
+      <label>${key}:</label><br>
+      <textarea name="${key}" rows="3" style="width:100%">${value}</textarea><br><br>
+    `;
+  });
+  formHTML += `<button type="submit">Save</button></form>`;
+
+  const modal = document.createElement("div");
+  modal.style.position = "fixed";
+  modal.style.top = "10%";
+  modal.style.left = "10%";
+  modal.style.width = "80%";
+  modal.style.height = "80%";
+  modal.style.overflow = "auto";
+  modal.style.background = "#fff";
+  modal.style.padding = "20px";
+  modal.style.zIndex = 9999;
+  modal.innerHTML = formHTML;
+  document.body.appendChild(modal);
+
+  document.getElementById("editForm").onsubmit = (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    fields.forEach(key => {
+      const raw = formData.get(key);
+      citation[key] = raw.includes("\n") ? raw.split("\n").map(s => s.trim()).filter(Boolean) : raw;
+    });
+    document.body.removeChild(modal);
+    renderCards(currentData);
+    alert("Edited! Save changes manually in GitHub if needed.");
+  };
 }
 
 function deleteCard(id) {
