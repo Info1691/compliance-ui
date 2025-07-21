@@ -106,7 +106,6 @@ document.getElementById("editForm").onsubmit = function (e) {
   renderCards(currentData);
   document.getElementById("editModal").classList.add("hidden");
 };
-}
 
 function deleteCard(id) {
   alert("Delete not implemented yet.\n\nCard ID: " + id);
