@@ -1,29 +1,33 @@
 async function loadCitations() {
-  const response = await fetch('citations.json');
-  const data = await response.json();
-  renderCards(data);
+  try {
+    const response = await fetch('citations.json');
+    if (!response.ok) throw new Error('Failed to load JSON');
+    const data = await response.json();
+    renderCards(data);
 
-  // Attach search functionality
-  const searchBox = document.getElementById("searchBox");
-  searchBox.addEventListener("input", () => {
-    const q = searchBox.value.toLowerCase();
-    const filtered = data.filter(c =>
-      c.case_name.toLowerCase().includes(q) ||
-      c.jurisdiction.toLowerCase().includes(q) ||
-      c.compliance_flags.join(", ").toLowerCase().includes(q)
-    );
-    renderCards(filtered);
-  });
+    const searchBox = document.getElementById("searchBox");
+    searchBox.addEventListener("input", () => {
+      const q = searchBox.value.toLowerCase();
+      const filtered = data.filter(c =>
+        c.case_name.toLowerCase().includes(q) ||
+        c.jurisdiction.toLowerCase().includes(q) ||
+        c.compliance_flags.join(", ").toLowerCase().includes(q)
+      );
+      renderCards(filtered);
+    });
+  } catch (error) {
+    document.body.innerHTML = `<h2 style="padding:2rem;color:red;">Error loading citations.json:<br>${error.message}</h2>`;
+    console.error('Load error:', error);
+  }
 }
 
-function renderCards(data) {
+function renderCards(filteredData) {
   const container = document.getElementById("cardsContainer");
   container.innerHTML = "";
 
-  data.forEach(citation => {
+  filteredData.forEach(citation => {
     const div = document.createElement("div");
     div.className = "card";
-    div.id = citation.id;
 
     div.innerHTML = `
       <h3>${citation.case_name} (${citation.year})</h3>
@@ -43,18 +47,19 @@ function renderCards(data) {
           <div class="full-text">${citation.full_case_text.replace(/\n/g, "<br>")}</div>
         </details>` : ""}
       <p><strong>Printable:</strong> ${citation.printable ? "Yes" : "No"}</p>
-      <button onclick="printCard(this)">🖨️ Print</button>
-      <button onclick="editCard('${citation.id}')">✏️ Edit</button>
-      <button onclick="deleteCard('${citation.id}')">🗑️ Delete</button>
+      <div style="margin-top: 10px;">
+        <button onclick="printCard(this)">🖨️ Print</button>
+        <button onclick="editCard('${citation.id}')">✏️ Edit</button>
+        <button onclick="deleteCard('${citation.id}')">🗑️ Delete</button>
+      </div>
     `;
 
     container.appendChild(div);
   });
 }
 
-// Print function
 function printCard(button) {
-  const card = button.parentElement;
+  const card = button.parentElement.parentElement;
   const win = window.open("", "PrintCard");
   win.document.write("<html><head><title>Print</title></head><body>");
   win.document.write(card.innerHTML);
@@ -63,29 +68,13 @@ function printCard(button) {
   win.print();
 }
 
-// Edit function (simple prompt-based for now)
 function editCard(id) {
-  const card = document.getElementById(id);
-  const nameElement = card.querySelector("h3");
-  const summaryElement = card.querySelector("p:nth-of-type(3)");
-  
-  const currentName = nameElement.textContent;
-  const currentSummary = summaryElement.textContent.replace("Summary:", "").trim();
-
-  const newName = prompt("Edit Case Name:", currentName);
-  const newSummary = prompt("Edit Summary:", currentSummary);
-
-  if (newName) nameElement.textContent = newName;
-  if (newSummary) summaryElement.innerHTML = `<strong>Summary:</strong> ${newSummary}`;
+  alert("Edit not implemented yet.\n\nCard ID: " + id);
 }
 
-// Delete function
 function deleteCard(id) {
-  const card = document.getElementById(id);
-  if (confirm("Are you sure you want to delete this citation?")) {
-    card.remove();
-  }
+  alert("Delete not implemented yet.\n\nCard ID: " + id);
 }
 
-// Load on page open
+// Initial Load
 window.onload = loadCitations;
