@@ -1,5 +1,5 @@
 async function loadCitations() {
-  const response = await fetch("citations.json");
+  const response = await fetch("/citations.json");
   const data = await response.json();
   const container = document.getElementById("cardsContainer");
   const searchBox = document.getElementById("searchBox");
