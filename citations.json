@@ -1,21 +1,4 @@
-[
-  {
-    "id": "sample-jersey-2020",
-    "case_name": "Representation of Sample Trust",
-    "citation": "[2020] JRC 100",
-    "year": 2020,
-    "court": "Jersey Royal Court",
-    "jurisdiction": "Jersey",
-    "summary": "A sample trust case to demonstrate UI rendering.",
-    "legal_principle": "Trustees must avoid conflicts and consult beneficiaries.",
-    "holding": "Trustee breached fiduciary duties by failing to seek consent.",
-    "compliance_flags": ["Self-Dealing", "Failure to Obtain Consent"],
-    "key_points": ["No Beddoe Order", "Beneficiary not informed"],
-    "tags": ["trustees", "jersey", "fiduciary"],
-    "case_link": null,
-    "full_case_text": "Full judgment text can be inserted here.",
-    "printable": true
-  }
+
   [
   {
     "id": "jersey-tchenguiz-2010",
