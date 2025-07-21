@@ -24,8 +24,10 @@ async function loadCitations() {
       c.jurisdiction.toLowerCase().includes(q) ||
       c.compliance_flags.join(" ").toLowerCase().includes(q)
     );
-    renderCards(filtered);
-  });
+      renderCards(filtered);
+});
+
+loadCitations();  // 👈 This line ensures your cards load on page open
 
   renderCards(data);
 }
