@@ -2,7 +2,7 @@
   {
     "id": "jersey-tchenguiz-2010",
     "case_name": "Representation of the Tchenguiz Discretionary Trust",
-    "citation": "[2010]  JRC 068",
+    "citation": "[2010] JRC 068",
     "year": 2010,
     "court": "Jersey Royal Court",
     "jurisdiction": "Jersey",
@@ -32,94 +32,32 @@
     "printable": true
   },
   {
-  "id": "jersey-ztrust-2009",
-  "case_name": "In the matter of the Z Trust",
-  "citation": "[2009] JRC 071",
-  "year": 2009,
-  "court": "Jersey Royal Court",
-  "jurisdiction": "Jersey",
-  "summary": "The court was asked to approve a momentous decision concerning the restructuring of a trust holding valuable assets. The judgment reinforced the principle that trustees must seek court guidance where a decision could significantly impact beneficiaries' interests.",
-  "legal_principle": "Trustees should seek court approval for decisions that could materially affect the structure or value of the trust, particularly in complex or conflicted circumstances.",
-  "holding": "Court approval granted for the proposed restructuring, highlighting the need for trustee caution and judicial oversight in high-stakes trust administration decisions.",
-  "compliance_flags": [
-    "Need for court guidance",
-    "Risk of conflicted decision-making",
-    "Material beneficiary impact"
-  ],
-  "key_points": [
-    "Court will review and approve momentous decisions by trustees",
-    "Trustees must act prudently and avoid conflicts of interest",
-    "Restructuring with significant implications requires judicial oversight"
-  ],
-  "tags": [
-    "court guidance",
-    "trust restructuring",
-    "trustee prudence",
-    "Jersey law"
-  ],
-  "case_link": null,
-  "full_case_text": "In [2009] JRC 071, the Royal Court of Jersey considered an application by trustees of the Z Trust for approval of a momentous decision regarding the restructuring of a trust holding substantial assets. The court affirmed its supervisory jurisdiction, stating that trustees faced with decisions that could fundamentally alter the nature or risk profile of a trust should apply for judicial approval. The judgment emphasized caution, prudence, and transparency, especially where beneficiaries’ interests may be differently affected. The Court concluded that the proposed restructuring was reasonable and in the best interests of the trust as a whole.",
-  "printable": true
-},
-  {
-  "id": "jersey-nolan-1998",
-  "case_name": "In the matter of the Nolan Family Trust",
-  "citation": "[1998] JLR 049",
-  "year": 1998,
-  "court": "Jersey Royal Court",
-  "jurisdiction": "Jersey",
-  "summary": "The Court reviewed a trustee’s failure to segregate trust and personal assets, leading to beneficiary loss. It reinforced core duties of impartiality, proper accounting, and the importance of independence.",
-  "legal_principle": "Trustees must avoid mixing trust assets with personal or third-party funds and are under a strict duty to account for trust property distinctly and transparently.",
-  "holding": "The trustee breached fiduciary duty by failing to maintain separation between trust and non-trust assets, and was ordered to compensate beneficiaries for losses.",
-  "compliance_flags": [
-    "Asset commingling",
-    "Accounting failure",
-    "Fiduciary independence breach"
-  ],
-  "key_points": [
-    "Trustees must keep trust assets separate from personal or other accounts",
-    "Failure to account accurately is a breach of fiduciary duty",
-    "Compensation may be awarded to beneficiaries for trustee misconduct"
-  ],
-  "tags": [
-    "asset segregation",
-    "trustee independence",
-    "trust accounting",
-    "Jersey fiduciary law"
-  ],
-  "case_link": null,
-  "full_case_text": "In [1998] JLR 049, the Jersey Royal Court scrutinised the conduct of a trustee who failed to maintain clear separation between the trust’s assets and personal funds. This mismanagement resulted in loss to the beneficiaries and a finding of fiduciary breach. The Court emphasised the foundational duty of a trustee to keep trust property distinctly managed and accounted for. The decision reaffirmed that any overlap between personal interest and trust administration without full transparency and consent is a serious compliance failure warranting restitution.",
-  "printable": true
-},
-  {
-  "id": "jersey-atrust-2012",
-  "case_name": "In the matter of the A Trust",
-  "citation": "[2012] JRC 169A",
-  "year": 2012,
-  "court": "Jersey Royal Court",
-  "jurisdiction": "Jersey",
-  "summary": "The trustee sought directions regarding distribution to a discretionary beneficiary after receiving conflicting legal advice. The court clarified that reliance on informal advice without documenting formal trust deliberations can lead to liability.",
-  "legal_principle": "Trustees must act prudently, document all material trust decisions, and not rely solely on informal or external advice without internal consideration and minute-taking.",
-  "holding": "Although no dishonesty was found, the court held that reliance on informal legal opinions without independent review or proper minuting was a serious procedural breach.",
-  "compliance_flags": [
-    "Failure to minute material trust decisions",
-    "Overreliance on informal advice",
-    "Procedural breach in trust governance"
-  ],
-  "key_points": [
-    "Trustees should minute all significant decisions",
-    "External legal advice does not replace trustee deliberation",
-    "Failure to document decision-making can expose trustees to challenge"
-  ],
-  "tags": [
-    "trust decision-making",
-    "legal advice",
-    "procedural compliance",
-    "trust governance"
-  ],
-  "case_link": null,
-  "full_case_text": "In [2012] JRC 169A, the Jersey Royal Court examined the conduct of a trustee that made a discretionary distribution following informal legal input, but without proper internal records. The Court reiterated that while trustees may take legal advice, they must also demonstrate independent judgment and proper process. Crucially, trust minutes should show active deliberation. Where documentation is lacking, even a seemingly proper decision may be exposed to challenge or reversal.",
-  "printable": true
-}
+    "id": "jersey-ztrust-2009",
+    "case_name": "In the matter of the Z Trust",
+    "citation": "[2009] JRC 071",
+    "year": 2009,
+    "court": "Jersey Royal Court",
+    "jurisdiction": "Jersey",
+    "summary": "Court guidance on trustee discretion and reasonableness when managing conflicts between beneficiaries. The decision highlights judicial willingness to intervene where discretion is improperly exercised.",
+    "legal_principle": "Trustee discretion must be exercised reasonably and in accordance with fiduciary principles.",
+    "holding": "The Court will intervene if trustee discretion is exercised capriciously or in bad faith.",
+    "compliance_flags": [
+      "Failure to balance beneficiary interests",
+      "Capricious use of discretion"
+    ],
+    "key_points": [
+      "Trustees must balance competing beneficiary interests",
+      "Discretion must not be exercised capriciously or with bias",
+      "Judicial intervention is available when discretion is misused"
+    ],
+    "tags": [
+      "trustee discretion",
+      "beneficiary conflict",
+      "Jersey case law"
+    ],
+    "case_link": null,
+    "full_case_text": "In this case, the Court scrutinised how a trustee handled competing demands from beneficiaries. The trustee had failed to document the rationale for key decisions, and beneficiaries alleged unfair treatment. The Court reaffirmed the need for trustees to act impartially, record material decisions, and ensure reasons are logically consistent with the trust’s objectives.",
+    "printable": true
+  }
 ]
 
