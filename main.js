@@ -68,8 +68,44 @@ function printCard(button) {
   win.print();
 }
 
-function editCard(id) {
-  alert("Edit not implemented yet.\n\nCard ID: " + id);
+function editCard(cardId) {
+  const citation = currentData.find(c => c.id === cardId);
+  if (!citation) return alert("Citation not found");
+
+  // Pre-fill form
+  document.getElementById("editId").value = citation.id;
+  document.getElementById("editCaseName").value = citation.case_name;
+  document.getElementById("editYear").value = citation.year;
+  document.getElementById("editJurisdiction").value = citation.jurisdiction;
+  document.getElementById("editSummary").value = citation.summary;
+  document.getElementById("editPrintable").value = citation.printable ? "true" : "false";
+
+  // Show modal
+  document.getElementById("editModal").classList.remove("hidden");
+}
+
+// Close modal logic
+document.getElementById("closeModal").onclick = () => {
+  document.getElementById("editModal").classList.add("hidden");
+};
+
+// Save form logic
+document.getElementById("editForm").onsubmit = function (e) {
+  e.preventDefault();
+
+  const id = document.getElementById("editId").value;
+  const updated = currentData.find(c => c.id === id);
+  if (!updated) return alert("Citation not found");
+
+  updated.case_name = document.getElementById("editCaseName").value;
+  updated.year = parseInt(document.getElementById("editYear").value);
+  updated.jurisdiction = document.getElementById("editJurisdiction").value;
+  updated.summary = document.getElementById("editSummary").value;
+  updated.printable = document.getElementById("editPrintable").value === "true";
+
+  renderCards(currentData);
+  document.getElementById("editModal").classList.add("hidden");
+};
 }
 
 function deleteCard(id) {
