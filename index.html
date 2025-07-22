@@ -15,10 +15,11 @@
   <main>
     <input type="text" id="searchBox" placeholder="Search by case name, flag, or jurisdiction..." />
     
-    <section>
-      <h3>Upload New Citations</h3>
+    <section class="upload-section">
+      <h2>Upload New Citations</h2>
       <input type="file" id="fileInput" />
-      <button onclick="uploadFile()">📤 Upload</button>
+      <button onclick="handleUpload()">⬆️ Upload</button>
+      <span id="uploadStatus"></span>
     </section>
 
     <div id="cardsContainer"></div>
