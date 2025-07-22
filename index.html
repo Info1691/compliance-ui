@@ -11,8 +11,16 @@
     <img src="logo.png" alt="Blue Chip Consultancy Services Logo" class="logo" />
     <h1>Compliance Citation Cards</h1>
   </header>
+
   <main>
     <input type="text" id="searchBox" placeholder="Search by case name, flag, or jurisdiction..." />
+    
+    <section>
+      <h3>Upload New Citations</h3>
+      <input type="file" id="fileInput" />
+      <button onclick="uploadFile()">📤 Upload</button>
+    </section>
+
     <div id="cardsContainer"></div>
   </main>
 
