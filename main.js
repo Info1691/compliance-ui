@@ -1,8 +1,12 @@
 let currentData = [];
+const GITHUB_TOKEN = 'YOUR_GITHUB_TOKEN'; // Replace securely before using
+const REPO = 'Info1691/legal-citations';
+const FILE_PATH = 'legal-data-2025-07-16.json';
+const API_URL = `https://api.github.com/repos/${REPO}/contents/${FILE_PATH}`;
 
 async function loadCitations() {
   try {
-    const response = await fetch('./citations.json');
+    const response = await fetch('./legal-data-2025-07-16.json');
     if (!response.ok) throw new Error('Failed to load JSON');
     const data = await response.json();
     currentData = data;
@@ -27,30 +31,32 @@ function renderCards(filteredData) {
   const container = document.getElementById("cardsContainer");
   container.innerHTML = "";
 
-  filteredData.forEach(c => {
+  filteredData.forEach(citation => {
     const div = document.createElement("div");
     div.className = "card";
 
     div.innerHTML = `
-      <h3>${c.case_name} (${c.year})</h3>
-      <p><strong>Jurisdiction:</strong> ${c.jurisdiction}</p>
-      <p><strong>Court:</strong> ${c.court}</p>
-      <p><strong>Citation:</strong> ${c.citation}</p>
-      <p><strong>Summary:</strong> ${c.summary}</p>
-      <p><strong>Legal Principle:</strong> ${c.legal_principle}</p>
-      <p><strong>Holding:</strong> ${c.holding}</p>
-      <p><strong>Compliance Flags:</strong> ${c.compliance_flags.join(", ")}</p>
-      <p><strong>Key Points:</strong> ${c.key_points.join(", ")}</p>
-      <p><strong>Tags:</strong> ${c.tags.join(", ")}</p>
-      ${c.case_link ? `<p><strong>Case Link:</strong> <a href="${c.case_link}" target="_blank">View Case</a></p>` : ""}
-      ${c.full_case_text ? `
-        <details><summary><strong>Full Case Text</strong></summary>
-        <div class="full-text">${c.full_case_text.replace(/\n/g, "<br>")}</div></details>` : ""}
-      <p><strong>Printable:</strong> ${c.printable ? "Yes" : "No"}</p>
+      <h3>${citation.case_name} (${citation.year})</h3>
+      <p><strong>Jurisdiction:</strong> ${citation.jurisdiction}</p>
+      <p><strong>Court:</strong> ${citation.court}</p>
+      <p><strong>Citation:</strong> ${citation.citation}</p>
+      <p><strong>Summary:</strong> ${citation.summary}</p>
+      <p><strong>Legal Principle:</strong> ${citation.legal_principle}</p>
+      <p><strong>Holding:</strong> ${citation.holding}</p>
+      <p><strong>Compliance Flags:</strong> ${citation.compliance_flags.join(", ")}</p>
+      <p><strong>Key Points:</strong> ${citation.key_points.join(", ")}</p>
+      <p><strong>Tags:</strong> ${citation.tags.join(", ")}</p>
+      ${citation.case_link ? `<p><strong>Case Link:</strong> <a href="${citation.case_link}" target="_blank">View Case</a></p>` : ""}
+      ${citation.full_case_text ? `
+        <details>
+          <summary><strong>Full Case Text</strong></summary>
+          <div class="full-text">${citation.full_case_text.replace(/\n/g, "<br>")}</div>
+        </details>` : ""}
+      <p><strong>Printable:</strong> ${citation.printable ? "Yes" : "No"}</p>
       <div style="margin-top: 10px;">
-        <button onclick="printCard(this)">🖨️ Print</button>
-        <button onclick="editCard('${c.id}')">✏️ Edit</button>
-        <button onclick="deleteCard('${c.id}')">🗑️ Delete</button>
+        <button onclick="printCard(this)">ð¨ï¸ Print</button>
+        <button onclick="editCard('${citation.id}')">âï¸ Edit</button>
+        <button onclick="deleteCard('${citation.id}')">ðï¸ Delete</button>
       </div>
     `;
 
@@ -121,25 +127,39 @@ document.getElementById("editForm").onsubmit = function (e) {
   document.getElementById("editModal").classList.add("hidden");
 };
 
-function deleteCard(id) {
-  if (!confirm("Are you sure you want to delete this citation?")) return;
-  currentData = currentData.filter(c => c.id !== id);
-  renderCards(currentData);
-}
-
-function uploadFile() {
-  const input = document.getElementById("fileInput");
+async function uploadFile() {
+  const input = document.getElementById("uploadInput");
   const file = input.files[0];
   if (!file) return alert("No file selected");
 
   const reader = new FileReader();
-  reader.onload = function (e) {
-    try {
-      const newData = JSON.parse(e.target.result);
-      currentData = [...currentData, ...newData];
-      renderCards(currentData);
-    } catch (err) {
-      alert("Failed to parse uploaded file");
+  reader.onload = async function () {
+    const newData = JSON.parse(reader.result);
+    const updatedData = [...currentData, ...newData];
+
+    const res = await fetch(API_URL, {
+      headers: { Authorization: `Bearer ${GITHUB_TOKEN}` }
+    });
+    const fileInfo = await res.json();
+
+    const putRes = await fetch(API_URL, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${GITHUB_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message: "Add new citations",
+        content: btoa(unescape(encodeURIComponent(JSON.stringify(updatedData, null, 2)))),
+        sha: fileInfo.sha
+      })
+    });
+
+    if (!putRes.ok) {
+      alert("Upload failed");
+    } else {
+      alert("Upload successful! Reloading...");
+      location.reload();
     }
   };
   reader.readAsText(file);
