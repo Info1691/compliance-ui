@@ -15,27 +15,29 @@
     <input type="text" id="searchBox" placeholder="Search by case name, flag, or jurisdiction..." />
     <div id="cardsContainer"></div>
   </main>
+
+  <!-- ✅ MODAL MUST BE INSIDE BODY -->
+  <div id="editModal" class="modal hidden">
+    <div class="modal-content">
+      <span id="closeModal" class="close">&times;</span>
+      <h2>Edit Case</h2>
+      <form id="editForm">
+        <input type="hidden" id="editId" />
+        <label>Case Name: <input type="text" id="editCaseName" /></label><br />
+        <label>Year: <input type="number" id="editYear" /></label><br />
+        <label>Jurisdiction: <input type="text" id="editJurisdiction" /></label><br />
+        <label>Summary: <textarea id="editSummary"></textarea></label><br />
+        <label>Printable: 
+          <select id="editPrintable">
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+          </select>
+        </label><br />
+        <button type="submit">Save Changes</button>
+      </form>
+    </div>
+  </div>
+
   <script src="main.js"></script>
 </body>
 </html>
-<!-- Edit Modal -->
-<div id="editModal" class="modal hidden">
-  <div class="modal-content">
-    <span id="closeModal" class="close">&times;</span>
-    <h2>Edit Case</h2>
-    <form id="editForm">
-      <input type="hidden" id="editId" />
-      <label>Case Name: <input type="text" id="editCaseName" /></label><br />
-      <label>Year: <input type="number" id="editYear" /></label><br />
-      <label>Jurisdiction: <input type="text" id="editJurisdiction" /></label><br />
-      <label>Summary: <textarea id="editSummary"></textarea></label><br />
-      <label>Printable: 
-        <select id="editPrintable">
-          <option value="true">Yes</option>
-          <option value="false">No</option>
-        </select>
-      </label><br />
-      <button type="submit">Save Changes</button>
-    </form>
-  </div>
-</div>
