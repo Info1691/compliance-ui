@@ -16,7 +16,7 @@
     <div id="cardsContainer"></div>
   </main>
 
-  <!-- ✅ MODAL MUST BE INSIDE BODY -->
+  <!-- Edit Modal -->
   <div id="editModal" class="modal hidden">
     <div class="modal-content">
       <span id="closeModal" class="close">&times;</span>
@@ -24,10 +24,19 @@
       <form id="editForm">
         <input type="hidden" id="editId" />
         <label>Case Name: <input type="text" id="editCaseName" /></label><br />
+        <label>Citation: <input type="text" id="editCitation" /></label><br />
         <label>Year: <input type="number" id="editYear" /></label><br />
+        <label>Court: <input type="text" id="editCourt" /></label><br />
         <label>Jurisdiction: <input type="text" id="editJurisdiction" /></label><br />
         <label>Summary: <textarea id="editSummary"></textarea></label><br />
-        <label>Printable: 
+        <label>Legal Principle: <textarea id="editLegalPrinciple"></textarea></label><br />
+        <label>Holding: <textarea id="editHolding"></textarea></label><br />
+        <label>Compliance Flags (comma-separated): <textarea id="editFlags"></textarea></label><br />
+        <label>Key Points (comma-separated): <textarea id="editKeyPoints"></textarea></label><br />
+        <label>Tags (comma-separated): <textarea id="editTags"></textarea></label><br />
+        <label>Case Link (optional): <input type="url" id="editCaseLink" /></label><br />
+        <label>Full Case Text: <textarea id="editFullText"></textarea></label><br />
+        <label>Printable:
           <select id="editPrintable">
             <option value="true">Yes</option>
             <option value="false">No</option>
