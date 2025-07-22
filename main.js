@@ -2,17 +2,13 @@ let currentData = [];
 
 async function loadCitations() {
   try {
-    // ✅ Use absolute path for GitHub Pages JSON loading
-    const response = await fetch('https://info1691.github.io/compliance-ui/citations.json');
+    const response = await fetch('./citations.json');
     if (!response.ok) throw new Error('Failed to load JSON');
-
     const data = await response.json();
-    console.log("✅ JSON loaded:", data);
     currentData = data;
     renderCards(data);
 
-    const searchBox = document.getElementById("searchBox");
-    searchBox.addEventListener("input", () => {
+    document.getElementById("searchBox").addEventListener("input", () => {
       const q = searchBox.value.toLowerCase();
       const filtered = data.filter(c =>
         c.case_name.toLowerCase().includes(q) ||
@@ -23,7 +19,7 @@ async function loadCitations() {
     });
   } catch (error) {
     document.body.innerHTML = `<h2 style="padding:2rem;color:red;">Error loading citations.json:<br>${error.message}</h2>`;
-    console.error('❌ Load error:', error);
+    console.error('Load error:', error);
   }
 }
 
@@ -46,7 +42,7 @@ function renderCards(filteredData) {
       <p><strong>Compliance Flags:</strong> ${citation.compliance_flags.join(", ")}</p>
       <p><strong>Key Points:</strong> ${citation.key_points.join(", ")}</p>
       <p><strong>Tags:</strong> ${citation.tags.join(", ")}</p>
-      ${citation.case_link ? `<p><strong>Case Link:</strong> <a href="${citation.case_link}" target="_blank" rel="noopener noreferrer">View Case</a></p>` : ""}
+      ${citation.case_link ? `<p><strong>Case Link:</strong> <a href="${citation.case_link}" target="_blank">View Case</a></p>` : ""}
       ${citation.full_case_text ? `
         <details>
           <summary><strong>Full Case Text</strong></summary>
@@ -74,48 +70,62 @@ function printCard(button) {
   win.print();
 }
 
-function editCard(cardId) {
-  const citation = currentData.find(c => c.id === cardId);
-  if (!citation) return alert("Citation not found");
+function editCard(id) {
+  const c = currentData.find(c => c.id === id);
+  if (!c) return;
 
-  // Pre-fill form
-  document.getElementById("editId").value = citation.id;
-  document.getElementById("editCaseName").value = citation.case_name;
-  document.getElementById("editYear").value = citation.year;
-  document.getElementById("editJurisdiction").value = citation.jurisdiction;
-  document.getElementById("editSummary").value = citation.summary;
-  document.getElementById("editPrintable").value = citation.printable ? "true" : "false";
+  document.getElementById("editId").value = c.id;
+  document.getElementById("editCaseName").value = c.case_name;
+  document.getElementById("editCitation").value = c.citation;
+  document.getElementById("editYear").value = c.year;
+  document.getElementById("editCourt").value = c.court;
+  document.getElementById("editJurisdiction").value = c.jurisdiction;
+  document.getElementById("editSummary").value = c.summary;
+  document.getElementById("editLegalPrinciple").value = c.legal_principle;
+  document.getElementById("editHolding").value = c.holding;
+  document.getElementById("editFlags").value = c.compliance_flags.join(", ");
+  document.getElementById("editKeyPoints").value = c.key_points.join(", ");
+  document.getElementById("editTags").value = c.tags.join(", ");
+  document.getElementById("editCaseLink").value = c.case_link || "";
+  document.getElementById("editFullText").value = c.full_case_text || "";
+  document.getElementById("editPrintable").value = c.printable ? "true" : "false";
 
-  // Show modal
   document.getElementById("editModal").classList.remove("hidden");
 }
 
-// Close modal logic
 document.getElementById("closeModal").onclick = () => {
   document.getElementById("editModal").classList.add("hidden");
 };
 
-// Save form logic
 document.getElementById("editForm").onsubmit = function (e) {
   e.preventDefault();
 
   const id = document.getElementById("editId").value;
-  const updated = currentData.find(c => c.id === id);
-  if (!updated) return alert("Citation not found");
+  const c = currentData.find(c => c.id === id);
+  if (!c) return alert("Citation not found");
 
-  updated.case_name = document.getElementById("editCaseName").value;
-  updated.year = parseInt(document.getElementById("editYear").value);
-  updated.jurisdiction = document.getElementById("editJurisdiction").value;
-  updated.summary = document.getElementById("editSummary").value;
-  updated.printable = document.getElementById("editPrintable").value === "true";
+  c.case_name = document.getElementById("editCaseName").value;
+  c.citation = document.getElementById("editCitation").value;
+  c.year = parseInt(document.getElementById("editYear").value);
+  c.court = document.getElementById("editCourt").value;
+  c.jurisdiction = document.getElementById("editJurisdiction").value;
+  c.summary = document.getElementById("editSummary").value;
+  c.legal_principle = document.getElementById("editLegalPrinciple").value;
+  c.holding = document.getElementById("editHolding").value;
+  c.compliance_flags = document.getElementById("editFlags").value.split(",").map(s => s.trim());
+  c.key_points = document.getElementById("editKeyPoints").value.split(",").map(s => s.trim());
+  c.tags = document.getElementById("editTags").value.split(",").map(s => s.trim());
+  c.case_link = document.getElementById("editCaseLink").value || null;
+  c.full_case_text = document.getElementById("editFullText").value || "";
+  c.printable = document.getElementById("editPrintable").value === "true";
 
   renderCards(currentData);
   document.getElementById("editModal").classList.add("hidden");
 };
 
 function deleteCard(id) {
-  alert("Delete not implemented yet.\n\nCard ID: " + id);
+  alert(`Delete not implemented yet.\n\nCard ID: ${id}`);
 }
 
-// Initial Load
+// Load data on startup
 window.onload = loadCitations;
