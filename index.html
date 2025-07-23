@@ -1,26 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Compliance Citation Viewer</title>
-  <link rel="stylesheet" href="style.css">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header>
+    <img src="logo.png" alt="Logo" class="logo">
     <h1>📘 Compliance Citation Viewer</h1>
   </header>
 
-  <main>
-    <div id="citation-container"></div>
+  <main id="citation-container"></main>
 
-    <div class="controls">
-      <button onclick="prevCitation()">⬅️ Prev</button>
-      <button onclick="nextCitation()">➡️ Next</button>
-      <button onclick="printCurrentCitation()">🖨️ Print</button>
-      <button onclick="exportCurrentCitation()">💾 Export</button>
-    </div>
-  </main>
+  <div class="controls">
+    <button onclick="prevCitation()">◀ Prev</button>
+    <button onclick="nextCitation()">▶ Next</button>
+    <button onclick="printCitation()">🖨️ Print</button>
+    <button onclick="exportCitation()">📤 Export</button>
+    <button onclick="editCitation()">✏️ Edit</button>
+    <button onclick="deleteCitation()">🗑️ Delete</button>
+  </div>
 
   <script src="main.js"></script>
 </body>
