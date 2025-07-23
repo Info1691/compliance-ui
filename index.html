@@ -3,51 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Compliance Citation Viewer</title>
+  <title>Compliance Citations Viewer</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header>
-    <img src="logo.png" alt="Blue Chip Logo" class="logo" />
-    <h1>Compliance Citation Cards</h1>
+    <h1>Compliance Citation Viewer</h1>
   </header>
+
+  <!-- ✅ This is the container your script is trying to access -->
   <div id="container"></div>
 
-  <main>
-    <input type="file" id="uploadFile" accept=".json" />
-    <input type="text" id="searchBox" placeholder="Search case name, flag, or jurisdiction..." />
-    <div id="cardsContainer"></div>
-  </main>
-
-  <!-- Edit Modal -->
-  <div id="editModal" class="modal hidden">
-    <div class="modal-content">
-      <span id="closeModal" class="close">&times;</span>
-      <h2>Edit Case</h2>
-      <form id="editForm">
-        <input type="hidden" id="editId" />
-        <label>Case Name: <input type="text" id="editCaseName" /></label><br />
-        <label>Citation: <input type="text" id="editCitation" /></label><br />
-        <label>Year: <input type="number" id="editYear" /></label><br />
-        <label>Court: <input type="text" id="editCourt" /></label><br />
-        <label>Jurisdiction: <input type="text" id="editJurisdiction" /></label><br />
-        <label>Summary: <textarea id="editSummary"></textarea></label><br />
-        <label>Legal Principle: <textarea id="editLegalPrinciple"></textarea></label><br />
-        <label>Holding: <textarea id="editHolding"></textarea></label><br />
-        <label>Compliance Flags (comma-separated): <textarea id="editFlags"></textarea></label><br />
-        <label>Key Points (comma-separated): <textarea id="editKeyPoints"></textarea></label><br />
-        <label>Tags (comma-separated): <textarea id="editTags"></textarea></label><br />
-        <label>Case Link (optional): <input type="url" id="editCaseLink" /></label><br />
-        <label>Full Case Text: <textarea id="editFullText"></textarea></label><br />
-        <label>Printable:
-          <select id="editPrintable">
-            <option value="true">Yes</option>
-            <option value="false">No</option>
-          </select>
-        </label><br />
-        <button type="submit">Save Changes</button>
-      </form>
-    </div>
+  <!-- Action Buttons -->
+  <div class="button-bar">
+    <button onclick="exportData()">Download citations.json</button>
+    <input type="file" id="fileInput" accept=".json" onchange="importData(event)" />
   </div>
 
   <script src="main.js"></script>
