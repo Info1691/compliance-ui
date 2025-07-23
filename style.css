@@ -3,42 +3,36 @@ body {
   background: #f9f9f9;
   margin: 0;
   padding: 0;
+  text-align: center;
 }
 
-.container {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-header {
+.header {
+  background: #003366;
+  color: white;
+  padding: 10px;
   display: flex;
   align-items: center;
-  margin-bottom: 20px;
+  justify-content: center;
+  gap: 20px;
 }
 
-.main-logo {
-  height: 60px;
-  margin-right: 20px;
-  background: white;
+.logo {
+  height: 50px;
+  background-color: white;
   padding: 5px;
   border-radius: 5px;
 }
 
-h1 {
-  font-size: 24px;
-  margin: 0;
+.container {
+  margin: 20px auto;
+  max-width: 900px;
 }
 
 .card {
   background: white;
-  padding: 20px;
-  border-radius: 8px;
   box-shadow: 0 0 10px rgba(0,0,0,0.1);
   margin-bottom: 20px;
-}
-
-button {
-  margin-right: 10px;
-  padding: 6px 10px;
+  padding: 20px;
+  text-align: left;
+  border-radius: 8px;
 }
