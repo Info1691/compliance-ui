@@ -7,57 +7,30 @@
     "court": "Jersey Royal Court",
     "jurisdiction": "Jersey",
     "summary": "Court intervention required for trust administration involving significant financial losses and beneficiary protection. The court emphasized trustees' duties to act in beneficiaries' interests and obtain proper authorization for significant expenditure.",
-    "legal_principle": "Trustees must exercise reasonable care, consult beneficiaries on material decisions, and are personally liable for breaches",
-    "holding": "The court emphasized trustees' duties to act in beneficiaries' interests and obtain proper authorization for significant expenditure.",
-    "compliance_flags": [
-      "Unauthorized expenditure",
-      "Lack of beneficiary consultation",
-      "Breach of fiduciary duty"
-    ],
-    "key_points": [
-      "Trustees must obtain proper authorization for significant expenditure",
-      "Beneficiaries must be consulted on material decisions",
-      "Court intervention available for trust administration disputes",
-      "Personal liability for trustees who breach their duties"
-    ],
-    "tags": [
-      "trust administration",
-      "beneficiary protection",
-      "court intervention",
-      "trustee duties",
-      "Jersey law"
-    ],
+    "legal_principle": "Trustees must act prudently and obtain appropriate court or beneficiary authority before incurring large expenses.",
+    "holding": "Court reinforced the fiduciary duty of trustees to act in the interests of beneficiaries and to avoid unapproved expenditure.",
+    "compliance_flags": ["Trustee Procedural Breach", "Fiduciary Funding or Investment Error"],
+    "key_points": ["Court supervision", "Unauthorised expenditure", "Beneficiary protection"],
+    "tags": ["trustee duty", "beneficiary rights", "investment loss"],
     "case_link": null,
-    "full_case_text": "JERSEY ROYAL COURT JUDGMENT – Case Number: [2010]JRC068. The Royal Court of Jersey, sitting as a court of equity, has inherent jurisdiction to supervise the administration of trusts. In this matter, the Court was called upon to consider the proper administration of a discretionary trust where significant financial irregularities had occurred. The trustees had made substantial expenditures without proper consultation with beneficiaries or court approval. The Court held that trustees must exercise their powers in good faith and in the best interests of beneficiaries. Where substantial expenditure is contemplated, particularly in litigation matters, trustees should either obtain beneficiary consent or seek court directions. The Court emphasized that the fundamental duty of trustees is to preserve and enhance the trust fund for the benefit of beneficiaries. Any departure from this principle requires clear justification and proper authorization.",
+    "full_case_text": "Full text to be inserted here or added via UI.",
     "printable": true
   },
   {
-    "id": "jersey-ztrust-2009",
+    "id": "jersey-z-trust-2009",
     "case_name": "In the matter of the Z Trust",
     "citation": "[2009] JRC 071",
     "year": 2009,
     "court": "Jersey Royal Court",
     "jurisdiction": "Jersey",
-    "summary": "Court guidance on trustee discretion and reasonableness when managing conflicts between beneficiaries. The decision highlights judicial willingness to intervene where discretion is improperly exercised.",
-    "legal_principle": "Trustee discretion must be exercised reasonably and in accordance with fiduciary principles.",
-    "holding": "The Court will intervene if trustee discretion is exercised capriciously or in bad faith.",
-    "compliance_flags": [
-      "Failure to balance beneficiary interests",
-      "Capricious use of discretion"
-    ],
-    "key_points": [
-      "Trustees must balance competing beneficiary interests",
-      "Discretion must not be exercised capriciously or with bias",
-      "Judicial intervention is available when discretion is misused"
-    ],
-    "tags": [
-      "trustee discretion",
-      "beneficiary conflict",
-      "Jersey case law"
-    ],
+    "summary": "A Jersey trustee made significant investments and procedural decisions without obtaining prior consent from the beneficiaries or a Beddoe order.",
+    "legal_principle": "Trustees must obtain beneficiary consent or Beddoe relief before engaging in litigation or speculative expenditure.",
+    "holding": "The trustee was held to have breached fiduciary obligations by bypassing formal consent mechanisms.",
+    "compliance_flags": ["Trustee Procedural Breach"],
+    "key_points": ["Litigation without Beddoe", "No beneficiary consent", "Uninformed risk"],
+    "tags": ["beddoe", "consent", "trustee litigation"],
     "case_link": null,
-    "full_case_text": "In this case, the Court scrutinised how a trustee handled competing demands from beneficiaries. The trustee had failed to document the rationale for key decisions, and beneficiaries alleged unfair treatment. The Court reaffirmed the need for trustees to act impartially, record material decisions, and ensure reasons are logically consistent with the trust’s objectives.",
-    "printable": true
+    "full_case_text": "To be inserted later.",
+    "printable": false
   }
 ]
-
