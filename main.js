@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", () => {
+window.onload = () => {
   const container = document.getElementById("container");
   if (!container) {
     console.error("❌ Cannot find #container in DOM");
@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
   fetch("citations.json")
     .then(response => {
       if (!response.ok) {
-        throw new Error(`📁 Failed to load citations.json: ${response.statusText}`);
+        throw new Error(`❌ Failed to load citations.json: ${response.statusText}`);
       }
       return response.json();
     })
@@ -22,33 +22,31 @@ document.addEventListener("DOMContentLoaded", () => {
           <h3>${entry.case_name} (${entry.year})</h3>
           <p><strong>Citation:</strong> ${entry.citation}</p>
           <p><strong>Jurisdiction:</strong> ${entry.jurisdiction}</p>
-          <p><strong>Compliance Flags:</strong> ${entry.compliance_flags?.join(", ")}</p>
-          <p><strong>Tags:</strong> ${entry.tags?.join(", ")}</p>
+          <p><strong>Compliance Flags:</strong> ${entry.compliance_flags.join(", ")}</p>
+          <p><strong>Tags:</strong> ${entry.tags.join(", ")}</p>
         `;
         container.appendChild(card);
       });
     })
     .catch(error => {
       container.innerHTML = `<pre style="color:red;">Error loading citations.json:\n${error.message}</pre>`;
-      console.error("📛 JSON Fetch Error:", error);
+      console.error("❌ JSON Error:", error);
     });
-});
+};
 
-// Button functions (Load, Export, Clear, Print)
+// Button functions
 function loadCitations() {
-  document.getElementById("fileInput").click();
+  document.location.reload();
 }
 
 function exportData() {
-  const data = document.querySelectorAll(".citation-card");
-  const citations = Array.from(data).map(card => {
-    return { html: card.innerHTML };
-  });
-  const blob = new Blob([JSON.stringify(citations, null, 2)], { type: "application/json" });
+  const blob = new Blob([JSON.stringify(currentData, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
+  a.href = url;
   a.download = "citations.json";
   a.click();
+  URL.revokeObjectURL(url);
 }
 
 function clearCitations() {
