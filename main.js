@@ -1,70 +1,75 @@
-window.onload = () => {
-  const container = document.getElementById("container");
-  if (!container) {
-    console.error("❌ Cannot find #container in DOM");
-    return;
+let citations = [];
+let currentIndex = 0;
+
+async function loadCitationsFromJSON() {
+  try {
+    const res = await fetch('citations.json');
+    citations = await res.json();
+    displayCitation(currentIndex);
+  } catch (err) {
+    const container = document.getElementById("citation-container");
+    if (container) {
+      container.innerHTML = `<p style="color:red">❌ Error loading citations.json: ${err.message}</p>`;
+    }
   }
-
-  fetch("citations.json")
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(`❌ Failed to load citations.json: ${response.statusText}`);
-      }
-      return response.json();
-    })
-    .then(data => {
-      container.innerHTML = "";
-      data.forEach(entry => {
-        const card = document.createElement("div");
-        card.className = "citation-card";
-
-        card.innerHTML = `
-          <h3>${entry.case_name} (${entry.year})</h3>
-          <p><strong>Citation:</strong> ${entry.citation}</p>
-          <p><strong>Court:</strong> ${entry.court}</p>
-          <p><strong>Jurisdiction:</strong> ${entry.jurisdiction}</p>
-          <p><strong>Summary:</strong> ${entry.summary}</p>
-          <p><strong>Legal Principle:</strong> ${entry.legal_principle}</p>
-          <p><strong>Holding:</strong> ${entry.holding}</p>
-          <p><strong>Compliance Flags:</strong> ${entry.compliance_flags.join(", ")}</p>
-          <p><strong>Key Points:</strong> ${entry.key_points.join(", ")}</p>
-          <p><strong>Tags:</strong> ${entry.tags.join(", ")}</p>
-          <p><strong>Case Link:</strong> ${entry.case_link ? `<a href="${entry.case_link}" target="_blank">View</a>` : "N/A"}</p>
-          <p><strong>Printable:</strong> ${entry.printable ? "Yes" : "No"}</p>
-        `;
-
-        if (entry.full_case_text) {
-          const details = document.createElement("details");
-          details.innerHTML = `<summary>📄 Full Case Text</summary><pre>${entry.full_case_text}</pre>`;
-          card.appendChild(details);
-        }
-
-        container.appendChild(card);
-      });
-    })
-    .catch(error => {
-      container.innerHTML = `<pre style="color:red;">Error loading citations.json:\n${error.message}</pre>`;
-      console.error("❌ JSON Error:", error);
-    });
-};
-
-// Button functions
-function loadCitations() {
-  document.location.reload();
 }
 
-function exportData() {
-  const dataStr = JSON.stringify(currentData, null, 2);
-  const blob = new Blob([dataStr], { type: "application/json" });
+function displayCitation(index) {
+  const container = document.getElementById("citation-container");
+  if (!container || !citations.length || !citations[index]) return;
+
+  const c = citations[index];
+  container.innerHTML = `
+    <h2>${c.case_name} (${c.year})</h2>
+    <p><strong>Citation:</strong> ${c.citation}</p>
+    <p><strong>Court:</strong> ${c.court}</p>
+    <p><strong>Jurisdiction:</strong> ${c.jurisdiction}</p>
+    <p><strong><u>Summary:</u></strong> ${c.summary}</p>
+    <p><strong><u>Legal Principle:</u></strong> ${c.legal_principle}</p>
+    <p><strong><u>Holding:</u></strong> ${c.holding}</p>
+    <p><strong>Compliance Flags:</strong> ${c.compliance_flags?.join(', ')}</p>
+    <p><strong>Key Points:</strong> ${c.key_points?.join(', ')}</p>
+    <p><strong>Tags:</strong> ${c.tags?.join(', ')}</p>
+    <p><strong>Case Link:</strong> ${c.case_link || "N/A"}</p>
+    <p><strong>Printable:</strong> ${c.printable ? "Yes" : "No"}</p>
+  `;
+}
+
+function nextCitation() {
+  if (currentIndex < citations.length - 1) {
+    currentIndex++;
+    displayCitation(currentIndex);
+  }
+}
+
+function prevCitation() {
+  if (currentIndex > 0) {
+    currentIndex--;
+    displayCitation(currentIndex);
+  }
+}
+
+function editCitation() {
+  alert("✏️ Edit UI coming soon (this is a placeholder).");
+}
+
+function printCurrentCitation() {
+  const printableWindow = window.open('', '_blank');
+  printableWindow.document.write('<html><head><title>Print Citation</title></head><body>');
+  printableWindow.document.write(document.getElementById('citation-container').innerHTML);
+  printableWindow.document.write('</body></html>');
+  printableWindow.document.close();
+  printableWindow.print();
+}
+
+function exportCurrentCitation() {
+  const citation = citations[currentIndex];
+  const blob = new Blob([JSON.stringify(citation, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "citations.json";
-  link.click();
-  URL.revokeObjectURL(url);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${citation.id || 'citation'}-${currentIndex + 1}.json`;
+  a.click();
 }
 
-function clearCitations() {
-  const container = document.getElementById("container");
-  if (container) container.innerHTML = "";
-}
+window.onload = loadCitationsFromJSON;
