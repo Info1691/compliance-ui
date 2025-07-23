@@ -1,10 +1,13 @@
 let currentIndex = 0;
 let citations = [];
 
-// Fetch citations from JSON
-fetch('citations.json')
+// 🛠 Dynamically resolve citations.json path based on current page
+const basePath = window.location.pathname.replace(/\/[^\/]*$/, '/');
+const jsonPath = `${basePath}citations.json`;
+
+fetch(jsonPath)
   .then(response => {
-    if (!response.ok) throw new Error('Network response was not ok');
+    if (!response.ok) throw new Error('Unable to fetch citations.');
     return response.json();
   })
   .then(data => {
@@ -12,38 +15,38 @@ fetch('citations.json')
     displayCitation(currentIndex);
   })
   .catch(error => {
-    document.getElementById('citationCard').innerHTML = `<p>Error loading citations: ${error.message}</p>`;
+    document.getElementById('citationCard').innerHTML = `<p style="color:red;">Error: ${error.message}</p>`;
   });
 
-// Display a single citation
 function displayCitation(index) {
   const citation = citations[index];
   const container = document.getElementById('citationCard');
   if (!citation) {
-    container.innerHTML = `<p>No citation found.</p>`;
+    container.innerHTML = "<p>No citation found.</p>";
     return;
   }
 
   container.innerHTML = `
-    <h2>${citation.case_name} (${citation.year})</h2>
-    <p><strong>Citation:</strong> ${citation.citation}</p>
-    <p><strong>Court:</strong> ${citation.court}</p>
-    <p><strong>Jurisdiction:</strong> ${citation.jurisdiction}</p>
-    <p><strong>Summary:</strong> ${citation.summary}</p>
-    <p><strong>Legal Principle:</strong> ${citation.legal_principle}</p>
-    <p><strong>Holding:</strong> ${citation.holding}</p>
-    <p><strong>Compliance Flags:</strong> ${citation.compliance_flags.join(", ")}</p>
-    <p><strong>Key Points:</strong> ${citation.key_points.join(", ")}</p>
-    <p><strong>Tags:</strong> ${citation.tags.join(", ")}</p>
-    <p><strong>Case Link:</strong> ${citation.case_link ? `<a href="${citation.case_link}" target="_blank">View Case</a>` : 'N/A'}</p>
-    <p><strong>Printable:</strong> ${citation.printable ? "Yes" : "No"}</p>
-    <p><strong>Full Text:</strong><br/><pre>${citation.full_case_text || "—"}</pre></p>
-    <button onclick="editCitation(${index})">Edit</button>
-    <button onclick="deleteCitation(${index})">Delete</button>
+    <div class="card">
+      <h2>${citation.case_name} (${citation.year})</h2>
+      <p><strong>Citation:</strong> ${citation.citation}</p>
+      <p><strong>Court:</strong> ${citation.court}</p>
+      <p><strong>Jurisdiction:</strong> ${citation.jurisdiction}</p>
+      <p><strong>Summary:</strong> ${citation.summary}</p>
+      <p><strong>Legal Principle:</strong> ${citation.legal_principle}</p>
+      <p><strong>Holding:</strong> ${citation.holding}</p>
+      <p><strong>Compliance Flags:</strong> ${citation.compliance_flags.join(", ")}</p>
+      <p><strong>Key Points:</strong> ${citation.key_points.join(", ")}</p>
+      <p><strong>Tags:</strong> ${citation.tags.join(", ")}</p>
+      <p><strong>Case Link:</strong> ${citation.case_link ? `<a href="${citation.case_link}" target="_blank">View Case</a>` : 'N/A'}</p>
+      <p><strong>Printable:</strong> ${citation.printable ? "Yes" : "No"}</p>
+      <p><strong>Full Text:</strong><br/><pre>${citation.full_case_text || "—"}</pre></p>
+      <button onclick="editCitation(${index})">Edit</button>
+      <button onclick="deleteCitation(${index})">Delete</button>
+    </div>
   `;
 }
 
-// Edit a citation (in-place form)
 function editCitation(index) {
   const citation = citations[index];
   const container = document.getElementById('citationCard');
@@ -98,17 +101,13 @@ function editCitation(index) {
   };
 }
 
-// Delete a citation
 function deleteCitation(index) {
   if (!confirm("Are you sure you want to delete this citation?")) return;
   citations.splice(index, 1);
-  if (currentIndex >= citations.length) {
-    currentIndex = citations.length - 1;
-  }
+  if (currentIndex >= citations.length) currentIndex = citations.length - 1;
   displayCitation(currentIndex);
 }
 
-// Navigation
 function prevCitation() {
   if (currentIndex > 0) {
     currentIndex--;
