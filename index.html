@@ -1,16 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Compliance Citation Viewer</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="header">
     <img src="logo.png" alt="Logo" class="logo" />
     <h1>Compliance Citation Viewer</h1>
   </div>
-  <div id="citationsContainer" class="container"></div>
+
+  <div class="nav">
+    <button id="prevBtn">⏮ Prev</button>
+    <button id="nextBtn">⏭ Next</button>
+    <button id="printBtn">🖨 Print</button>
+    <button id="exportBtn">📤 Export</button>
+  </div>
+
+  <div id="citationCard" class="citation-card"></div>
+
+  <script src="main.js"></script>
 </body>
-<script src="main.js"></script>
 </html>
