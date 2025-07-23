@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Compliance Citation Viewer</title>
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -11,18 +11,19 @@
     <h1>Compliance Citation Viewer</h1>
   </header>
 
-  <!-- ✅ The container the script needs -->
+  <!-- ✅ Container for Citations -->
   <div id="container"></div>
 
-  <!-- 🔘 Action Buttons -->
+  <!-- ➕ Action Buttons -->
   <div class="button-row">
     <input type="file" id="fileInput" accept=".json" />
-    <button onclick="loadCitations()">Load Citations</button>
-    <button onclick="exportData()">🖨️ Export citations.json</button>
-    <button onclick="clearCitations()">🗑️ Clear All</button>
+    <button onclick="loadCitations()">📂 Load Citations</button>
+    <button onclick="exportData()">⬇ Export citations.json</button>
+    <button onclick="clearCitations()">🧹 Clear All</button>
+    <button onclick="window.print()">🖨️ Print</button>
   </div>
 
-  <!-- ⚙️ Script -->
-  <script src="main.js"></script>
+  <!-- ✅ Ensure script is loaded AFTER container -->
+  <script src="main.js" defer></script>
 </body>
 </html>
