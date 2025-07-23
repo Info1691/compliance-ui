@@ -1,58 +1,88 @@
 let currentIndex = 0;
-let allCitations = [];
+let citations = [];
 
-function renderCitation(index) {
-  const entry = allCitations[index];
-  const container = document.getElementById('container');
-  container.innerHTML = ''; // clear previous
+async function loadCitations() {
+  const response = await fetch('citations.json');
+  citations = await response.json();
+  renderCitation();
+}
 
-  if (!entry) {
-    container.innerHTML = '<p>No citation here.</p>';
+function renderCitation() {
+  const container = document.getElementById('citation-container');
+  container.innerHTML = '';
+  if (citations.length === 0) {
+    container.innerHTML = '<p>No citations available.</p>';
     return;
   }
 
-  const html = `
-    <h2>${entry.case_name} (${entry.year})</h2>
-    <p><strong>Citation:</strong> ${entry.citation}</p>
-    <p><strong>Court:</strong> ${entry.court}</p>
-    <p><strong>Jurisdiction:</strong> ${entry.jurisdiction}</p>
-    <p><strong>Summary:</strong> ${entry.summary}</p>
-    <p><strong>Legal Principle:</strong> ${entry.legal_principle}</p>
-    <p><strong>Holding:</strong> ${entry.holding}</p>
-    <p><strong>Compliance Flags:</strong> ${entry.compliance_flags.join(', ')}</p>
-    <p><strong>Key Points:</strong> ${entry.key_points.join(', ')}</p>
-    <p><strong>Tags:</strong> ${entry.tags.join(', ')}</p>
-    <p><strong>Case Link:</strong> ${entry.case_link || 'N/A'}</p>
-    <p><strong>Printable:</strong> ${entry.printable ? 'Yes' : 'No'}</p>
-  `;
-
+  const data = citations[currentIndex];
   const card = document.createElement('div');
   card.className = 'citation-card';
-  card.innerHTML = html;
+
+  card.innerHTML = `
+    <h2>${data.case_name} (${data.year})</h2>
+    <p><strong>Citation:</strong> ${data.citation}</p>
+    <p><strong>Court:</strong> ${data.court}</p>
+    <p><strong>Jurisdiction:</strong> ${data.jurisdiction}</p>
+    <p><strong>Summary:</strong> ${data.summary}</p>
+    <p><strong>Legal Principle:</strong> ${data.legal_principle}</p>
+    <p><strong>Holding:</strong> ${data.holding}</p>
+    <p><strong>Compliance Flags:</strong> ${data.compliance_flags.join(', ')}</p>
+    <p><strong>Key Points:</strong> ${data.key_points.join(', ')}</p>
+    <p><strong>Tags:</strong> ${data.tags.join(', ')}</p>
+    <p><strong>Case Link:</strong> ${data.case_link || 'N/A'}</p>
+    <p><strong>Printable:</strong> ${data.printable ? 'Yes' : 'No'}</p>
+  `;
+
   container.appendChild(card);
 }
 
-window.onload = () => {
-  fetch('citations.json')
-    .then(r => r.json())
-    .then(data => {
-      allCitations = data;
-      renderCitation(currentIndex);
-    })
-    .catch(e => {
-      document.getElementById('container').innerHTML = `<pre style="color:red">${e}</pre>`;
-    });
+function prevCitation() {
+  if (currentIndex > 0) {
+    currentIndex--;
+    renderCitation();
+  }
+}
 
-  document.getElementById('prevBtn').onclick = () => {
-    if (currentIndex > 0) {
-      currentIndex--;
-      renderCitation(currentIndex);
-    }
-  };
-  document.getElementById('nextBtn').onclick = () => {
-    if (currentIndex < allCitations.length - 1) {
-      currentIndex++;
-      renderCitation(currentIndex);
-    }
-  };
-};
+function nextCitation() {
+  if (currentIndex < citations.length - 1) {
+    currentIndex++;
+    renderCitation();
+  }
+}
+
+function printCitation() {
+  window.print();
+}
+
+function exportCitation() {
+  const citation = citations[currentIndex];
+  const blob = new Blob([JSON.stringify(citation, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${citation.id || 'citation'}.json`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+function editCitation() {
+  const fields = ['case_name', 'citation', 'court', 'jurisdiction', 'summary', 'legal_principle', 'holding'];
+  const citation = citations[currentIndex];
+  for (let key of fields) {
+    const newValue = prompt(`Edit ${key}:`, citation[key]);
+    if (newValue !== null) citation[key] = newValue;
+  }
+  renderCitation();
+}
+
+function deleteCitation() {
+  if (confirm('Are you sure you want to delete this citation?')) {
+    citations.splice(currentIndex, 1);
+    if (currentIndex >= citations.length) currentIndex = citations.length - 1;
+    renderCitation();
+  }
+}
+
+window.onload = loadCitations;
