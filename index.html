@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Compliance Citation Viewer</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
   <header>
@@ -12,25 +12,13 @@
   </header>
 
   <main>
-    <!-- Citation Viewer -->
-    <div id="citation-viewer">
-      <!-- Navigation -->
-      <div id="nav-controls">
-        <button onclick="prevCitation()">⬅ Prev</button>
-        <button onclick="nextCitation()">Next ➡</button>
-      </div>
+    <div id="citation-container"></div>
 
-      <!-- Citation Display -->
-      <div id="citation-container">
-        <p>Loading citations...</p>
-      </div>
-
-      <!-- Action Buttons -->
-      <div class="button-row">
-        <button onclick="editCitation()">✏️ Edit</button>
-        <button onclick="printCurrentCitation()">🖨️ Print</button>
-        <button onclick="exportCurrentCitation()">📁 Export</button>
-      </div>
+    <div class="controls">
+      <button onclick="prevCitation()">⬅️ Prev</button>
+      <button onclick="nextCitation()">➡️ Next</button>
+      <button onclick="printCurrentCitation()">🖨️ Print</button>
+      <button onclick="exportCurrentCitation()">💾 Export</button>
     </div>
   </main>
 
