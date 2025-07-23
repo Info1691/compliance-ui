@@ -1,70 +1,75 @@
-window.onload = () => {
-  const container = document.getElementById("container");
-  if (!container) {
-    console.error("❌ Cannot find #container in DOM");
-    return;
-  }
+let currentIndex = 0;
+let citations = [];
 
-  fetch("citations.json")
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(`❌ Failed to load citations.json: ${response.statusText}`);
-      }
-      return response.json();
-    })
-    .then(data => {
-      container.innerHTML = "";
-      data.forEach(entry => {
-        const card = document.createElement("div");
-        card.className = "citation-card";
-
-        card.innerHTML = `
-          <h3>${entry.case_name} (${entry.year})</h3>
-          <p><strong>Citation:</strong> ${entry.citation}</p>
-          <p><strong>Court:</strong> ${entry.court}</p>
-          <p><strong>Jurisdiction:</strong> ${entry.jurisdiction}</p>
-          <p><strong>Summary:</strong> ${entry.summary}</p>
-          <p><strong>Legal Principle:</strong> ${entry.legal_principle}</p>
-          <p><strong>Holding:</strong> ${entry.holding}</p>
-          <p><strong>Compliance Flags:</strong> ${entry.compliance_flags.join(", ")}</p>
-          <p><strong>Key Points:</strong> ${entry.key_points.join(", ")}</p>
-          <p><strong>Tags:</strong> ${entry.tags.join(", ")}</p>
-          <p><strong>Case Link:</strong> ${entry.case_link ? `<a href="${entry.case_link}" target="_blank">View</a>` : "N/A"}</p>
-          <p><strong>Printable:</strong> ${entry.printable ? "Yes" : "No"}</p>
-        `;
-
-        if (entry.full_case_text) {
-          const details = document.createElement("details");
-          details.innerHTML = `<summary>📄 Full Case Text</summary><pre>${entry.full_case_text}</pre>`;
-          card.appendChild(details);
-        }
-
-        container.appendChild(card);
-      });
-    })
-    .catch(error => {
-      container.innerHTML = `<pre style="color:red;">Error loading citations.json:\n${error.message}</pre>`;
-      console.error("❌ JSON Error:", error);
-    });
-};
-
-// Button functions
 function loadCitations() {
-  document.location.reload();
+  fetch("citations.json")
+    .then((response) => response.json())
+    .then((data) => {
+      citations = data;
+      if (citations.length > 0) {
+        renderCitation(currentIndex);
+      } else {
+        document.getElementById("citation-container").innerHTML = "No citations found.";
+      }
+    })
+    .catch((error) => {
+      console.error("Error loading citations:", error);
+      document.getElementById("citation-container").innerHTML = "Failed to load citations.";
+    });
 }
 
-function exportData() {
-  const dataStr = JSON.stringify(currentData, null, 2);
-  const blob = new Blob([dataStr], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "citations.json";
-  link.click();
-  URL.revokeObjectURL(url);
+function renderCitation(index) {
+  const citation = citations[index];
+  const container = document.getElementById("citation-container");
+
+  if (!citation || !container) return;
+
+  container.innerHTML = `
+    <div class="citation-card">
+      <h2>${citation.case_name} (${citation.year})</h2>
+      <p><strong>Citation:</strong> ${citation.citation}</p>
+      <p><strong>Court:</strong> ${citation.court}</p>
+      <p><strong>Jurisdiction:</strong> ${citation.jurisdiction}</p>
+      <p><strong>Summary:</strong> ${citation.summary}</p>
+      <p><strong>Legal Principle:</strong> ${citation.legal_principle}</p>
+      <p><strong>Holding:</strong> ${citation.holding}</p>
+      <p><strong>Compliance Flags:</strong> ${citation.compliance_flags.join(", ")}</p>
+      <p><strong>Key Points:</strong> ${citation.key_points.join(", ")}</p>
+      <p><strong>Tags:</strong> ${citation.tags.join(", ")}</p>
+      <p><strong>Case Link:</strong> ${citation.case_link || "N/A"}</p>
+      <p><strong>Printable:</strong> ${citation.printable ? "Yes" : "No"}</p>
+    </div>
+  `;
 }
 
-function clearCitations() {
-  const container = document.getElementById("container");
-  if (container) container.innerHTML = "";
+function prevCitation() {
+  if (currentIndex > 0) {
+    currentIndex--;
+    renderCitation(currentIndex);
+  }
 }
+
+function nextCitation() {
+  if (currentIndex < citations.length - 1) {
+    currentIndex++;
+    renderCitation(currentIndex);
+  }
+}
+
+function printCurrentCitation() {
+  window.print();
+}
+
+function exportCurrentCitation() {
+  const citation = citations[currentIndex];
+  const content = JSON.stringify(citation, null, 2);
+  const dataUri = "data:application/json;charset=utf-8," + encodeURIComponent(content);
+  const exportLink = document.createElement("a");
+  exportLink.href = dataUri;
+  exportLink.download = `${citation.case_name.replace(/\s+/g, "_")}_${citation.year}.json`;
+  document.body.appendChild(exportLink);
+  exportLink.click();
+  document.body.removeChild(exportLink);
+}
+
+window.onload = loadCitations;
