@@ -6,49 +6,55 @@ body {
   text-align: center;
 }
 
-.header {
+header {
   background: #003366;
+  padding: 15px;
   color: white;
-  padding: 10px 20px;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 20px;
+  justify-content: center;
 }
 
 .logo {
-  height: 50px;
+  height: 60px;
+  margin-right: 20px;
   background: white;
-  padding: 4px;
+  padding: 5px;
   border-radius: 5px;
-  max-width: 80px;
 }
 
-.nav {
-  margin: 20px 0;
+.controls {
+  margin: 20px;
 }
 
 button {
   margin: 0 5px;
-  padding: 8px 14px;
+  padding: 6px 12px;
+  font-size: 14px;
+  border-radius: 5px;
   border: none;
-  border-radius: 4px;
-  background-color: #007bff;
+  background: #007bff;
   color: white;
   cursor: pointer;
 }
 
 button:hover {
-  background-color: #0056b3;
+  background: #0056b3;
 }
 
-.citation-card {
+.card {
+  max-width: 700px;
+  margin: 0 auto 50px;
   background: white;
   padding: 20px;
-  margin: 0 auto 30px;
-  width: 90%;
-  max-width: 800px;
+  border-radius: 10px;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
   text-align: left;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-  border-radius: 6px;
+}
+
+pre {
+  white-space: pre-wrap;
+  background: #f1f1f1;
+  padding: 10px;
+  border-radius: 5px;
 }
