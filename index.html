@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Compliance Citations Viewer</title>
+  <title>Compliance Citation Viewer</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -11,15 +11,18 @@
     <h1>Compliance Citation Viewer</h1>
   </header>
 
-  <!-- ✅ This is the container your script is trying to access -->
+  <!-- ✅ The container the script needs -->
   <div id="container"></div>
 
-  <!-- Action Buttons -->
-  <div class="button-bar">
-    <button onclick="exportData()">Download citations.json</button>
-    <input type="file" id="fileInput" accept=".json" onchange="importData(event)" />
+  <!-- 🔘 Action Buttons -->
+  <div class="button-row">
+    <input type="file" id="fileInput" accept=".json" />
+    <button onclick="loadCitations()">Load Citations</button>
+    <button onclick="exportData()">🖨️ Export citations.json</button>
+    <button onclick="clearCitations()">🗑️ Clear All</button>
   </div>
 
+  <!-- ⚙️ Script -->
   <script src="main.js"></script>
 </body>
 </html>
