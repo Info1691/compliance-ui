@@ -7,22 +7,14 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header>
-    <img src="logo.png" alt="Logo" class="logo">
-    <h1>📘 Compliance Citation Viewer</h1>
-  </header>
-
-  <main id="citation-container"></main>
-
-  <div class="controls">
-    <button onclick="prevCitation()">◀ Prev</button>
-    <button onclick="nextCitation()">▶ Next</button>
-    <button onclick="printCitation()">🖨️ Print</button>
-    <button onclick="exportCitation()">📤 Export</button>
-    <button onclick="editCitation()">✏️ Edit</button>
-    <button onclick="deleteCitation()">🗑️ Delete</button>
+  <div class="container">
+    <header>
+      <img src="logo.png" alt="Your Logo" class="main-logo" />
+      <h1>Compliance Citation Viewer</h1>
+    </header>
+    
+    <div id="citationsContainer"></div>
   </div>
-
   <script src="main.js"></script>
 </body>
 </html>
