@@ -5,7 +5,6 @@ window.onload = () => {
     return;
   }
 
-  // Attempt to fetch citations.json
   fetch("citations.json")
     .then(response => {
       if (!response.ok) {
@@ -14,12 +13,11 @@ window.onload = () => {
       return response.json();
     })
     .then(data => {
-      container.innerHTML = ""; // Clear any prior content
+      container.innerHTML = "";
       data.forEach(entry => {
         const card = document.createElement("div");
         card.className = "citation-card";
 
-        // Build each field
         card.innerHTML = `
           <h3>${entry.case_name} (${entry.year})</h3>
           <p><strong>Citation:</strong> ${entry.citation}</p>
