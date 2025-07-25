@@ -3,21 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Compliance Citation Viewer</title>
-  <link rel="stylesheet" href="style.css"/>
+  <title>Laws Repository</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header>
-    <img src="logo.png" alt="Logo" class="logo"/>
-    <h1>Compliance Citation Viewer</h1>
+    <img src="logo.png" alt="Logo" />
+    <h1>Laws Repository</h1>
   </header>
-  <div class="controls">
-    <button onclick="showPrevious()">⏮ Prev</button>
-    <button onclick="showNext()">⏭ Next</button>
-    <button onclick="printCitation()">🖨 Print</button>
-    <button onclick="exportCitation()">📤 Export</button>
-  </div>
-  <div id="citationCard" class="card"></div>
+  <main>
+    <section class="law-list">
+      <h2>Available Laws</h2>
+      <ul id="law-list"></ul>
+    </section>
+    <section class="law-details" id="law-details">
+      <p>Select a law to view details</p>
+    </section>
+  </main>
   <script src="main.js"></script>
 </body>
 </html>
