@@ -1,131 +1,125 @@
-let citations = [];
-let breaches = [];
+document.addEventListener('DOMContentLoaded', function () {
+    const citationsUrl = '../data/citations/citations.json';
+    const breachesUrl = '../data/breaches/breaches.json';
+    const citationContainer = document.getElementById('citationContainer');
+    const breachFilter = document.getElementById('breachFilter');
+    const keywordSearch = document.getElementById('keywordSearch');
 
-async function loadData() {
-  const citationsRes = await fetch('citations.json');
-  citations = await citationsRes.json();
+    let citations = [];
+    let breaches = [];
+    let currentFilter = '';
+    let currentKeyword = '';
 
-  const breachesRes = await fetch('data/breaches/breaches.json');
-  breaches = await breachesRes.json();
-
-  populateDropdown();
-  renderCitations(citations);
-  renderBreachSummary(citations);
-}
-
-function populateDropdown() {
-  const dropdown = document.getElementById('breachFilter');
-  dropdown.innerHTML = `<option value="">-- All Breaches --</option>`;
-  breaches.forEach(breach => {
-    const option = document.createElement('option');
-    option.value = breach.tag;
-    option.textContent = breach.tag;
-    dropdown.appendChild(option);
-  });
-}
-
-function filterAndSearch() {
-  const selected = document.getElementById('breachFilter').value.trim().toLowerCase();
-  const query = document.getElementById('searchInput').value.trim().toLowerCase();
-
-  let filtered = citations;
-
-  // Filter by dropdown
-  if (selected) {
-    const breachEntry = breaches.find(b =>
-      b.tag.toLowerCase() === selected || b.aliases.some(alias => alias.toLowerCase() === selected)
-    );
-    if (breachEntry) {
-      const matchTerms = [breachEntry.tag.toLowerCase(), ...breachEntry.aliases.map(a => a.toLowerCase())];
-      filtered = filtered.filter(cite =>
-        cite.compliance_flags.some(flag => matchTerms.includes(flag.toLowerCase()))
-      );
-    } else {
-      filtered = []; // No match
+    async function loadCitations() {
+        const response = await fetch(citationsUrl);
+        citations = await response.json();
+        renderCitations();
     }
-  }
 
-  // Search bar match: loose match across name, summary, flags
-  if (query) {
-    filtered = filtered.filter(cite =>
-      cite.case_name.toLowerCase().includes(query) ||
-      cite.summary.toLowerCase().includes(query) ||
-      cite.compliance_flags.some(flag => flag.toLowerCase().includes(query))
-    );
-  }
+    async function loadBreaches() {
+        const response = await fetch(breachesUrl);
+        breaches = await response.json();
+        populateBreachFilter();
+    }
 
-  renderCitations(filtered);
-  renderBreachSummary(filtered);
-}
+    function populateBreachFilter() {
+        breachFilter.innerHTML = '<option value="">-- All Breaches --</option>';
+        breaches.forEach(breach => {
+            const option = document.createElement('option');
+            option.value = breach.tag.toLowerCase();
+            option.textContent = breach.tag;
+            breachFilter.appendChild(option);
+        });
+    }
 
-function renderCitations(citationsList) {
-  const container = document.getElementById('citationContainer');
-  container.innerHTML = '';
-  citationsList.forEach(cite => {
-    const card = document.createElement('div');
-    card.className = 'citation-card';
-    card.innerHTML = `
-      <p><strong>Case Name:</strong> ${cite.case_name}</p>
-      <p><strong>Citation:</strong> ${cite.citation}</p>
-      <p><strong>Year:</strong> ${cite.year}</p>
-      <p><strong>Court:</strong> ${cite.court}</p>
-      <p><strong>Jurisdiction:</strong> ${cite.jurisdiction}</p>
-      <p><strong>Summary:</strong> ${cite.summary}</p>
-      <p><strong>Legal Principle:</strong> ${cite.legal_principle}</p>
-      <p><strong>Holding:</strong> ${cite.holding}</p>
-      <p><strong>Compliance Flags:</strong> ${cite.compliance_flags.join(', ')}</p>
-      <p><strong>Key Points:</strong> ${cite.key_points}</p>
-      <p><strong>Tags:</strong> ${cite.tags.join(', ')}</p>
-      <p><strong>Case Link:</strong> ${cite.case_link || 'N/A'}</p>
-      <p><strong>Full Text:</strong> ${cite.full_case_text || 'N/A'}</p>
-      <div class="actions">
-        <button onclick="editCitation('${cite.id}')">Edit</button>
-        <button onclick="printCitation('${cite.id}')">Print</button>
-        <button onclick="exportCitation('${cite.id}')">Export as .txt</button>
-      </div>
-    `;
-    container.appendChild(card);
-  });
-}
+    function getAllBreachKeywords() {
+        let keywords = {};
+        breaches.forEach(breach => {
+            const tag = breach.tag.toLowerCase();
+            keywords[tag] = [tag, ...(breach.aliases || []).map(a => a.toLowerCase())];
+        });
+        return keywords;
+    }
 
-function renderBreachSummary(citationsList) {
-  const summary = document.getElementById('summaryContainer');
-  if (summary) {
-    summary.innerHTML = `<p>Showing ${citationsList.length} citation(s).</p>`;
-  }
-}
+    function matchesFilter(citation, filter) {
+        if (!filter) return true;
+        const breachKeywords = getAllBreachKeywords();
+        const filterTerms = breachKeywords[filter] || [filter];
 
-function editCitation(id) {
-  alert(`Edit functionality is placeholder for citation ID: ${id}`);
-}
+        return citation.compliance_flags?.some(flag =>
+            filterTerms.some(term => flag.toLowerCase().includes(term))
+        );
+    }
 
-function printCitation(id) {
-  const citation = citations.find(c => c.id === id);
-  if (!citation) return;
+    function matchesKeyword(citation, keyword) {
+        if (!keyword) return true;
+        const lowerKeyword = keyword.toLowerCase();
+        const allBreachTerms = Object.values(getAllBreachKeywords()).flat();
 
-  const w = window.open();
-  w.document.write('<pre>' + JSON.stringify(citation, null, 2) + '</pre>');
-  w.document.close();
-  w.print();
-}
+        const matchBreachAlias = allBreachTerms.some(alias => alias.includes(lowerKeyword));
 
-function exportCitation(id) {
-  const citation = citations.find(c => c.id === id);
-  if (!citation) return;
+        return (
+            citation.case_name?.toLowerCase().includes(lowerKeyword) ||
+            citation.summary?.toLowerCase().includes(lowerKeyword) ||
+            citation.holding?.toLowerCase().includes(lowerKeyword) ||
+            citation.compliance_flags?.some(flag => flag.toLowerCase().includes(lowerKeyword)) ||
+            matchBreachAlias
+        );
+    }
 
-  const blob = new Blob([JSON.stringify(citation, null, 2)], { type: 'text/plain' });
-  const url = URL.createObjectURL(blob);
+    function renderCitations() {
+        citationContainer.innerHTML = '';
+        citations.forEach(citation => {
+            if (matchesFilter(citation, currentFilter) && matchesKeyword(citation, currentKeyword)) {
+                const card = document.createElement('div');
+                card.className = 'citation-card';
+                card.innerHTML = `
+                    <p><strong>Case Name:</strong> ${citation.case_name}</p>
+                    <p><strong>Citation:</strong> ${citation.citation}</p>
+                    <p><strong>Year:</strong> ${citation.year}</p>
+                    <p><strong>Court:</strong> ${citation.court}</p>
+                    <p><strong>Jurisdiction:</strong> ${citation.jurisdiction}</p>
+                    <p><strong>Summary:</strong> ${citation.summary}</p>
+                    <p><strong>Compliance Flags:</strong> ${citation.compliance_flags?.join(', ')}</p>
+                    <button onclick="window.print()">Print</button>
+                    <button onclick="exportCitation(${JSON.stringify(citation).replace(/"/g, '&quot;')})">Export as .txt</button>
+                `;
+                citationContainer.appendChild(card);
+            }
+        });
+    }
 
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${citation.case_name.replace(/\s+/g, '_')}.txt`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
+    window.exportCitation = function (citation) {
+        const text = `
+Case Name: ${citation.case_name}
+Citation: ${citation.citation}
+Year: ${citation.year}
+Court: ${citation.court}
+Jurisdiction: ${citation.jurisdiction}
+Summary: ${citation.summary}
+Compliance Flags: ${citation.compliance_flags?.join(', ')}
+`;
+        const blob = new Blob([text], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${citation.case_name.replace(/\s+/g, '_')}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
 
-// Hook search & dropdown
-document.addEventListener('DOMContentLoaded', () => {
-  loadData();
-  document.getElementById('breachFilter').addEventListener('change', filterAndSearch);
-  document.getElementById('searchInput').addEventListener('input', filterAndSearch);
+    breachFilter.addEventListener('change', (e) => {
+        currentFilter = e.target.value;
+        renderCitations();
+    });
+
+    keywordSearch.addEventListener('input', (e) => {
+        currentKeyword = e.target.value.trim();
+        renderCitations();
+    });
+
+    loadBreaches();
+    loadCitations();
 });
