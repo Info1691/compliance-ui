@@ -8,80 +8,49 @@ async function loadData() {
   const breachesRes = await fetch('data/breaches/breaches.json');
   breaches = await breachesRes.json();
 
-  populateBreachFilter();
+  populateDropdown();
   renderCitations(citations);
+  renderBreachSummary(citations);
 }
 
-function populateBreachFilter() {
-  const select = document.getElementById('breachFilter');
+function populateDropdown() {
+  const dropdown = document.getElementById('breachFilter');
+  dropdown.innerHTML = `<option value="">-- All Breaches --</option>`;
   breaches.forEach(breach => {
     const option = document.createElement('option');
     option.value = breach.tag;
     option.textContent = breach.tag;
-    select.appendChild(option);
+    dropdown.appendChild(option);
   });
-}
-
-function renderCitations(data) {
-  const container = document.getElementById('citationsContainer');
-  container.innerHTML = '';
-
-  data.forEach(entry => {
-    const div = document.createElement('div');
-    div.className = 'citation-card';
-
-    div.innerHTML = `
-      <p><strong>Case Name:</strong> ${entry.case_name}</p>
-      <p><strong>Citation:</strong> ${entry.citation}</p>
-      <p><strong>Year:</strong> ${entry.year}</p>
-      <p><strong>Court:</strong> ${entry.court}</p>
-      <p><strong>Jurisdiction:</strong> ${entry.jurisdiction}</p>
-      <p><strong>Summary:</strong> ${entry.summary}</p>
-      <p><strong>Compliance Flags:</strong> ${entry.compliance_flags.join(', ')}</p>
-      <div class="button-row">
-        <button onclick="printCitation(\`${entry.case_name}\`)">Print</button>
-        <button onclick="exportText(\`${entry.case_name}\`, \`${entry.summary.replace(/`/g, "'")}\`)">Export as .txt</button>
-      </div>
-    `;
-    container.appendChild(div);
-  });
-}
-
-function printCitation(caseName) {
-  window.print();
-}
-
-function exportText(caseName, summary) {
-  const blob = new Blob([`${caseName}\n\n${summary}`], { type: 'text/plain' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `${caseName}.txt`;
-  link.click();
-}
-
-function matchAlias(breachTag, flags) {
-  const found = breaches.find(b => b.tag === breachTag);
-  if (!found) return false;
-  const allTerms = [found.tag.toLowerCase(), ...found.aliases.map(a => a.toLowerCase())];
-  return flags.some(flag => allTerms.includes(flag.toLowerCase()));
 }
 
 function filterAndSearch() {
-  const selected = document.getElementById('breachFilter').value;
+  const selected = document.getElementById('breachFilter').value.trim().toLowerCase();
   const query = document.getElementById('searchInput').value.trim().toLowerCase();
 
   let filtered = citations;
 
+  // Filter by dropdown
   if (selected) {
-    filtered = filtered.filter(cite =>
-      cite.compliance_flags &&
-      matchAlias(selected, cite.compliance_flags)
+    const breachEntry = breaches.find(b =>
+      b.tag.toLowerCase() === selected || b.aliases.some(alias => alias.toLowerCase() === selected)
     );
+    if (breachEntry) {
+      const matchTerms = [breachEntry.tag.toLowerCase(), ...breachEntry.aliases.map(a => a.toLowerCase())];
+      filtered = filtered.filter(cite =>
+        cite.compliance_flags.some(flag => matchTerms.includes(flag.toLowerCase()))
+      );
+    } else {
+      filtered = []; // No match
+    }
   }
 
+  // Search bar match: loose match across name, summary, flags
   if (query) {
     filtered = filtered.filter(cite =>
-      JSON.stringify(cite).toLowerCase().includes(query)
+      cite.case_name.toLowerCase().includes(query) ||
+      cite.summary.toLowerCase().includes(query) ||
+      cite.compliance_flags.some(flag => flag.toLowerCase().includes(query))
     );
   }
 
@@ -89,42 +58,74 @@ function filterAndSearch() {
   renderBreachSummary(filtered);
 }
 
-function renderBreachSummary(filteredCitations) {
-  const container = document.getElementById('breachSummaryContainer');
+function renderCitations(citationsList) {
+  const container = document.getElementById('citationContainer');
   container.innerHTML = '';
-
-  const grouped = {};
-
-  filteredCitations.forEach(c => {
-    if (!grouped[c.jurisdiction]) grouped[c.jurisdiction] = [];
-    grouped[c.jurisdiction].push(c);
+  citationsList.forEach(cite => {
+    const card = document.createElement('div');
+    card.className = 'citation-card';
+    card.innerHTML = `
+      <p><strong>Case Name:</strong> ${cite.case_name}</p>
+      <p><strong>Citation:</strong> ${cite.citation}</p>
+      <p><strong>Year:</strong> ${cite.year}</p>
+      <p><strong>Court:</strong> ${cite.court}</p>
+      <p><strong>Jurisdiction:</strong> ${cite.jurisdiction}</p>
+      <p><strong>Summary:</strong> ${cite.summary}</p>
+      <p><strong>Legal Principle:</strong> ${cite.legal_principle}</p>
+      <p><strong>Holding:</strong> ${cite.holding}</p>
+      <p><strong>Compliance Flags:</strong> ${cite.compliance_flags.join(', ')}</p>
+      <p><strong>Key Points:</strong> ${cite.key_points}</p>
+      <p><strong>Tags:</strong> ${cite.tags.join(', ')}</p>
+      <p><strong>Case Link:</strong> ${cite.case_link || 'N/A'}</p>
+      <p><strong>Full Text:</strong> ${cite.full_case_text || 'N/A'}</p>
+      <div class="actions">
+        <button onclick="editCitation('${cite.id}')">Edit</button>
+        <button onclick="printCitation('${cite.id}')">Print</button>
+        <button onclick="exportCitation('${cite.id}')">Export as .txt</button>
+      </div>
+    `;
+    container.appendChild(card);
   });
+}
 
-  for (const [jurisdiction, entries] of Object.entries(grouped)) {
-    const section = document.createElement('div');
-    section.className = 'summary-group';
-
-    const title = document.createElement('h2');
-    title.textContent = jurisdiction;
-    section.appendChild(title);
-
-    entries.forEach(entry => {
-      const line = document.createElement('div');
-      line.className = 'summary-line';
-      line.innerHTML = `
-        <strong>${entry.case_name}</strong> (${entry.citation})<br />
-        <em>${entry.compliance_flags.join(', ')}</em><br />
-        ${entry.summary}
-        <hr />
-      `;
-      section.appendChild(line);
-    });
-
-    container.appendChild(section);
+function renderBreachSummary(citationsList) {
+  const summary = document.getElementById('summaryContainer');
+  if (summary) {
+    summary.innerHTML = `<p>Showing ${citationsList.length} citation(s).</p>`;
   }
 }
 
-document.getElementById('breachFilter').addEventListener('change', filterAndSearch);
-document.getElementById('searchInput').addEventListener('input', filterAndSearch);
+function editCitation(id) {
+  alert(`Edit functionality is placeholder for citation ID: ${id}`);
+}
 
-loadData();
+function printCitation(id) {
+  const citation = citations.find(c => c.id === id);
+  if (!citation) return;
+
+  const w = window.open();
+  w.document.write('<pre>' + JSON.stringify(citation, null, 2) + '</pre>');
+  w.document.close();
+  w.print();
+}
+
+function exportCitation(id) {
+  const citation = citations.find(c => c.id === id);
+  if (!citation) return;
+
+  const blob = new Blob([JSON.stringify(citation, null, 2)], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${citation.case_name.replace(/\s+/g, '_')}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Hook search & dropdown
+document.addEventListener('DOMContentLoaded', () => {
+  loadData();
+  document.getElementById('breachFilter').addEventListener('change', filterAndSearch);
+  document.getElementById('searchInput').addEventListener('input', filterAndSearch);
+});
