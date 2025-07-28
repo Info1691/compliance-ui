@@ -1,0 +1,57 @@
+[
+  {
+    "category": "Trustee Breach",
+    "tag": "Breach of Trust",
+    "aliases": [
+      "breach of trust",
+      "fiduciary failure",
+      "trustee misconduct",
+      "self serving"
+    ]
+  },
+  {
+    "category": "Disclosure",
+    "tag": "Failure to Inform Beneficiaries",
+    "aliases": [
+      "non-disclosure",
+      "uninformed",
+      "concealed from beneficiary"
+    ]
+  },
+  {
+    "category": "Investment Breach",
+    "tag": "Improper Investment Strategy",
+    "aliases": [
+      "bad investment",
+      "risky investment",
+      "loss of funds"
+    ]
+  },
+  {
+    "category": "Litigation Misconduct",
+    "tag": "Unauthorized Legal Action",
+    "aliases": [
+      "no beneficiary consent",
+      "no Beddoe order",
+      "vexatious litigation"
+    ]
+  },
+  {
+    "category": "Jurisdictional Breach",
+    "tag": "Improper Delegation",
+    "aliases": [
+      "unauthorised delegation",
+      "forum shopping",
+      "no court approval"
+    ]
+  },
+  {
+    "category": "Conflict of Interest",
+    "tag": "Self-Dealing",
+    "aliases": [
+      "conflicted trustee",
+      "acting for own benefit",
+      "personal gain"
+    ]
+  }
+]
