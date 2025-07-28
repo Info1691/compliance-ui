@@ -9,8 +9,8 @@ function normalize(text) {
 async function loadData() {
   try {
     const [citationsRes, breachesRes] = await Promise.all([
-      fetch('citations.json'),
-      fetch('breaches.json')
+      fetch(.github/workflows/upload-citations.yml'),
+      fetch('data/breaches/breaches.json')
     ]);
 
     citations = await citationsRes.json();
