@@ -9,7 +9,7 @@ function normalize(text) {
 async function loadData() {
   try {
     const [citationsRes, breachesRes] = await Promise.all([
-      fetch('citations.json'), 
+      fetch('data/breaches/citations.json'), 
       fetch('data/breaches/breaches.json')
     ]);
 
