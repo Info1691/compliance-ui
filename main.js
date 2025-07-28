@@ -1,62 +1,91 @@
-fetch('citations.json')
-  .then(response => response.json())
-  .then(data => {
-    const container = document.getElementById('citationsContainer');
-    container.innerHTML = ''; // clear before loading
+document.addEventListener("DOMContentLoaded", async () => {
+  const citationContainer = document.getElementById("citationContainer");
+  const breachFilter = document.getElementById("breachFilter");
 
-    data.forEach((citation, index) => {
-      const card = document.createElement('div');
-      card.className = 'card';
+  let citations = [];
+  let breaches = [];
 
-      const form = document.createElement('form');
-      form.innerHTML = `
-        <label>Case Name:<br/><input type="text" name="case_name" value="${citation.case_name}"/></label><br/>
-        <label>Citation:<br/><input type="text" name="citation" value="${citation.citation}"/></label><br/>
-        <label>Year:<br/><input type="text" name="year" value="${citation.year}"/></label><br/>
-        <label>Court:<br/><input type="text" name="court" value="${citation.court}"/></label><br/>
-        <label>Jurisdiction:<br/><input type="text" name="jurisdiction" value="${citation.jurisdiction}"/></label><br/>
-        <label>Summary:<br/><textarea name="summary">${citation.summary}</textarea></label><br/>
-        <label>Legal Principle:<br/><textarea name="legal_principle">${citation.legal_principle}</textarea></label><br/>
-        <label>Holding:<br/><textarea name="holding">${citation.holding}</textarea></label><br/>
-        <label>Compliance Flags:<br/><input type="text" name="compliance_flags" value="${citation.compliance_flags.join(', ')}"/></label><br/>
-        <label>Key Points:<br/><input type="text" name="key_points" value="${citation.key_points.join(', ')}"/></label><br/>
-        <label>Tags:<br/><input type="text" name="tags" value="${citation.tags.join(', ')}"/></label><br/>
-        <label>Case Link:<br/><a href="${citation.case_link}" target="_blank">View Case</a></label><br/>
-        <label>Full Text:<br/><textarea name="full_case_text">${citation.full_case_text || ''}</textarea></label><br/>
+  async function loadData() {
+    const citationRes = await fetch("citations.json");
+    citations = await citationRes.json();
+
+    const breachRes = await fetch("breaches.json");
+    breaches = await breachRes.json();
+  }
+
+  function populateBreachFilter() {
+    const categories = {};
+
+    breaches.forEach(breach => {
+      if (!categories[breach.category]) categories[breach.category] = [];
+      categories[breach.category].push(breach.tag);
+    });
+
+    Object.entries(categories).forEach(([category, tags]) => {
+      const optgroup = document.createElement("optgroup");
+      optgroup.label = category;
+      tags.forEach(tag => {
+        const option = document.createElement("option");
+        option.value = tag;
+        option.textContent = tag;
+        optgroup.appendChild(option);
+      });
+      breachFilter.appendChild(optgroup);
+    });
+  }
+
+  function renderCitations(filtered = citations) {
+    citationContainer.innerHTML = "";
+
+    filtered.forEach(entry => {
+      const card = document.createElement("div");
+      card.className = "citation-card";
+
+      card.innerHTML = `
+        <strong>${entry.case_name} (${entry.year})</strong><br/>
+        <em>${entry.citation}</em><br/>
+        <p><strong>Jurisdiction:</strong> ${entry.jurisdiction}</p>
+        <p><strong>Summary:</strong> ${entry.summary}</p>
+        <p><strong>Legal Principle:</strong> ${entry.legal_principle}</p>
+        <p><strong>Holding:</strong> ${entry.holding}</p>
+        <p><strong>Compliance Flags:</strong> ${entry.compliance_flags.join(', ')}</p>
+        <button onclick="printEntry(${JSON.stringify(entry).replace(/"/g, '&quot;')})">Print</button>
+        <button onclick="exportEntry(${JSON.stringify(entry).replace(/"/g, '&quot;')})">Export</button>
+        <button onclick="editEntry('${entry.id}')">Edit</button>
       `;
 
-      const saveBtn = document.createElement('button');
-      saveBtn.textContent = 'Save';
-      saveBtn.type = 'button';
-      saveBtn.onclick = () => {
-        alert('Saving is not implemented yet.');
-      };
-
-      const deleteBtn = document.createElement('button');
-      deleteBtn.textContent = 'Delete';
-      deleteBtn.type = 'button';
-      deleteBtn.onclick = () => {
-        container.removeChild(card);
-      };
-
-      const printBtn = document.createElement('button');
-      printBtn.textContent = 'Print';
-      printBtn.type = 'button';
-      printBtn.onclick = () => {
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(`<pre>${JSON.stringify(citation, null, 2)}</pre>`);
-        printWindow.document.close();
-        printWindow.print();
-      };
-
-      card.appendChild(form);
-      card.appendChild(saveBtn);
-      card.appendChild(deleteBtn);
-      card.appendChild(printBtn);
-
-      container.appendChild(card);
+      citationContainer.appendChild(card);
     });
-  })
-  .catch(err => {
-    console.error('Error loading citations.json:', err);
+  }
+
+  breachFilter.addEventListener("change", () => {
+    const selected = breachFilter.value;
+    if (!selected) return renderCitations();
+    const filtered = citations.filter(c => c.compliance_flags.includes(selected));
+    renderCitations(filtered);
   });
+
+  window.printEntry = function (entry) {
+    const newWindow = window.open("", "_blank");
+    newWindow.document.write(`<pre>${entry.case_name} (${entry.year})\n\n${entry.summary}\n\nPrinciple: ${entry.legal_principle}\nHolding: ${entry.holding}</pre>`);
+    newWindow.print();
+  };
+
+  window.exportEntry = function (entry) {
+    const text = `${entry.case_name} (${entry.year})\n\n${entry.summary}\n\nPrinciple: ${entry.legal_principle}\nHolding: ${entry.holding}`;
+    const blob = new Blob([text], { type: "text/plain" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `${entry.id}-export.txt`;
+    link.click();
+  };
+
+  window.editEntry = function (id) {
+    alert(`Edit mode not yet implemented. Entry ID: ${id}`);
+    // In future: open edit modal or redirect to editable form
+  };
+
+  await loadData();
+  populateBreachFilter();
+  renderCitations();
+});
