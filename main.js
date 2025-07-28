@@ -1,91 +1,81 @@
-document.addEventListener("DOMContentLoaded", async () => {
-  const citationContainer = document.getElementById("citationContainer");
-  const breachFilter = document.getElementById("breachFilter");
+let breaches = [];
 
-  let citations = [];
-  let breaches = [];
-
-  async function loadData() {
-    const citationRes = await fetch("citations.json");
-    citations = await citationRes.json();
-
-    const breachRes = await fetch("breaches.json");
-    breaches = await breachRes.json();
-  }
-
-  function populateBreachFilter() {
-    const categories = {};
-
-    breaches.forEach(breach => {
-      if (!categories[breach.category]) categories[breach.category] = [];
-      categories[breach.category].push(breach.tag);
+fetch('data/breaches/breaches.json')
+  .then(response => response.json())
+  .then(data => {
+    breaches = data;
+    const breachFilter = document.getElementById('breachFilter');
+    data.forEach(entry => {
+      const option = document.createElement('option');
+      option.value = entry.tag;
+      option.textContent = entry.tag;
+      breachFilter.appendChild(option);
     });
-
-    Object.entries(categories).forEach(([category, tags]) => {
-      const optgroup = document.createElement("optgroup");
-      optgroup.label = category;
-      tags.forEach(tag => {
-        const option = document.createElement("option");
-        option.value = tag;
-        option.textContent = tag;
-        optgroup.appendChild(option);
-      });
-      breachFilter.appendChild(optgroup);
-    });
-  }
-
-  function renderCitations(filtered = citations) {
-    citationContainer.innerHTML = "";
-
-    filtered.forEach(entry => {
-      const card = document.createElement("div");
-      card.className = "citation-card";
-
-      card.innerHTML = `
-        <strong>${entry.case_name} (${entry.year})</strong><br/>
-        <em>${entry.citation}</em><br/>
-        <p><strong>Jurisdiction:</strong> ${entry.jurisdiction}</p>
-        <p><strong>Summary:</strong> ${entry.summary}</p>
-        <p><strong>Legal Principle:</strong> ${entry.legal_principle}</p>
-        <p><strong>Holding:</strong> ${entry.holding}</p>
-        <p><strong>Compliance Flags:</strong> ${entry.compliance_flags.join(', ')}</p>
-        <button onclick="printEntry(${JSON.stringify(entry).replace(/"/g, '&quot;')})">Print</button>
-        <button onclick="exportEntry(${JSON.stringify(entry).replace(/"/g, '&quot;')})">Export</button>
-        <button onclick="editEntry('${entry.id}')">Edit</button>
-      `;
-
-      citationContainer.appendChild(card);
-    });
-  }
-
-  breachFilter.addEventListener("change", () => {
-    const selected = breachFilter.value;
-    if (!selected) return renderCitations();
-    const filtered = citations.filter(c => c.compliance_flags.includes(selected));
-    renderCitations(filtered);
   });
 
-  window.printEntry = function (entry) {
-    const newWindow = window.open("", "_blank");
-    newWindow.document.write(`<pre>${entry.case_name} (${entry.year})\n\n${entry.summary}\n\nPrinciple: ${entry.legal_principle}\nHolding: ${entry.holding}</pre>`);
-    newWindow.print();
-  };
+fetch('citations.json')
+  .then(response => response.json())
+  .then(citations => {
+    const container = document.getElementById('citationsContainer');
 
-  window.exportEntry = function (entry) {
-    const text = `${entry.case_name} (${entry.year})\n\n${entry.summary}\n\nPrinciple: ${entry.legal_principle}\nHolding: ${entry.holding}`;
-    const blob = new Blob([text], { type: "text/plain" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `${entry.id}-export.txt`;
-    link.click();
-  };
+    function renderCards(filtered) {
+      container.innerHTML = '';
+      filtered.forEach(citation => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <strong>Case Name:</strong> ${citation.case_name}<br>
+          <strong>Citation:</strong> ${citation.citation}<br>
+          <strong>Year:</strong> ${citation.year}<br>
+          <strong>Court:</strong> ${citation.court}<br>
+          <strong>Jurisdiction:</strong> ${citation.jurisdiction}<br>
+          <strong>Summary:</strong> ${citation.summary}<br>
+          <strong>Legal Principle:</strong> ${citation.legal_principle}<br>
+          <strong>Holding:</strong> ${citation.holding}<br>
+          <strong>Compliance Flags:</strong> ${citation.compliance_flags.join(', ')}<br>
+          <strong>Key Points:</strong> ${citation.key_points.join(', ')}<br>
+          <strong>Tags:</strong> ${citation.tags.join(', ')}<br>
+          <strong>Case Link:</strong> ${citation.case_link ? `<a href="${citation.case_link}" target="_blank">View Case</a>` : 'N/A'}<br>
+          <strong>Full Text:</strong><br><pre>${citation.full_case_text || ''}</pre>
+          <br>
+          <button onclick="editEntry(${JSON.stringify(citation).replace(/"/g, '&quot;')})">Edit</button>
+          <button onclick="printEntry(\`${formatTxt(citation)}\`)">Print</button>
+          <button onclick="exportTxt(\`${formatTxt(citation)}\`)">Export as .txt</button>
+        `;
+        container.appendChild(card);
+      });
+    }
 
-  window.editEntry = function (id) {
-    alert(`Edit mode not yet implemented. Entry ID: ${id}`);
-    // In future: open edit modal or redirect to editable form
-  };
+    function formatTxt(c) {
+      return `Case: ${c.case_name}\nCitation: ${c.citation}\nYear: ${c.year}\nCourt: ${c.court}\nJurisdiction: ${c.jurisdiction}\n\nSummary:\n${c.summary}\n\nLegal Principle:\n${c.legal_principle}\n\nHolding:\n${c.holding}\n\nCompliance Flags: ${c.compliance_flags.join(', ')}\nKey Points: ${c.key_points.join(', ')}\nTags: ${c.tags.join(', ')}\nCase Link: ${c.case_link}\n\nFull Text:\n${c.full_case_text || ''}`;
+    }
 
-  await loadData();
-  populateBreachFilter();
-  renderCitations();
-});
+    document.getElementById('breachFilter').addEventListener('change', function () {
+      const selected = this.value;
+      const filtered = selected
+        ? citations.filter(c => c.compliance_flags.includes(selected))
+        : citations;
+      renderCards(filtered);
+    });
+
+    renderCards(citations);
+  });
+
+function printEntry(txt) {
+  const win = window.open('', '_blank');
+  win.document.write(`<pre>${txt}</pre>`);
+  win.print();
+  win.close();
+}
+
+function exportTxt(content) {
+  const blob = new Blob([content], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'citation.txt';
+  a.click();
+}
+
+function editEntry(data) {
+  alert("Edit modal placeholder.\n\nNo save logic active.\n\nYou may edit fields in future versions.");
+}
