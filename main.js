@@ -1,129 +1,110 @@
-let citations = [];
-let breachTags = [];
-let currentFilter = '';
-let currentSearch = '';
+document.addEventListener("DOMContentLoaded", async () => {
+  const citationsUrl = "data/citations/citations.json";
+  const breachesUrl = "data/breaches/breaches.json";
 
-async function loadJSON(url) {
-  const response = await fetch(url);
-  return await response.json();
-}
+  const citationContainer = document.getElementById("citation-container");
+  const filterDropdown = document.getElementById("breach-filter");
+  const searchBox = document.getElementById("search-box");
 
-function normalize(str) {
-  return str.toLowerCase().trim();
-}
+  let citations = [];
+  let breaches = [];
+  let aliasMap = {};
 
-function getCanonicalTag(input) {
-  const lowerInput = normalize(input);
-  for (const breach of breachTags) {
-    const aliases = breach.aliases.map(normalize);
-    if (normalize(breach.tag) === lowerInput || aliases.includes(lowerInput)) {
-      return breach.tag;
+  try {
+    const citationResponse = await fetch(citationsUrl);
+    const breachResponse = await fetch(breachesUrl);
+    citations = await citationResponse.json();
+    breaches = await breachResponse.json();
+  } catch (err) {
+    console.error("Error loading data:", err);
+    citationContainer.innerHTML = "<p>Error loading citations or breaches.</p>";
+    return;
+  }
+
+  // Build alias → canonical tag map
+  breaches.forEach(b => {
+    aliasMap[b.tag.toLowerCase()] = b.tag;
+    b.aliases.forEach(alias => {
+      aliasMap[alias.toLowerCase()] = b.tag;
+    });
+  });
+
+  function renderCitations(filtered) {
+    citationContainer.innerHTML = "";
+    if (!filtered.length) {
+      citationContainer.innerHTML = "<p>No matching citations found.</p>";
+      return;
     }
-  }
-  return null;
-}
 
-function matchesSearch(citation, keyword) {
-  const fields = [
-    citation.case_name,
-    citation.summary,
-    citation.holding,
-    citation.legal_principle,
-    ...(citation.compliance_flags || [])
-  ];
-  const keywordLower = keyword.toLowerCase();
-  return fields.some(field =>
-    (Array.isArray(field)
-      ? field.join(' ').toLowerCase()
-      : (field || '').toLowerCase()
-    ).includes(keywordLower)
-  );
-}
-
-function renderCitations() {
-  const container = document.getElementById("citationsContainer");
-  container.innerHTML = "";
-
-  let filtered = [...citations];
-
-  if (currentFilter && currentFilter !== "-- All Breaches --") {
-    filtered = filtered.filter(c => (c.compliance_flags || []).includes(currentFilter));
+    filtered.forEach(c => {
+      const card = document.createElement("div");
+      card.className = "citation-card";
+      card.innerHTML = `
+        <h3>${c.case_name}</h3>
+        <p><strong>Citation:</strong> ${c.citation}</p>
+        <p><strong>Year:</strong> ${c.year}</p>
+        <p><strong>Court:</strong> ${c.court}</p>
+        <p><strong>Jurisdiction:</strong> ${c.jurisdiction}</p>
+        <p><strong>Summary:</strong> ${c.summary}</p>
+        <p><strong>Compliance Flags:</strong> ${c.compliance_flags.join(", ")}</p>
+      `;
+      citationContainer.appendChild(card);
+    });
   }
 
-  if (currentSearch && currentSearch.trim() !== "") {
-    const canonical = getCanonicalTag(currentSearch);
-    filtered = filtered.filter(c =>
-      matchesSearch(c, currentSearch) ||
-      (canonical && (c.compliance_flags || []).includes(canonical))
+  function filterByBreach(breach) {
+    if (!breach || breach === "-- All Breaches --") return citations;
+    const canonical = aliasMap[breach.toLowerCase()] || breach;
+    return citations.filter(c =>
+      c.compliance_flags.some(flag => {
+        const flagCanon = aliasMap[flag.toLowerCase()] || flag;
+        return flagCanon.toLowerCase() === canonical.toLowerCase();
+      })
     );
   }
 
-  filtered.forEach(citation => {
-    const card = document.createElement("div");
-    card.className = "citation-card";
-    card.innerHTML = `
-      <p><strong>Case Name:</strong> ${citation.case_name}</p>
-      <p><strong>Citation:</strong> ${citation.citation}</p>
-      <p><strong>Year:</strong> ${citation.year}</p>
-      <p><strong>Court:</strong> ${citation.court}</p>
-      <p><strong>Jurisdiction:</strong> ${citation.jurisdiction}</p>
-      <p><strong>Summary:</strong> ${citation.summary}</p>
-      <p><strong>Compliance Flags:</strong> ${(citation.compliance_flags || []).join(", ")}</p>
-      <button onclick="printCitation(${JSON.stringify(citation).replace(/"/g, '&quot;')})">Print</button>
-      <button onclick="exportText(${JSON.stringify(citation).replace(/"/g, '&quot;')})">Export as .txt</button>
-    `;
-    container.appendChild(card);
-  });
-}
+  function searchByText(query) {
+    const q = query.toLowerCase().trim();
+    if (!q) return citations;
+    const canonical = aliasMap[q] || q;
+    return citations.filter(c =>
+      c.compliance_flags.some(f => {
+        const fCanon = aliasMap[f.toLowerCase()] || f;
+        return fCanon.toLowerCase().includes(canonical.toLowerCase());
+      }) ||
+      c.summary.toLowerCase().includes(q) ||
+      c.case_name.toLowerCase().includes(q)
+    );
+  }
 
-function printCitation(citation) {
-  const printWindow = window.open("", "_blank");
-  printWindow.document.write("<pre>" + JSON.stringify(citation, null, 2) + "</pre>");
-  printWindow.document.close();
-  printWindow.print();
-}
+  function populateDropdown() {
+    const defaultOption = document.createElement("option");
+    defaultOption.textContent = "-- All Breaches --";
+    defaultOption.value = "";
+    filterDropdown.appendChild(defaultOption);
 
-function exportText(citation) {
-  const text = `Case Name: ${citation.case_name}
-Citation: ${citation.citation}
-Year: ${citation.year}
-Court: ${citation.court}
-Jurisdiction: ${citation.jurisdiction}
-Summary: ${citation.summary}
-Compliance Flags: ${(citation.compliance_flags || []).join(", ")}
-`;
-  const blob = new Blob([text], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${citation.case_name.replace(/\s+/g, "_")}.txt`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
+    breaches.forEach(b => {
+      const option = document.createElement("option");
+      option.value = b.tag;
+      option.textContent = b.tag;
+      filterDropdown.appendChild(option);
+    });
+  }
 
-async function initialize() {
-  citations = await loadJSON("data/citations/citations.json");
-  breachTags = await loadJSON("data/breaches/breaches.json");
+  populateDropdown();
+  renderCitations(citations);
 
-  const breachSelect = document.getElementById("breachFilter");
-  breachSelect.innerHTML = `<option>-- All Breaches --</option>`;
-  breachTags.forEach(tag => {
-    const option = document.createElement("option");
-    option.textContent = tag.tag;
-    breachSelect.appendChild(option);
+  filterDropdown.addEventListener("change", () => {
+    const selected = filterDropdown.value;
+    const filtered = filterByBreach(selected);
+    renderCitations(filtered);
   });
 
-  document.getElementById("searchBox").addEventListener("input", (e) => {
-    currentSearch = e.target.value;
-    renderCitations();
+  searchBox.addEventListener("keyup", e => {
+    if (e.key === "Enter") {
+      const query = searchBox.value;
+      const filtered = searchByText(query);
+      renderCitations(filtered);
+    }
   });
-
-  breachSelect.addEventListener("change", (e) => {
-    currentFilter = e.target.value;
-    renderCitations();
-  });
-
-  renderCitations();
-}
-
-window.onload = initialize;
+});
