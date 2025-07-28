@@ -12,18 +12,15 @@
     <h1>Compliance Citation Viewer</h1>
   </header>
 
-  <main>
-    <div class="filter-section">
-      <label for="breachFilter">Filter by Breach Type:</label>
-      <select id="breachFilter">
-        <option value="">-- All Breaches --</option>
-      </select>
-      <input type="text" id="searchInput" placeholder="Search by keyword..." />
-    </div>
+  <div class="controls">
+    <label for="breach-filter">Filter by Breach Type:</label>
+    <select id="breach-filter">
+      <option value="">-- All Breaches --</option>
+    </select>
+    <input type="text" id="search-input" placeholder="Search by keyword..." />
+  </div>
 
-    <div id="citationsContainer" class="citations-container"></div>
-    <div id="breachSummaryContainer" class="summary-container"></div>
-  </main>
+  <div id="citation-container"></div>
 
   <script src="main.js"></script>
 </body>
