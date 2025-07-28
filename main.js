@@ -9,8 +9,8 @@ function normalize(text) {
 async function loadData() {
   try {
     const [citationsRes, breachesRes] = await Promise.all([
-      fetch('data/breaches/citations.json'),
-      fetch('data/breaches/breaches.json')
+      fetch('citations.json'),
+      fetch('breaches.json')
     ]);
 
     citations = await citationsRes.json();
@@ -38,19 +38,23 @@ function populateBreachDropdown() {
 function buildAliasMap() {
   aliasToCanonical = {};
   breaches.forEach(breach => {
-    const canonical = breach.tag;
+    aliasToCanonical[normalize(breach.tag)] = breach.tag;
     breach.aliases.forEach(alias => {
-      aliasToCanonical[normalize(alias)] = canonical;
+      aliasToCanonical[normalize(alias)] = breach.tag;
     });
-    aliasToCanonical[normalize(canonical)] = canonical;
   });
 }
 
-function displayCitations(citationsToDisplay) {
+function displayCitations(filteredCitations) {
   const container = document.getElementById('citation-container');
   container.innerHTML = '';
 
-  citationsToDisplay.forEach(citation => {
+  if (filteredCitations.length === 0) {
+    container.innerHTML = '<p>No citations found.</p>';
+    return;
+  }
+
+  filteredCitations.forEach(citation => {
     const card = document.createElement('div');
     card.className = 'citation-card';
 
@@ -64,6 +68,7 @@ function displayCitations(citationsToDisplay) {
       <p><strong>Legal Principle:</strong> ${citation.legal_principle}</p>
       <p><strong>Holding:</strong> ${citation.holding}</p>
       <p><strong>Compliance Flags:</strong> ${citation.compliance_flags.join(', ')}</p>
+      <p><strong>Key Points:</strong> ${citation.key_points.join(', ')}</p>
       <p><strong>Tags:</strong> ${citation.tags.join(', ')}</p>
     `;
 
@@ -71,32 +76,33 @@ function displayCitations(citationsToDisplay) {
   });
 }
 
-function filterCitations() {
-  const dropdown = document.getElementById('breach-filter');
-  const searchInput = document.getElementById('search-input');
-  const selectedTag = dropdown.value;
-  const searchText = normalize(searchInput.value);
-
-  const filtered = citations.filter(citation => {
-    const matchesTag = selectedTag === '' || citation.compliance_flags.includes(selectedTag);
-    const matchesSearch = searchText === '' || (
-      normalize(citation.case_name).includes(searchText) ||
-      normalize(citation.summary).includes(searchText) ||
-      citation.tags.some(tag => normalize(tag).includes(searchText)) ||
-      citation.compliance_flags.some(flag => {
-        const canonical = aliasToCanonical[normalize(flag)];
-        return canonical && normalize(canonical).includes(searchText);
-      })
+document.getElementById('breach-filter').addEventListener('change', function () {
+  const selected = this.value;
+  if (!selected || selected === "-- All Breaches --") {
+    displayCitations(citations);
+  } else {
+    const filtered = citations.filter(citation =>
+      citation.compliance_flags.some(flag =>
+        normalize(flag) === normalize(selected) ||
+        normalize(flag) in aliasToCanonical && aliasToCanonical[normalize(flag)] === selected
+      )
     );
-    return matchesTag && matchesSearch;
-  });
-
-  displayCitations(filtered);
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  loadData();
-
-  document.getElementById('breach-filter').addEventListener('change', filterCitations);
-  document.getElementById('search-input').addEventListener('input', filterCitations);
+    displayCitations(filtered);
+  }
 });
+
+document.getElementById('search-input').addEventListener('input', function () {
+  const searchTerm = normalize(this.value);
+  const filtered = citations.filter(citation =>
+    normalize(citation.case_name).includes(searchTerm) ||
+    normalize(citation.summary).includes(searchTerm) ||
+    citation.tags.some(tag => normalize(tag).includes(searchTerm)) ||
+    citation.compliance_flags.some(flag =>
+      normalize(flag).includes(searchTerm) ||
+      (normalize(flag) in aliasToCanonical && normalize(aliasToCanonical[normalize(flag)]).includes(searchTerm))
+    )
+  );
+  displayCitations(filtered);
+});
+
+window.onload = loadData;
