@@ -3,14 +3,14 @@ let breaches = [];
 let aliasToCanonical = {};
 
 function normalize(text) {
-    return text.toLowerCase().replace(/\s*/g, '');
+    return text.toLowerCase().replace(/\s+/g, '');
 }
 
 async function loadData() {
     try {
         const [citationsRes, breachesRes] = await Promise.all([
-            fetch('data/citations.json'),
-            fetch('data/breaches/breaches.json')
+            fetch('/compliance-ui/data/citations.json'),
+            fetch('/compliance-ui/data/breaches/breaches.json')
         ]);
 
         citations = await citationsRes.json();
@@ -27,6 +27,8 @@ async function loadData() {
 
 function populateBreachDropdown() {
     const dropdown = document.getElementById('breach-filter');
+    dropdown.innerHTML = '<option value="">-- All Breaches --</option>';
+
     breaches.forEach(breach => {
         const option = document.createElement('option');
         option.value = breach.tag;
@@ -36,64 +38,77 @@ function populateBreachDropdown() {
 }
 
 function buildAliasMap() {
-    aliasToCanonical = {};
     breaches.forEach(breach => {
-        aliasToCanonical[normalize(breach.tag)] = breach.tag;
-        breach.aliases.forEach(alias => {
-            aliasToCanonical[normalize(alias)] = breach.tag;
-        });
+        const canonical = breach.tag;
+        aliasToCanonical[normalize(canonical)] = canonical;
+        if (breach.aliases) {
+            breach.aliases.forEach(alias => {
+                aliasToCanonical[normalize(alias)] = canonical;
+            });
+        }
     });
 }
 
-function displayCitations(citationList) {
+function displayCitations(citationsToDisplay) {
     const container = document.getElementById('citation-container');
     container.innerHTML = '';
 
-    citationList.forEach(entry => {
+    if (citationsToDisplay.length === 0) {
+        container.innerHTML = '<p>No citations found.</p>';
+        return;
+    }
+
+    citationsToDisplay.forEach(citation => {
         const card = document.createElement('div');
         card.className = 'citation-card';
-
         card.innerHTML = `
-            <h2>${entry.case_name}</h2>
-            <p><strong>Citation:</strong> ${entry.citation}</p>
-            <p><strong>Year:</strong> ${entry.year}</p>
-            <p><strong>Court:</strong> ${entry.court}</p>
-            <p><strong>Jurisdiction:</strong> ${entry.jurisdiction}</p>
-            <p><strong>Compliance Flags:</strong> ${entry.compliance_flags.join(', ')}</p>
-            <p><strong>Summary:</strong> ${entry.summary}</p>
+            <h3>${citation.case_name}</h3>
+            <p><strong>Citation:</strong> ${citation.citation}</p>
+            <p><strong>Jurisdiction:</strong> ${citation.jurisdiction}</p>
+            <p><strong>Compliance Flags:</strong> ${citation.compliance_flags.join(', ')}</p>
+            <p><strong>Summary:</strong> ${citation.summary}</p>
+            <button onclick="printCitation(${JSON.stringify(citation).replace(/"/g, '&quot;')})">Print</button>
         `;
-
         container.appendChild(card);
     });
 }
 
 function filterCitations() {
-    const selectedBreach = document.getElementById('breach-filter').value;
-    const keyword = normalize(document.getElementById('keyword-filter').value);
+    const breachFilter = document.getElementById('breach-filter').value;
+    const keyword = normalize(document.getElementById('keyword-search').value);
 
-    let filtered = citations;
-
-    if (selectedBreach && selectedBreach !== '') {
-        filtered = filtered.filter(entry =>
-            entry.compliance_flags.some(flag =>
-                normalize(flag) === normalize(selectedBreach)
-            )
+    const filtered = citations.filter(citation => {
+        const matchesBreach = !breachFilter || citation.compliance_flags.includes(breachFilter);
+        const matchesKeyword = !keyword || Object.values(citation).some(value =>
+            typeof value === 'string' && normalize(value).includes(keyword)
         );
-    }
-
-    if (keyword && keyword !== '') {
-        filtered = filtered.filter(entry =>
-            Object.values(entry).some(value =>
-                typeof value === 'string' && normalize(value).includes(keyword)
-            )
-        );
-    }
+        return matchesBreach && matchesKeyword;
+    });
 
     displayCitations(filtered);
 }
 
-document.getElementById('breach-filter').addEventListener('change', filterCitations);
-document.getElementById('keyword-filter').addEventListener('input', filterCitations);
+function printCitation(citation) {
+    const newWindow = window.open('', '_blank');
+    newWindow.document.write(`
+        <html>
+        <head><title>Print Citation</title></head>
+        <body>
+            <h3>${citation.case_name}</h3>
+            <p><strong>Citation:</strong> ${citation.citation}</p>
+            <p><strong>Jurisdiction:</strong> ${citation.jurisdiction}</p>
+            <p><strong>Compliance Flags:</strong> ${citation.compliance_flags.join(', ')}</p>
+            <p><strong>Summary:</strong> ${citation.summary}</p>
+            <p><strong>Legal Principle:</strong> ${citation.legal_principle}</p>
+            <p><strong>Holding:</strong> ${citation.holding}</p>
+        </body>
+        </html>
+    `);
+    newWindow.document.close();
+    newWindow.print();
+}
 
-// Load data when page loads
-window.addEventListener('DOMContentLoaded', loadData);
+// Event listeners
+window.onload = loadData;
+document.getElementById('breach-filter').addEventListener('change', filterCitations);
+document.getElementById('keyword-search').addEventListener('input', filterCitations);
