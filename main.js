@@ -1,81 +1,130 @@
+let citations = [];
 let breaches = [];
 
-fetch('data/breaches/breaches.json')
-  .then(response => response.json())
-  .then(data => {
-    breaches = data;
-    const breachFilter = document.getElementById('breachFilter');
-    data.forEach(entry => {
-      const option = document.createElement('option');
-      option.value = entry.tag;
-      option.textContent = entry.tag;
-      breachFilter.appendChild(option);
-    });
+async function loadData() {
+  const citationsRes = await fetch('citations.json');
+  citations = await citationsRes.json();
+
+  const breachesRes = await fetch('data/breaches/breaches.json');
+  breaches = await breachesRes.json();
+
+  populateBreachFilter();
+  renderCitations(citations);
+}
+
+function populateBreachFilter() {
+  const select = document.getElementById('breachFilter');
+  breaches.forEach(breach => {
+    const option = document.createElement('option');
+    option.value = breach.tag;
+    option.textContent = breach.tag;
+    select.appendChild(option);
+  });
+}
+
+function renderCitations(data) {
+  const container = document.getElementById('citationsContainer');
+  container.innerHTML = '';
+
+  data.forEach(entry => {
+    const div = document.createElement('div');
+    div.className = 'citation-card';
+
+    div.innerHTML = `
+      <p><strong>Case Name:</strong> ${entry.case_name}</p>
+      <p><strong>Citation:</strong> ${entry.citation}</p>
+      <p><strong>Year:</strong> ${entry.year}</p>
+      <p><strong>Court:</strong> ${entry.court}</p>
+      <p><strong>Jurisdiction:</strong> ${entry.jurisdiction}</p>
+      <p><strong>Summary:</strong> ${entry.summary}</p>
+      <p><strong>Compliance Flags:</strong> ${entry.compliance_flags.join(', ')}</p>
+      <div class="button-row">
+        <button onclick="printCitation(\`${entry.case_name}\`)">Print</button>
+        <button onclick="exportText(\`${entry.case_name}\`, \`${entry.summary.replace(/`/g, "'")}\`)">Export as .txt</button>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function printCitation(caseName) {
+  window.print();
+}
+
+function exportText(caseName, summary) {
+  const blob = new Blob([`${caseName}\n\n${summary}`], { type: 'text/plain' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `${caseName}.txt`;
+  link.click();
+}
+
+function matchAlias(breachTag, flags) {
+  const found = breaches.find(b => b.tag === breachTag);
+  if (!found) return false;
+  const allTerms = [found.tag.toLowerCase(), ...found.aliases.map(a => a.toLowerCase())];
+  return flags.some(flag => allTerms.includes(flag.toLowerCase()));
+}
+
+function filterAndSearch() {
+  const selected = document.getElementById('breachFilter').value;
+  const query = document.getElementById('searchInput').value.trim().toLowerCase();
+
+  let filtered = citations;
+
+  if (selected) {
+    filtered = filtered.filter(cite =>
+      cite.compliance_flags &&
+      matchAlias(selected, cite.compliance_flags)
+    );
+  }
+
+  if (query) {
+    filtered = filtered.filter(cite =>
+      JSON.stringify(cite).toLowerCase().includes(query)
+    );
+  }
+
+  renderCitations(filtered);
+  renderBreachSummary(filtered);
+}
+
+function renderBreachSummary(filteredCitations) {
+  const container = document.getElementById('breachSummaryContainer');
+  container.innerHTML = '';
+
+  const grouped = {};
+
+  filteredCitations.forEach(c => {
+    if (!grouped[c.jurisdiction]) grouped[c.jurisdiction] = [];
+    grouped[c.jurisdiction].push(c);
   });
 
-fetch('citations.json')
-  .then(response => response.json())
-  .then(citations => {
-    const container = document.getElementById('citationsContainer');
+  for (const [jurisdiction, entries] of Object.entries(grouped)) {
+    const section = document.createElement('div');
+    section.className = 'summary-group';
 
-    function renderCards(filtered) {
-      container.innerHTML = '';
-      filtered.forEach(citation => {
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `
-          <strong>Case Name:</strong> ${citation.case_name}<br>
-          <strong>Citation:</strong> ${citation.citation}<br>
-          <strong>Year:</strong> ${citation.year}<br>
-          <strong>Court:</strong> ${citation.court}<br>
-          <strong>Jurisdiction:</strong> ${citation.jurisdiction}<br>
-          <strong>Summary:</strong> ${citation.summary}<br>
-          <strong>Legal Principle:</strong> ${citation.legal_principle}<br>
-          <strong>Holding:</strong> ${citation.holding}<br>
-          <strong>Compliance Flags:</strong> ${citation.compliance_flags.join(', ')}<br>
-          <strong>Key Points:</strong> ${citation.key_points.join(', ')}<br>
-          <strong>Tags:</strong> ${citation.tags.join(', ')}<br>
-          <strong>Case Link:</strong> ${citation.case_link ? `<a href="${citation.case_link}" target="_blank">View Case</a>` : 'N/A'}<br>
-          <strong>Full Text:</strong><br><pre>${citation.full_case_text || ''}</pre>
-          <br>
-          <button onclick="editEntry(${JSON.stringify(citation).replace(/"/g, '&quot;')})">Edit</button>
-          <button onclick="printEntry(\`${formatTxt(citation)}\`)">Print</button>
-          <button onclick="exportTxt(\`${formatTxt(citation)}\`)">Export as .txt</button>
-        `;
-        container.appendChild(card);
-      });
-    }
+    const title = document.createElement('h2');
+    title.textContent = jurisdiction;
+    section.appendChild(title);
 
-    function formatTxt(c) {
-      return `Case: ${c.case_name}\nCitation: ${c.citation}\nYear: ${c.year}\nCourt: ${c.court}\nJurisdiction: ${c.jurisdiction}\n\nSummary:\n${c.summary}\n\nLegal Principle:\n${c.legal_principle}\n\nHolding:\n${c.holding}\n\nCompliance Flags: ${c.compliance_flags.join(', ')}\nKey Points: ${c.key_points.join(', ')}\nTags: ${c.tags.join(', ')}\nCase Link: ${c.case_link}\n\nFull Text:\n${c.full_case_text || ''}`;
-    }
-
-    document.getElementById('breachFilter').addEventListener('change', function () {
-      const selected = this.value;
-      const filtered = selected
-        ? citations.filter(c => c.compliance_flags.includes(selected))
-        : citations;
-      renderCards(filtered);
+    entries.forEach(entry => {
+      const line = document.createElement('div');
+      line.className = 'summary-line';
+      line.innerHTML = `
+        <strong>${entry.case_name}</strong> (${entry.citation})<br />
+        <em>${entry.compliance_flags.join(', ')}</em><br />
+        ${entry.summary}
+        <hr />
+      `;
+      section.appendChild(line);
     });
 
-    renderCards(citations);
-  });
-
-function printEntry(txt) {
-  const win = window.open('', '_blank');
-  win.document.write(`<pre>${txt}</pre>`);
-  win.print();
-  win.close();
+    container.appendChild(section);
+  }
 }
 
-function exportTxt(content) {
-  const blob = new Blob([content], { type: 'text/plain' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'citation.txt';
-  a.click();
-}
+document.getElementById('breachFilter').addEventListener('change', filterAndSearch);
+document.getElementById('searchInput').addEventListener('input', filterAndSearch);
 
-function editEntry(data) {
-  alert("Edit modal placeholder.\n\nNo save logic active.\n\nYou may edit fields in future versions.");
-}
+loadData();
