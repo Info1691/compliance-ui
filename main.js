@@ -36,50 +36,58 @@ function populateBreachDropdown() {
 }
 
 function buildAliasMap() {
-  aliasToCanonical = {};
   breaches.forEach(breach => {
-    const canonical = normalize(breach.tag);
-    aliasToCanonical[canonical] = breach.tag;
+    const canonical = breach.tag;
     breach.aliases.forEach(alias => {
-      aliasToCanonical[normalize(alias)] = breach.tag;
+      aliasToCanonical[normalize(alias)] = canonical;
     });
+    aliasToCanonical[normalize(canonical)] = canonical;
   });
 }
 
-function displayCitations(citationsToDisplay) {
+function displayCitations(filtered) {
   const container = document.getElementById('citation-container');
   container.innerHTML = '';
-  citationsToDisplay.forEach(citation => {
-    const div = document.createElement('div');
-    div.className = 'citation-card';
-    div.innerHTML = `
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<p>No citations match the selected filters.</p>';
+    return;
+  }
+
+  filtered.forEach(citation => {
+    const card = document.createElement('div');
+    card.className = 'citation-card';
+
+    card.innerHTML = `
       <h3>${citation.case_name} (${citation.year})</h3>
       <p><strong>Jurisdiction:</strong> ${citation.jurisdiction}</p>
-      <p><strong>Citation:</strong> ${citation.citation}</p>
       <p><strong>Summary:</strong> ${citation.summary}</p>
       <p><strong>Compliance Flags:</strong> ${citation.compliance_flags.join(', ')}</p>
     `;
-    container.appendChild(div);
+
+    container.appendChild(card);
   });
 }
 
 function applyFilters() {
-  const breachFilter = document.getElementById('breach-filter').value;
-  const searchInput = document.getElementById('search-input').value.trim().toLowerCase();
-  const normalizedSearch = normalize(searchInput);
+  const selected = document.getElementById('breach-filter').value;
+  const keyword = document.getElementById('search-input').value.trim().toLowerCase();
 
-  const filtered = citations.filter(citation => {
-    const matchesBreach = !breachFilter || citation.compliance_flags.includes(breachFilter);
-    const matchesAlias = !searchInput || citation.compliance_flags.some(flag => {
-      return normalize(flag) === normalizedSearch || aliasToCanonical[normalizedSearch] === flag;
-    }) || JSON.stringify(citation).toLowerCase().includes(searchInput);
-    return matchesBreach && matchesAlias;
+  const results = citations.filter(cite => {
+    const allFlags = cite.compliance_flags.map(f => normalize(f));
+    const matchBreach = !selected || allFlags.includes(normalize(selected)) || allFlags.includes(normalize(aliasToCanonical[selected]));
+    const matchKeyword = !keyword || (
+      cite.case_name.toLowerCase().includes(keyword) ||
+      cite.summary.toLowerCase().includes(keyword)
+    );
+    return matchBreach && matchKeyword;
   });
 
-  displayCitations(filtered);
+  displayCitations(results);
 }
 
 document.getElementById('breach-filter').addEventListener('change', applyFilters);
-document.getElementById('search-input').addEventListener('keyup', applyFilters);
+document.getElementById('search-input').addEventListener('input', applyFilters);
 
-window.onload = loadData;
+// Start
+loadData();
