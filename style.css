@@ -1,59 +1,60 @@
 body {
+  font-family: Arial, sans-serif;
+  background: #f8f9fa;
   margin: 0;
-  background-color: white;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  color: #000;
+  padding: 0;
+  text-align: center;
 }
 
 header {
-  background-color: #0a2d6b;
+  background: #003366;
+  padding: 15px;
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
 }
 
-header img {
-  height: 50px;
-  margin-right: 10px;
-  background-color: white;
-  padding: 2px;
-  border-radius: 4px;
+.logo {
+  height: 60px;
+  margin-right: 20px;
+  background: white;
+  padding: 5px;
+  border-radius: 5px;
 }
 
-main {
-  display: flex;
-  padding: 1rem;
-  min-height: 90vh;
+.controls {
+  margin: 20px;
 }
 
-.law-list {
-  flex: 1;
-  max-width: 250px;
-  border-right: 2px solid #ccc;
-  padding-right: 1rem;
-}
-
-.law-list ul {
-  list-style: none;
-  padding-left: 0;
-}
-
-.law-list li {
-  padding: 0.5rem;
-  margin-bottom: 5px;
-  background-color: #f0f4ff;
-  border-radius: 4px;
+button {
+  margin: 0 5px;
+  padding: 6px 12px;
+  font-size: 14px;
+  border-radius: 5px;
+  border: none;
+  background: #007bff;
+  color: white;
   cursor: pointer;
 }
 
-.law-list li:hover {
-  background-color: #d0e0ff;
+button:hover {
+  background: #0056b3;
 }
 
-.law-details {
-  flex: 3;
-  padding-left: 2rem;
+.card {
+  max-width: 700px;
+  margin: 0 auto 50px;
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
+  text-align: left;
+}
+
+pre {
   white-space: pre-wrap;
+  background: #f1f1f1;
+  padding: 10px;
+  border-radius: 5px;
 }
