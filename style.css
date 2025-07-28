@@ -1,55 +1,85 @@
 body {
-  font-family: Arial, sans-serif;
-  background: #f6f9ff;
+  font-family: sans-serif;
+  background-color: #f5f7fb;
   margin: 0;
   padding: 0;
 }
 
 header {
-  background-color: #0a5ba1;
-  color: white;
+  background-color: #0d57a0;
   padding: 10px;
-  text-align: center;
   display: flex;
   align-items: center;
-  justify-content: center;
 }
 
 .logo {
-  height: 60px;
-  margin-right: 15px;
-  background: white;
+  height: 50px;
+  margin-right: 10px;
+  background-color: white;
   padding: 5px;
-  border-radius: 8px;
 }
 
 h1 {
+  color: white;
   margin: 0;
 }
 
-.filter-container {
-  padding: 15px;
-  text-align: center;
-}
-
-select {
-  padding: 5px;
-  font-size: 1rem;
-}
-
-.card {
-  background: white;
+main {
   padding: 20px;
-  margin: 15px auto;
-  width: 90%;
-  max-width: 800px;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.filter-section {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+#searchInput {
+  padding: 6px;
+  font-size: 14px;
+  width: 250px;
+}
+
+.citation-card {
+  background-color: white;
+  padding: 15px;
+  margin-bottom: 20px;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.button-row {
+  margin-top: 10px;
 }
 
 button {
-  margin: 10px 5px;
-  padding: 8px 15px;
-  font-size: 0.95rem;
+  margin-right: 8px;
+  padding: 6px 10px;
+  background-color: #0d57a0;
+  color: white;
+  border: none;
+  border-radius: 4px;
   cursor: pointer;
+}
+
+button:hover {
+  background-color: #094a88;
+}
+
+.summary-container {
+  background: #ffffff;
+  padding: 20px;
+  margin-top: 30px;
+  border-radius: 6px;
+  box-shadow: 0 0 5px rgba(0,0,0,0.08);
+}
+
+.summary-group {
+  margin-bottom: 25px;
+}
+
+.summary-line {
+  margin-bottom: 10px;
 }
