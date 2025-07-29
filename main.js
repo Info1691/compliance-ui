@@ -3,75 +3,98 @@ let breaches = [];
 let aliasToCanonical = {};
 
 function normalize(text) {
-    return text.toLowerCase().replace(/\s*/g, '');
+  return text.toLowerCase().replace(/\s*/g, '');
 }
 
 async function loadData() {
-    try {
-        const [citationsRes, breachesRes] = await Promise.all([
-            fetch('data/citations.json'),
-            fetch('data/breaches/breaches.json')
-        ]);
+  try {
+    const [citationsRes, breachesRes] = await Promise.all([
+      fetch('data/citations.json'),
+      fetch('https://info1691.github.io/breaches-ui/data/breaches.json')
+    ]);
 
-        if (!citationsRes.ok || !breachesRes.ok) {
-            throw new Error('Failed to fetch data files');
-        }
-
-        const citationsText = await citationsRes.text();
-        const breachesText = await breachesRes.text();
-
-        console.log("Raw citations.json:", citationsText);
-        console.log("Raw breaches.json:", breachesText);
-
-        citations = JSON.parse(citationsText);
-        breaches = JSON.parse(breachesText);
-
-        populateBreachDropdown();
-        buildAliasMap();
-        displayCitations(citations);
-    } catch (err) {
-        console.error("Error loading data:", err);
-        document.getElementById('citation-container').innerHTML = '<p>Error loading citations or breaches.</p>';
+    if (!citationsRes.ok || !breachesRes.ok) {
+      throw new Error('Failed to fetch data files');
     }
+
+    citations = await citationsRes.json();
+    breaches = await breachesRes.json();
+
+    populateBreachDropdown();
+    buildAliasMap();
+    displayCitations(citations);
+  } catch (err) {
+    console.error("Error loading data:", err);
+    document.getElementById('citation-container').innerHTML = '<p>Error loading citations or breaches.</p>';
+  }
 }
 
 function populateBreachDropdown() {
-    const dropdown = document.getElementById('breachDropdown');
-    dropdown.innerHTML = '<option value="">â All Breaches â</option>';
+  const dropdown = document.getElementById('breach-filter');
+  dropdown.innerHTML = '<option value="all">← All Breaches →</option>';
 
-    breaches.forEach(breach => {
-        const option = document.createElement('option');
-        option.value = breach.tag;
-        option.textContent = breach.tag;
-        dropdown.appendChild(option);
-    });
+  breaches.forEach(breach => {
+    const option = document.createElement('option');
+    option.value = breach.tag;
+    option.textContent = breach.tag;
+    dropdown.appendChild(option);
+  });
+
+  dropdown.addEventListener('change', filterCitations);
 }
 
 function buildAliasMap() {
-    aliasToCanonical = {};
-    breaches.forEach(({ tag, aliases }) => {
-        aliasToCanonical[normalize(tag)] = tag;
-        aliases.forEach(alias => {
-            aliasToCanonical[normalize(alias)] = tag;
-        });
-    });
+  aliasToCanonical = {};
+  breaches.forEach(breach => {
+    aliasToCanonical[normalize(breach.tag)] = breach.tag;
+    if (breach.aliases) {
+      breach.aliases.forEach(alias => {
+        aliasToCanonical[normalize(alias)] = breach.tag;
+      });
+    }
+  });
 }
 
-function displayCitations(data) {
-    const container = document.getElementById('citation-container');
-    container.innerHTML = '';
+function filterCitations() {
+  const selectedTag = document.getElementById('breach-filter').value;
+  const searchKeyword = document.getElementById('keyword-search')?.value?.toLowerCase() || '';
 
-    data.forEach(citation => {
-        const card = document.createElement('div');
-        card.className = 'citation-card';
-        card.innerHTML = `
-            <h3>${citation.case_name}</h3>
-            <p><strong>Citation:</strong> ${citation.citation}</p>
-            <p><strong>Jurisdiction:</strong> ${citation.jurisdiction}</p>
-            <p><strong>Summary:</strong> ${citation.summary}</p>
-        `;
-        container.appendChild(card);
-    });
+  const filtered = citations.filter(citation => {
+    const matchesTag =
+      selectedTag === 'all' ||
+      citation.compliance_flags?.includes(selectedTag);
+    const matchesKeyword =
+      citation.case_name?.toLowerCase().includes(searchKeyword) ||
+      citation.summary?.toLowerCase().includes(searchKeyword) ||
+      citation.legal_principle?.toLowerCase().includes(searchKeyword);
+    return matchesTag && matchesKeyword;
+  });
+
+  displayCitations(filtered);
 }
 
-document.addEventListener('DOMContentLoaded', loadData);
+function displayCitations(list) {
+  const container = document.getElementById('citation-container');
+  container.innerHTML = '';
+
+  if (!list.length) {
+    container.innerHTML = '<p>No matching citations found.</p>';
+    return;
+  }
+
+  list.forEach(entry => {
+    const card = document.createElement('div');
+    card.className = 'citation-card';
+    card.innerHTML = `
+      <h3>${entry.case_name}</h3>
+      <p><strong>Citation:</strong> ${entry.citation}</p>
+      <p><strong>Jurisdiction:</strong> ${entry.jurisdiction}</p>
+      <p><strong>Summary:</strong> ${entry.summary}</p>
+      <p><strong>Compliance Flags:</strong> ${entry.compliance_flags?.join(', ') || 'None'}</p>
+    `;
+    container.appendChild(card);
+  });
+}
+
+// Kick off
+window.addEventListener('DOMContentLoaded', loadData);
