@@ -9,16 +9,18 @@ function normalize(text) {
 async function loadData() {
   try {
     const [citationsRes, breachesRes] = await Promise.all([
-      fetch('data/citations.json'),
-      fetch('https://info1691.github.io/breaches-ui/data/breaches.json')
+      fetch('data/citations/citations.json'),  // ✅ Corrected path
+      fetch('data/breaches/breaches.json')     // ✅ Local path, not external GitHub Pages
     ]);
 
     if (!citationsRes.ok || !breachesRes.ok) {
-      throw new Error('Failed to fetch data files');
+      throw new Error('Failed to fetch one or more data files');
     }
 
     citations = await citationsRes.json();
     breaches = await breachesRes.json();
+
+    console.log(`Loaded ${citations.length} citations and ${breaches.length} breach tags.`);
 
     populateBreachDropdown();
     buildAliasMap();
