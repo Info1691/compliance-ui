@@ -88,28 +88,6 @@
     "printable": true
   },
   {
-    "id": "jersey-osiris-2014",
-    "case_name": "Representation of Osiris Trustees Ltd",
-    "citation": "[2014] JRC 206",
-    "year": 2014,
-    "court": "Royal Court",
-    "jurisdiction": "Jersey",
-    "summary": "Examined trustee conflict of interest where the trustee was also a director of the investee company.",
-    "legal_principle": "Trustees must avoid conflicts of interest and declare personal involvement.",
-    "holding": "Failure to disclose role as director was a fiduciary breach.",
-    "compliance_flags": ["Trustee Procedural Breach", "Fiduciary Funding or Investment Error"],
-    "key_points": ["Conflict of interest", "Trustee as company director"],
-    "tags": ["Jersey", "Conflict", "Directorship"],
-    "breached_law_or_rule": "Trusts (Jersey) Law 1984, Article 30",
-    "observed_conduct": "Trustee failed to disclose dual role as director in company invested by trust.",
-    "anomaly_detected": "Conflict of interest not disclosed, undermining fiduciary impartiality.",
-    "authority_basis": "Representation of Osiris Trustees Ltd [2014] JRC 206",
-    "canonical_breach_tag": "Undisclosed Trustee Conflict",
-    "case_link": "",
-    "full_case_text": "",
-    "printable": true
-  },
-  {
     "id": "uk-armitage-v-nurse-1997",
     "case_name": "Armitage v Nurse",
     "citation": "[1997] EWCA Civ 1279",
