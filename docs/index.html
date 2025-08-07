@@ -2,34 +2,58 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Compliance Citation Viewer</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header>
-    <img src="logo.png" alt="Logo" />
+    <img src="logo.png" alt="Logo" class="logo" />
     <h1>Compliance Citation Viewer</h1>
   </header>
 
-  <main>
-    <div class="controls">
-      <select id="breachTypeFilter"><option>Loading...</option></select>
-      <input type="text" placeholder="Search by keyword..." />
-      <button id="openDrawerBtn">Add/Edit Citation</button>
-    </div>
-    <div id="citationContainer">Loading citations...</div>
-  </main>
+  <div class="controls">
+    <label for="breachFilter">Filter by Breach Type:</label>
+    <select id="breachFilter"><option>Loading...</option></select>
+    <input type="text" id="searchInput" placeholder="Search by keyword..." />
+    <button id="openDrawerBtn">Add/Edit Citation</button>
+  </div>
 
-  <div id="citationDrawer" class="drawer">
-    <button id="closeDrawerBtn">×</button>
-    <h2>Citation Entry</h2>
-    <input placeholder="ID" />
-    <input placeholder="Case Name" />
-    <input placeholder="Citation" />
-    <input placeholder="Year" />
-    <input placeholder="Court" />
-    <input placeholder="Jurisdiction" />
-    <textarea placeholder="Summary"></textarea>
+  <div id="citationsContainer"></div>
+
+  <!-- Drawer -->
+  <div id="drawer" class="drawer hidden">
+    <div class="drawer-header">
+      <h2>Citation Entry</h2>
+      <button id="closeDrawerBtn">&times;</button>
+    </div>
+    <div class="drawer-content">
+      <form id="citationForm">
+        <input type="text" id="id" placeholder="ID" required />
+        <input type="text" id="case_name" placeholder="Case Name" />
+        <input type="text" id="citation" placeholder="Citation" />
+        <input type="text" id="year" placeholder="Year" />
+        <input type="text" id="court" placeholder="Court" />
+        <input type="text" id="jurisdiction" placeholder="Jurisdiction" />
+        <textarea id="summary" placeholder="Summary"></textarea>
+        <textarea id="legal_principle" placeholder="Legal Principle"></textarea>
+        <textarea id="holding" placeholder="Holding"></textarea>
+        <input type="text" id="compliance_flags" placeholder="Compliance Flags (comma-separated)" />
+        <input type="text" id="key_points" placeholder="Key Points (comma-separated)" />
+        <input type="text" id="tags" placeholder="Tags (comma-separated)" />
+        <textarea id="observed_conduct" placeholder="Observed Conduct"></textarea>
+        <textarea id="anomaly_detected" placeholder="Anomaly Detected"></textarea>
+        <input type="text" id="breached_law_or_rule" placeholder="Breached Law or Rule" />
+        <textarea id="authority_basis" placeholder="Authority Basis"></textarea>
+        <input type="text" id="canonical_breach_tag" placeholder="Canonical Breach Tag" />
+        <input type="text" id="case_link" placeholder="Case Link (optional)" />
+        <textarea id="full_case_text" placeholder="Full Case Text (optional)"></textarea>
+        <label>
+          <input type="checkbox" id="printable" /> Printable
+        </label>
+        <button type="submit">Validate (Save Later)</button>
+      </form>
+    </div>
   </div>
 
   <script src="main.js"></script>
