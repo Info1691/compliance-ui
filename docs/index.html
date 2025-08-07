@@ -15,16 +15,41 @@
   <main>
     <div class="filter-bar">
       <label for="breach-filter">Filter by Breach Type:</label>
-      <select id="breach-filter">
-        <option>Loading...</option>
-      </select>
+      <select id="breach-filter"><option>Loading...</option></select>
       <input type="text" id="keyword-search" placeholder="Search by keyword..." />
+      <button id="open-writer">Add/Edit Citation</button>
     </div>
 
     <div id="citation-container">
       <p>Loading citations...</p>
     </div>
   </main>
+
+  <!-- Drawer Panel -->
+  <div id="citation-drawer" class="drawer">
+    <div class="drawer-header">
+      <h2>Citation Entry</h2>
+      <button id="close-drawer">&times;</button>
+    </div>
+    <form id="citation-form">
+      <div class="form-group"><label>ID</label><input name="id" required /></div>
+      <div class="form-group"><label>Case Name</label><input name="case_name" required /></div>
+      <div class="form-group"><label>Citation</label><input name="citation" required /></div>
+      <div class="form-group"><label>Year</label><input name="year" type="number" required /></div>
+      <div class="form-group"><label>Court</label><input name="court" required /></div>
+      <div class="form-group"><label>Jurisdiction</label><input name="jurisdiction" required /></div>
+      <div class="form-group"><label>Summary</label><textarea name="summary"></textarea></div>
+      <div class="form-group"><label>Legal Principle</label><textarea name="legal_principle"></textarea></div>
+      <div class="form-group"><label>Holding</label><textarea name="holding"></textarea></div>
+      <div class="form-group"><label>Compliance Flags (comma-separated)</label><input name="compliance_flags" /></div>
+      <div class="form-group"><label>Key Points (comma-separated)</label><input name="key_points" /></div>
+      <div class="form-group"><label>Tags (comma-separated)</label><input name="tags" /></div>
+      <div class="form-group"><label>Case Link</label><input name="case_link" /></div>
+      <div class="form-group"><label>Full Case Text</label><textarea name="full_case_text"></textarea></div>
+      <div class="form-group"><label>Printable</label><select name="printable"><option value="true">True</option><option value="false">False</option></select></div>
+      <button type="submit">Validate Citation</button>
+    </form>
+  </div>
 
   <script src="main.js"></script>
 </body>
