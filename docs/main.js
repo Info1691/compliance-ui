@@ -1,78 +1,64 @@
-document.addEventListener("DOMContentLoaded", async () => {
-  const citationContainer = document.getElementById("citation-container");
-  const breachFilter = document.getElementById("breach-filter");
-  const keywordSearch = document.getElementById("keyword-search");
+let citations = [];
 
-  try {
-    const [citationsResponse, breachesResponse] = await Promise.all([
-      fetch("./data/citations/citations.json"),
-      fetch("./data/breaches/breaches.json"),
-    ]);
+// Drawer controls
+document.getElementById("open-writer").addEventListener("click", () => {
+  document.getElementById("citation-drawer").classList.add("open");
+});
 
-    if (!citationsResponse.ok || !breachesResponse.ok) {
-      throw new Error("Failed to fetch data");
-    }
+document.getElementById("close-drawer").addEventListener("click", () => {
+  document.getElementById("citation-drawer").classList.remove("open");
+});
 
-    const citations = await citationsResponse.json();
-    const breachTags = await breachesResponse.json();
+// Load citations.json
+fetch("citations.json")
+  .then(response => response.json())
+  .then(data => {
+    citations = data;
+    renderCitations();
+  })
+  .catch(err => {
+    document.getElementById("citation-container").innerHTML = `<p>Error loading citations.</p>`;
+  });
 
-    function renderCitation(citation) {
-      return `
-        <div class="citation-card">
-          <h2>${citation.case_name}</h2>
-          <p><strong>Citation:</strong> ${citation.citation}</p>
-          <p><strong>Year:</strong> ${citation.year}</p>
-          <p><strong>Court:</strong> ${citation.court}</p>
-          <p><strong>Jurisdiction:</strong> ${citation.jurisdiction}</p>
-          <p><strong>Summary:</strong> ${citation.summary}</p>
-          <p><strong>Legal Principle:</strong> ${citation.legal_principle}</p>
-          <p><strong>Holding:</strong> ${citation.holding}</p>
-          <p><strong>Observed Conduct:</strong> ${citation.observed_conduct}</p>
-          <p><strong>Anomaly Detected:</strong> ${citation.anomaly_detected}</p>
-          <p><strong>Breached Law/Rule:</strong> ${citation.breached_law_or_rule}</p>
-          <p><strong>Authority Basis:</strong> ${citation.authority_basis}</p>
-          <p><strong>Compliance Flags:</strong> ${citation.compliance_flags.join(", ")}</p>
-          <p><strong>Canonical Breach Tag:</strong> ${citation.canonical_breach_tag}</p>
-        </div>
-      `;
-    }
+function renderCitations() {
+  const container = document.getElementById("citation-container");
+  container.innerHTML = "";
+  citations.forEach(cite => {
+    const card = document.createElement("div");
+    card.className = "citation-card";
+    card.innerHTML = `
+      <h3>${cite.case_name}</h3>
+      <p><strong>Citation:</strong> ${cite.citation}</p>
+      <p><strong>Jurisdiction:</strong> ${cite.jurisdiction}</p>
+      <p><strong>Summary:</strong> ${cite.summary}</p>
+    `;
+    container.appendChild(card);
+  });
+}
 
-    function filterAndRender() {
-      const selectedTag = breachFilter.value.toLowerCase();
-      const keyword = keywordSearch.value.toLowerCase();
+// Form validation (does not write to JSON file yet)
+document.getElementById("citation-form").addEventListener("submit", (e) => {
+  e.preventDefault();
 
-      const filtered = citations.filter(c => {
-        const breachMatch =
-          selectedTag === "all" ||
-          c.canonical_breach_tag?.toLowerCase() === selectedTag ||
-          c.compliance_flags?.some(f => f.toLowerCase() === selectedTag);
+  const form = e.target;
+  const newCitation = {
+    id: form.id.value.trim(),
+    case_name: form.case_name.value.trim(),
+    citation: form.citation.value.trim(),
+    year: parseInt(form.year.value.trim()),
+    court: form.court.value.trim(),
+    jurisdiction: form.jurisdiction.value.trim(),
+    summary: form.summary.value.trim(),
+    legal_principle: form.legal_principle.value.trim(),
+    holding: form.holding.value.trim(),
+    compliance_flags: form.compliance_flags.value.split(',').map(s => s.trim()).filter(Boolean),
+    key_points: form.key_points.value.split(',').map(s => s.trim()).filter(Boolean),
+    tags: form.tags.value.split(',').map(s => s.trim()).filter(Boolean),
+    case_link: form.case_link.value.trim(),
+    full_case_text: form.full_case_text.value.trim(),
+    printable: form.printable.value === "true"
+  };
 
-        const keywordMatch =
-          !keyword ||
-          JSON.stringify(c).toLowerCase().includes(keyword);
-
-        return breachMatch && keywordMatch;
-      });
-
-      citationContainer.innerHTML = filtered.length
-        ? filtered.map(renderCitation).join("")
-        : "<p>No matching citations found.</p>";
-    }
-
-    // Load dropdown
-    breachFilter.innerHTML = `<option value="all">All</option>` + breachTags
-      .map(tag => `<option value="${tag.tag.toLowerCase()}">${tag.tag}</option>`)
-      .join("");
-
-    // Event listeners
-    breachFilter.addEventListener("change", filterAndRender);
-    keywordSearch.addEventListener("input", filterAndRender);
-
-    // Initial render
-    filterAndRender();
-
-  } catch (error) {
-    citationContainer.innerHTML = `<p>Error loading citations or breaches.</p>`;
-    console.error("Error loading data:", error);
-  }
+  console.log("Validated Citation:", newCitation);
+  alert("Citation validated in memory. This does NOT write to file yet.");
 });
