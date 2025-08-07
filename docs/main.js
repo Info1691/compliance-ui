@@ -1,102 +1,56 @@
-let citations = [];
-let breaches = [];
-let aliasToCanonical = {};
+document.addEventListener("DOMContentLoaded", () => {
+  fetch("citations.json")
+    .then((response) => response.json())
+    .then((data) => {
+      let currentIndex = 0;
+      const total = data.length;
 
-function normalize(text) {
-  return text.toLowerCase().replace(/\s*/g, '');
-}
+      const caseContainer = document.getElementById("case-container");
+      const prevBtn = document.getElementById("prevBtn");
+      const nextBtn = document.getElementById("nextBtn");
 
-async function loadData() {
-  try {
-    const [citationsRes, breachesRes] = await Promise.all([
-      fetch('data/citations/citations.json'),  // ✅ Corrected path
-      fetch('data/breaches/breaches.json')     // ✅ Local path, not external GitHub Pages
-    ]);
+      function renderCase(index) {
+        const c = data[index];
+        caseContainer.innerHTML = `
+          <h2>${c.case_name}</h2>
+          <p><strong>Citation:</strong> ${c.citation}</p>
+          <p><strong>Year:</strong> ${c.year}</p>
+          <p><strong>Court:</strong> ${c.court}</p>
+          <p><strong>Jurisdiction:</strong> ${c.jurisdiction}</p>
+          <p><strong>Summary:</strong> ${c.summary}</p>
+          <p><strong>Legal Principle:</strong> ${c.legal_principle}</p>
+          <p><strong>Holding:</strong> ${c.holding}</p>
+          <p><strong>Compliance Flags:</strong> ${c.compliance_flags.join(", ")}</p>
+          <p><strong>Key Points:</strong> ${c.key_points.join(", ")}</p>
+          <p><strong>Tags:</strong> ${c.tags.join(", ")}</p>
+          <p><strong>Breached Law or Rule:</strong> ${c.breached_law_or_rule || '—'}</p>
+          <p><strong>Observed Conduct:</strong> ${c.observed_conduct || '—'}</p>
+          <p><strong>Anomaly Detected:</strong> ${c.anomaly_detected || '—'}</p>
+          <p><strong>Authority Basis:</strong> ${c.authority_basis || '—'}</p>
+          <p><strong>Canonical Breach Tag:</strong> ${c.canonical_breach_tag || '—'}</p>
+          ${c.full_case_text ? `<details><summary>Full Case Text</summary><pre>${c.full_case_text}</pre></details>` : ""}
+          ${c.case_link ? `<a href="${c.case_link}" target="_blank">View Case</a><br>` : ""}
+          <button onclick="window.print()">Print</button>
+        `;
+      }
 
-    if (!citationsRes.ok || !breachesRes.ok) {
-      throw new Error('Failed to fetch one or more data files');
-    }
+      renderCase(currentIndex);
 
-    citations = await citationsRes.json();
-    breaches = await breachesRes.json();
-
-    console.log(`Loaded ${citations.length} citations and ${breaches.length} breach tags.`);
-
-    populateBreachDropdown();
-    buildAliasMap();
-    displayCitations(citations);
-  } catch (err) {
-    console.error("Error loading data:", err);
-    document.getElementById('citation-container').innerHTML = '<p>Error loading citations or breaches.</p>';
-  }
-}
-
-function populateBreachDropdown() {
-  const dropdown = document.getElementById('breach-filter');
-  dropdown.innerHTML = '<option value="all">← All Breaches →</option>';
-
-  breaches.forEach(breach => {
-    const option = document.createElement('option');
-    option.value = breach.tag;
-    option.textContent = breach.tag;
-    dropdown.appendChild(option);
-  });
-
-  dropdown.addEventListener('change', filterCitations);
-}
-
-function buildAliasMap() {
-  aliasToCanonical = {};
-  breaches.forEach(breach => {
-    aliasToCanonical[normalize(breach.tag)] = breach.tag;
-    if (breach.aliases) {
-      breach.aliases.forEach(alias => {
-        aliasToCanonical[normalize(alias)] = breach.tag;
+      prevBtn.addEventListener("click", () => {
+        if (currentIndex > 0) {
+          currentIndex--;
+          renderCase(currentIndex);
+        }
       });
-    }
-  });
-}
 
-function filterCitations() {
-  const selectedTag = document.getElementById('breach-filter').value;
-  const searchKeyword = document.getElementById('keyword-search')?.value?.toLowerCase() || '';
-
-  const filtered = citations.filter(citation => {
-    const matchesTag =
-      selectedTag === 'all' ||
-      citation.compliance_flags?.includes(selectedTag);
-    const matchesKeyword =
-      citation.case_name?.toLowerCase().includes(searchKeyword) ||
-      citation.summary?.toLowerCase().includes(searchKeyword) ||
-      citation.legal_principle?.toLowerCase().includes(searchKeyword);
-    return matchesTag && matchesKeyword;
-  });
-
-  displayCitations(filtered);
-}
-
-function displayCitations(list) {
-  const container = document.getElementById('citation-container');
-  container.innerHTML = '';
-
-  if (!list.length) {
-    container.innerHTML = '<p>No matching citations found.</p>';
-    return;
-  }
-
-  list.forEach(entry => {
-    const card = document.createElement('div');
-    card.className = 'citation-card';
-    card.innerHTML = `
-      <h3>${entry.case_name}</h3>
-      <p><strong>Citation:</strong> ${entry.citation}</p>
-      <p><strong>Jurisdiction:</strong> ${entry.jurisdiction}</p>
-      <p><strong>Summary:</strong> ${entry.summary}</p>
-      <p><strong>Compliance Flags:</strong> ${entry.compliance_flags?.join(', ') || 'None'}</p>
-    `;
-    container.appendChild(card);
-  });
-}
-
-// Kick off
-window.addEventListener('DOMContentLoaded', loadData);
+      nextBtn.addEventListener("click", () => {
+        if (currentIndex < total - 1) {
+          currentIndex++;
+          renderCase(currentIndex);
+        }
+      });
+    })
+    .catch((error) => {
+      document.getElementById("case-container").innerHTML = `<p>Error loading data: ${error}</p>`;
+    });
+});
