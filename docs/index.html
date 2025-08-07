@@ -3,60 +3,58 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Compliance Citation Viewer</title> 
+  <title>Compliance Citation Viewer</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header>
-    <img src="logo.png" alt="Logo" class="logo"/>
+    <img src="logo.png" alt="Logo" class="logo" />
     <h1>Compliance Citation Viewer</h1>
   </header>
 
   <main>
     <div class="controls">
+      <label for="breachFilter">Filter by Breach Type:</label>
       <select id="breachFilter">
-        <option>Loading...</option>
+        <option value="all">All</option>
       </select>
       <input type="text" id="searchInput" placeholder="Search by keyword..." />
       <button id="openDrawerBtn">Add/Edit Citation</button>
     </div>
 
-    <div id="citationsContainer">
-      <p>Loading citations...</p>
-    </div>
+    <div id="citationsContainer">Loading citations...</div>
   </main>
 
-  <!-- Drawer Panel -->
   <div id="drawer" class="drawer">
-    <div class="drawer-content">
-      <button id="closeDrawerBtn" class="close-btn">&times;</button>
+    <div class="drawer-header">
       <h2>Citation Entry</h2>
-      <form id="citationForm">
-        <div class="field-grid">
-          <input type="text" placeholder="ID" id="id" />
-          <input type="text" placeholder="Case Name" id="case_name" />
-          <input type="text" placeholder="Citation" id="citation" />
-          <input type="text" placeholder="Year" id="year" />
-          <input type="text" placeholder="Court" id="court" />
-          <input type="text" placeholder="Jurisdiction" id="jurisdiction" />
-          <input type="text" placeholder="Summary" id="summary" />
-          <input type="text" placeholder="Legal Principle" id="legal_principle" />
-          <input type="text" placeholder="Holding" id="holding" />
-          <input type="text" placeholder="Compliance Flags (comma-separated)" id="compliance_flags" />
-          <input type="text" placeholder="Key Points (comma-separated)" id="key_points" />
-          <input type="text" placeholder="Tags (comma-separated)" id="tags" />
-          <input type="text" placeholder="Observed Conduct" id="observed_conduct" />
-          <input type="text" placeholder="Anomaly Detected" id="anomaly_detected" />
-          <input type="text" placeholder="Breached Law or Rule" id="breached_law_or_rule" />
-          <input type="text" placeholder="Authority Basis" id="authority_basis" />
-          <input type="text" placeholder="Canonical Breach Tag" id="canonical_breach_tag" />
-          <input type="text" placeholder="Case Link (optional)" id="case_link" />
-          <textarea placeholder="Full Case Text (optional)" id="full_case_text"></textarea>
-        </div>
-        <label><input type="checkbox" id="printable" /> Printable</label>
-        <button type="submit">Validate & Save</button>
-      </form>
+      <button id="closeDrawerBtn">×</button>
     </div>
+    <form id="citationForm">
+      <div class="form-columns">
+        <input type="text" placeholder="ID" id="id" />
+        <input type="text" placeholder="Case Name" id="case_name" />
+        <input type="text" placeholder="Citation" id="citation" />
+        <input type="text" placeholder="Year" id="year" />
+        <input type="text" placeholder="Court" id="court" />
+        <input type="text" placeholder="Jurisdiction" id="jurisdiction" />
+        <input type="text" placeholder="Summary" id="summary" />
+        <input type="text" placeholder="Legal Principle" id="legal_principle" />
+        <input type="text" placeholder="Holding" id="holding" />
+        <input type="text" placeholder="Compliance Flags (comma-separated)" id="compliance_flags" />
+        <input type="text" placeholder="Key Points (comma-separated)" id="key_points" />
+        <input type="text" placeholder="Tags (comma-separated)" id="tags" />
+        <input type="text" placeholder="Observed Conduct" id="observed_conduct" />
+        <input type="text" placeholder="Anomaly Detected" id="anomaly_detected" />
+        <input type="text" placeholder="Breached Law or Rule" id="breached_law_or_rule" />
+        <input type="text" placeholder="Authority Basis" id="authority_basis" />
+        <input type="text" placeholder="Canonical Breach Tag" id="canonical_breach_tag" />
+        <input type="text" placeholder="Case Link (optional)" id="case_link" />
+        <textarea placeholder="Full Case Text (optional)" id="full_case_text"></textarea>
+        <label><input type="checkbox" id="printable" /> Printable</label>
+        <button type="submit" id="validateBtn">Validate & Save</button>
+      </div>
+    </form>
   </div>
 
   <script src="main.js"></script>
