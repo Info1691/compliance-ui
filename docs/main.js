@@ -1,57 +1,51 @@
-async function loadCitations() {
-  try {
-    const response = await fetch('docs/data/citations/citations.json');
-    const citations = await response.json();
-    displayCitations(citations);
-  } catch (err) {
-    console.error("Error loading citations:", err);
-    document.getElementById('citationList').innerHTML = 'Error loading citations.';
-  }
-}
-
-async function loadBreaches() {
-  try {
-    const response = await fetch('docs/data/breaches/breaches.json');
-    const breaches = await response.json();
-    const filter = document.getElementById('breachFilter');
-    breaches.forEach(b => {
-      const option = document.createElement('option');
-      option.value = b.tag;
-      option.textContent = b.tag;
-      filter.appendChild(option);
-    });
-  } catch (err) {
-    console.warn("Breaches not loaded (optional file):", err);
-    document.getElementById('breachFilter').innerHTML = '<option value="">(Unavailable)</option>';
-  }
-}
-
-function displayCitations(citations) {
-  const container = document.getElementById('citationList');
-  container.innerHTML = '';
-  citations.forEach(cite => {
-    const card = document.createElement('div');
-    card.className = 'citation-card';
-    card.innerHTML = `
-      <h3>${cite.case_name}</h3>
-      <p><strong>Citation:</strong> ${cite.citation}</p>
-      <p><strong>Year:</strong> ${cite.year}</p>
-      <p><strong>Court:</strong> ${cite.court}</p>
-      <p><strong>Jurisdiction:</strong> ${cite.jurisdiction}</p>
-      <p><strong>Summary:</strong> ${cite.summary}</p>
-    `;
-    container.appendChild(card);
-  });
-}
-
 document.addEventListener('DOMContentLoaded', () => {
-  loadCitations();
-  loadBreaches();
-
-  const drawer = document.getElementById('drawer');
+  const citationContainer = document.getElementById('citationContainer');
+  const breachFilter = document.getElementById('breachFilter');
   const openBtn = document.getElementById('openDrawerBtn');
   const closeBtn = document.getElementById('closeDrawerBtn');
+  const drawer = document.getElementById('drawer');
 
+  // Drawer toggle
   openBtn.addEventListener('click', () => drawer.classList.add('open'));
   closeBtn.addEventListener('click', () => drawer.classList.remove('open'));
+
+  // Load citations
+  fetch('docs/data/citations/citations.json')
+    .then(r => r.json())
+    .then(data => {
+      citationContainer.innerHTML = '';
+      data.forEach(c => {
+        const card = document.createElement('div');
+        card.className = 'citation-card';
+        card.innerHTML = `
+          <h3>${c.case_name}</h3>
+          <p><strong>Citation:</strong> ${c.citation}</p>
+          <p><strong>Year:</strong> ${c.year}</p>
+          <p><strong>Court:</strong> ${c.court}</p>
+          <p><strong>Jurisdiction:</strong> ${c.jurisdiction}</p>
+          <p><strong>Summary:</strong> ${c.summary}</p>
+        `;
+        citationContainer.appendChild(card);
+      });
+    })
+    .catch(e => {
+      console.error('Error loading citations:', e);
+      citationContainer.innerHTML = '<p>Error loading citations.</p>';
+    });
+
+  // Load breaches (not critical)
+  fetch('docs/data/breaches/breaches.json')
+    .then(r => r.json())
+    .then(data => {
+      breachFilter.innerHTML = '<option value="">All</option>';
+      data.forEach(b => {
+        const opt = document.createElement('option');
+        opt.value = b.tag;
+        opt.textContent = b.tag;
+        breachFilter.appendChild(opt);
+      });
+    })
+    .catch(e => {
+      console.warn('Breaches not loaded (optional):', e);
+    });
 });
