@@ -1,64 +1,64 @@
-let citations = [];
+document.addEventListener('DOMContentLoaded', function () {
+    const citationsContainer = document.getElementById('citations-container');
+    const drawer = document.getElementById('drawer');
+    const openDrawerBtn = document.getElementById('openDrawerBtn');
+    const closeDrawerBtn = document.getElementById('closeDrawerBtn');
 
-// Drawer controls
-document.getElementById("open-writer").addEventListener("click", () => {
-  document.getElementById("citation-drawer").classList.add("open");
-});
+    // Restore citations on load
+    fetch('citations.json')
+        .then(response => response.json())
+        .then(data => {
+            const citations = Array.isArray(data) ? data : data.citations;
+            if (!citations || citations.length === 0) {
+                citationsContainer.innerHTML = '<p>No citations available.</p>';
+                return;
+            }
 
-document.getElementById("close-drawer").addEventListener("click", () => {
-  document.getElementById("citation-drawer").classList.remove("open");
-});
+            citationsContainer.innerHTML = '';
+            citations.forEach(citation => {
+                const card = document.createElement('div');
+                card.className = 'citation-card';
+                card.innerHTML = `
+                    <h3>${citation.case_name}</h3>
+                    <p><strong>Citation:</strong> ${citation.citation}</p>
+                    <p><strong>Year:</strong> ${citation.year}</p>
+                    <p><strong>Court:</strong> ${citation.court}</p>
+                    <p><strong>Jurisdiction:</strong> ${citation.jurisdiction}</p>
+                    <p><strong>Summary:</strong> ${citation.summary}</p>
+                    <p><strong>Legal Principle:</strong> ${citation.legal_principle}</p>
+                    <p><strong>Holding:</strong> ${citation.holding}</p>
+                    <p><strong>Observed Conduct:</strong> ${citation.observed_conduct}</p>
+                    <p><strong>Anomaly Detected:</strong> ${citation.anomaly_detected}</p>
+                    <p><strong>Breached Law/Rule:</strong> ${citation.breached_law_or_rule}</p>
+                    <p><strong>Authority Basis:</strong> ${citation.authority_basis}</p>
+                    <p><strong>Compliance Flags:</strong> ${citation.compliance_flags?.join(', ')}</p>
+                    <p><strong>Canonical Breach Tag:</strong> ${citation.canonical_breach_tag}</p>
+                `;
+                citationsContainer.appendChild(card);
+            });
+        })
+        .catch(error => {
+            citationsContainer.innerHTML = '<p>Error loading citations.</p>';
+            console.error('Error fetching citations.json:', error);
+        });
 
-// Load citations.json
-fetch("citations.json")
-  .then(response => response.json())
-  .then(data => {
-    citations = data;
-    renderCitations();
-  })
-  .catch(err => {
-    document.getElementById("citation-container").innerHTML = `<p>Error loading citations.</p>`;
-  });
+    // Drawer panel toggle
+    openDrawerBtn.addEventListener('click', () => {
+        drawer.classList.add('open');
+    });
+    closeDrawerBtn.addEventListener('click', () => {
+        drawer.classList.remove('open');
+    });
 
-function renderCitations() {
-  const container = document.getElementById("citation-container");
-  container.innerHTML = "";
-  citations.forEach(cite => {
-    const card = document.createElement("div");
-    card.className = "citation-card";
-    card.innerHTML = `
-      <h3>${cite.case_name}</h3>
-      <p><strong>Citation:</strong> ${cite.citation}</p>
-      <p><strong>Jurisdiction:</strong> ${cite.jurisdiction}</p>
-      <p><strong>Summary:</strong> ${cite.summary}</p>
-    `;
-    container.appendChild(card);
-  });
-}
-
-// Form validation (does not write to JSON file yet)
-document.getElementById("citation-form").addEventListener("submit", (e) => {
-  e.preventDefault();
-
-  const form = e.target;
-  const newCitation = {
-    id: form.id.value.trim(),
-    case_name: form.case_name.value.trim(),
-    citation: form.citation.value.trim(),
-    year: parseInt(form.year.value.trim()),
-    court: form.court.value.trim(),
-    jurisdiction: form.jurisdiction.value.trim(),
-    summary: form.summary.value.trim(),
-    legal_principle: form.legal_principle.value.trim(),
-    holding: form.holding.value.trim(),
-    compliance_flags: form.compliance_flags.value.split(',').map(s => s.trim()).filter(Boolean),
-    key_points: form.key_points.value.split(',').map(s => s.trim()).filter(Boolean),
-    tags: form.tags.value.split(',').map(s => s.trim()).filter(Boolean),
-    case_link: form.case_link.value.trim(),
-    full_case_text: form.full_case_text.value.trim(),
-    printable: form.printable.value === "true"
-  };
-
-  console.log("Validated Citation:", newCitation);
-  alert("Citation validated in memory. This does NOT write to file yet.");
+    // STAGE 2 PREP: Hook in a 'raw case text' field that will auto-populate fields (placeholder only)
+    const rawCaseInput = document.getElementById('rawCaseInput');
+    if (rawCaseInput) {
+        rawCaseInput.addEventListener('input', () => {
+            const raw = rawCaseInput.value.trim();
+            if (raw.length > 50) {
+                console.log("Parsing logic placeholder â will convert raw text to fields.");
+                // Future: Populate form fields based on structured parsing logic here
+            }
+        });
+    }
 });
