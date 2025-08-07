@@ -4,54 +4,71 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Compliance Citation Viewer</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
   <header>
-    <img src="logo.png" alt="Logo" class="logo" />
+    <img src="logo.png" alt="Logo" class="logo"/>
     <h1>Compliance Citation Viewer</h1>
   </header>
 
-  <div class="controls">
-    <label for="breachFilter">Filter by Breach Type:</label>
-    <select id="breachFilter"><option>Loading...</option></select>
-    <input type="text" id="searchInput" placeholder="Search by keyword..." />
-    <button id="openDrawerBtn">Add/Edit Citation</button>
-  </div>
+  <main>
+    <section class="filter-bar">
+      <label for="breachFilter">Filter by Breach Type:</label>
+      <select id="breachFilter"><option>Loading...</option></select>
+      <input type="text" id="searchBox" placeholder="Search by keyword..."/>
+      <button id="openDrawerBtn">Add/Edit Citation</button>
+    </section>
 
-  <div id="citationContainer">Loading citations...</div>
+    <section id="citationsContainer">Loading citations...</section>
+  </main>
 
-  <!-- Drawer Panel -->
-  <div id="drawer" class="drawer">
-    <div class="drawer-header">
-      <h2>Citation Entry</h2>
-      <button id="closeDrawerBtn" class="close-btn">&times;</button>
-    </div>
-    <form id="citationForm" class="drawer-form">
-      <!-- All fields here, same as before -->
-      <input type="text" id="id" placeholder="ID" />
-      <input type="text" id="case_name" placeholder="Case Name" />
-      <input type="text" id="citation" placeholder="Citation" />
-      <input type="text" id="year" placeholder="Year" />
-      <input type="text" id="court" placeholder="Court" />
-      <input type="text" id="jurisdiction" placeholder="Jurisdiction" />
-      <textarea id="summary" placeholder="Summary"></textarea>
-      <textarea id="legal_principle" placeholder="Legal Principle"></textarea>
-      <textarea id="holding" placeholder="Holding"></textarea>
-      <input type="text" id="compliance_flags" placeholder="Compliance Flags (comma-separated)" />
-      <input type="text" id="key_points" placeholder="Key Points (comma-separated)" />
-      <input type="text" id="tags" placeholder="Tags (comma-separated)" />
-      <input type="text" id="observed_conduct" placeholder="Observed Conduct" />
-      <input type="text" id="anomaly_detected" placeholder="Anomaly Detected" />
-      <input type="text" id="breached_law_or_rule" placeholder="Breached Law or Rule" />
-      <input type="text" id="authority_basis" placeholder="Authority Basis" />
-      <input type="text" id="canonical_breach_tag" placeholder="Canonical Breach Tag" />
-      <input type="text" id="case_link" placeholder="Case Link (optional)" />
+  <aside id="drawer" class="drawer hidden">
+    <h2>Citation Entry</h2>
+    <form id="citationForm">
+      <div class="field-pair">
+        <input type="text" id="id" placeholder="ID"/>
+        <input type="text" id="case_name" placeholder="Case Name"/>
+      </div>
+      <div class="field-pair">
+        <input type="text" id="citation" placeholder="Citation"/>
+        <input type="text" id="year" placeholder="Year"/>
+      </div>
+      <div class="field-pair">
+        <input type="text" id="court" placeholder="Court"/>
+        <input type="text" id="jurisdiction" placeholder="Jurisdiction"/>
+      </div>
+      <div class="field-pair">
+        <input type="text" id="summary" placeholder="Summary"/>
+        <input type="text" id="legal_principle" placeholder="Legal Principle"/>
+      </div>
+      <div class="field-pair">
+        <input type="text" id="holding" placeholder="Holding"/>
+        <input type="text" id="compliance_flags" placeholder="Compliance Flags (comma-separated)"/>
+      </div>
+      <div class="field-pair">
+        <input type="text" id="key_points" placeholder="Key Points (comma-separated)"/>
+        <input type="text" id="tags" placeholder="Tags (comma-separated)"/>
+      </div>
+      <div class="field-pair">
+        <input type="text" id="observed_conduct" placeholder="Observed Conduct"/>
+        <input type="text" id="anomaly_detected" placeholder="Anomaly Detected"/>
+      </div>
+      <div class="field-pair">
+        <input type="text" id="breached_law_or_rule" placeholder="Breached Law or Rule"/>
+        <input type="text" id="authority_basis" placeholder="Authority Basis"/>
+      </div>
+      <div class="field-pair">
+        <input type="text" id="canonical_breach_tag" placeholder="Canonical Breach Tag"/>
+        <input type="text" id="case_link" placeholder="Case Link (optional)"/>
+      </div>
       <textarea id="full_case_text" placeholder="Full Case Text (optional)"></textarea>
-      <label><input type="checkbox" id="printable" /> Printable</label>
+      <div class="checkbox-group">
+        <input type="checkbox" id="printable"/><label for="printable">Printable</label>
+      </div>
       <button type="submit">Validate & Save</button>
     </form>
-  </div>
+  </aside>
 
   <script src="main.js"></script>
 </body>
