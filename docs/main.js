@@ -1,54 +1,65 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const citationContainer = document.getElementById("citationContainer");
-  const breachFilter = document.getElementById("breachFilter");
-  const drawer = document.getElementById("drawer");
-  const openDrawer = document.getElementById("openDrawer");
-  const closeDrawer = document.getElementById("closeDrawer");
+let citations = [];
+let breachTags = [];
 
-  fetch("data/citations/citations.json")
-    .then(response => response.json())
-    .then(data => {
-      renderCitations(data);
-      populateFilter(data);
-    })
-    .catch(error => {
-      console.error("Error loading citations:", error);
-      citationContainer.innerHTML = "<p>Error loading citations.</p>";
-    });
+const citationContainer = document.getElementById("citationContainer");
+const drawer = document.getElementById("citationDrawer");
+const openDrawerBtn = document.getElementById("openDrawerBtn");
+const closeDrawerBtn = document.getElementById("closeDrawerBtn");
 
-  function renderCitations(data) {
-    citationContainer.innerHTML = "";
-    data.forEach(citation => {
-      const div = document.createElement("div");
-      div.classList.add("citation-card");
-      div.innerHTML = `
-        <h3>${citation.case_name}</h3>
-        <p><strong>Citation:</strong> ${citation.citation}</p>
-        <p><strong>Year:</strong> ${citation.year}</p>
-        <p><strong>Court:</strong> ${citation.court}</p>
-        <p><strong>Jurisdiction:</strong> ${citation.jurisdiction}</p>
-        <p><strong>Summary:</strong> ${citation.summary}</p>
-        <p><strong>Legal Principle:</strong> ${citation.legal_principle}</p>
-        <p><strong>Holding:</strong> ${citation.holding}</p>
-        <p><strong>Compliance Flags:</strong> ${citation.compliance_flags?.join(", ")}</p>
-        <p><strong>Canonical Breach Tag:</strong> ${citation.canonical_breach_tag || ""}</p>
-      `;
-      citationContainer.appendChild(div);
-    });
+fetch("data/citations/citations.json")
+  .then((res) => res.json())
+  .then((data) => {
+    citations = data;
+    renderCitations(citations);
+  })
+  .catch((err) => {
+    console.error("Error loading citations:", err);
+    citationContainer.innerHTML = "<p>Error loading citations or breaches.</p>";
+  });
+
+fetch("data/breaches/breaches.json")
+  .then((res) => res.json())
+  .then((data) => {
+    breachTags = data;
+    populateBreachDropdown(data);
+  })
+  .catch((err) => {
+    console.error("Error loading breaches:", err);
+  });
+
+function renderCitations(data) {
+  if (!data.length) {
+    citationContainer.innerHTML = "<p>No citations found.</p>";
+    return;
   }
 
-  function populateFilter(data) {
-    const allFlags = new Set();
-    data.forEach(c => (c.compliance_flags || []).forEach(f => allFlags.add(f)));
-    breachFilter.innerHTML = `<option value="">All</option>`;
-    [...allFlags].sort().forEach(flag => {
-      const option = document.createElement("option");
-      option.value = flag;
-      option.textContent = flag;
-      breachFilter.appendChild(option);
-    });
-  }
+  citationContainer.innerHTML = "";
+  data.forEach((c) => {
+    const div = document.createElement("div");
+    div.className = "citation-card";
+    div.innerHTML = `
+      <h2>${c.case_name}</h2>
+      <p><strong>Citation:</strong> ${c.citation}</p>
+      <p><strong>Year:</strong> ${c.year}</p>
+      <p><strong>Court:</strong> ${c.court}</p>
+      <p><strong>Jurisdiction:</strong> ${c.jurisdiction}</p>
+      <p><strong>Summary:</strong> ${c.summary}</p>
+    `;
+    citationContainer.appendChild(div);
+  });
+}
 
-  openDrawer.addEventListener("click", () => drawer.classList.remove("hidden"));
-  closeDrawer.addEventListener("click", () => drawer.classList.add("hidden"));
-});
+function populateBreachDropdown(tags) {
+  const select = document.getElementById("breachTypeFilter");
+  select.innerHTML = `<option value="">All Breaches</option>`;
+  tags.forEach((t) => {
+    const option = document.createElement("option");
+    option.value = t.tag;
+    option.textContent = t.tag;
+    select.appendChild(option);
+  });
+}
+
+// Drawer open/close logic
+openDrawerBtn.addEventListener("click", () => drawer.classList.add("open"));
+closeDrawerBtn.addEventListener("click", () => drawer.classList.remove("open"));
