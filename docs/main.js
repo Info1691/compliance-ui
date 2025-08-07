@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-  fetch("citations.json")
+  fetch("verified_citations_partial.json")
     .then((response) => response.json())
     .then((data) => {
       let currentIndex = 0;
