@@ -5,9 +5,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   try {
     const [citationsResponse, breachesResponse] = await Promise.all([
-      fetch("docs/data/citations/citations.json"),
-      fetch("docs/data/breaches/breaches.json"),
-    ]);
+  fetch("data/citations/citations.json"),
+  fetch("data/breaches/breaches.json"),]);
 
     if (!citationsResponse.ok || !breachesResponse.ok) {
       throw new Error("Failed to fetch data");
