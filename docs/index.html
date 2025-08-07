@@ -4,51 +4,54 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Compliance Citation Viewer</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
   <header>
-    <img src="logo.png" alt="Logo" class="logo" />
+    <img src="logo-white-bg.png" alt="Logo" class="logo"/>
     <h1>Compliance Citation Viewer</h1>
   </header>
 
-  <main>
-    <div class="filter-bar">
-      <label for="breach-filter">Filter by Breach Type:</label>
-      <select id="breach-filter"><option>Loading...</option></select>
-      <input type="text" id="keyword-search" placeholder="Search by keyword..." />
-      <button id="open-writer">Add/Edit Citation</button>
-    </div>
+  <div class="controls">
+    <label for="breachFilter">Filter by Breach Type:</label>
+    <select id="breachFilter"><option>Loading...</option></select>
+    <input type="text" id="searchInput" placeholder="Search by keyword...">
+    <button id="openDrawer">Add/Edit Citation</button>
+  </div>
 
-    <div id="citation-container">
-      <p>Loading citations...</p>
-    </div>
-  </main>
+  <main id="citationContainer">Loading citations...</main>
 
   <!-- Drawer Panel -->
-  <div id="citation-drawer" class="drawer">
+  <div id="drawer" class="drawer hidden">
     <div class="drawer-header">
       <h2>Citation Entry</h2>
-      <button id="close-drawer">&times;</button>
+      <button id="closeDrawer">&times;</button>
     </div>
-    <form id="citation-form">
-      <div class="form-group"><label>ID</label><input name="id" required /></div>
-      <div class="form-group"><label>Case Name</label><input name="case_name" required /></div>
-      <div class="form-group"><label>Citation</label><input name="citation" required /></div>
-      <div class="form-group"><label>Year</label><input name="year" type="number" required /></div>
-      <div class="form-group"><label>Court</label><input name="court" required /></div>
-      <div class="form-group"><label>Jurisdiction</label><input name="jurisdiction" required /></div>
-      <div class="form-group"><label>Summary</label><textarea name="summary"></textarea></div>
-      <div class="form-group"><label>Legal Principle</label><textarea name="legal_principle"></textarea></div>
-      <div class="form-group"><label>Holding</label><textarea name="holding"></textarea></div>
-      <div class="form-group"><label>Compliance Flags (comma-separated)</label><input name="compliance_flags" /></div>
-      <div class="form-group"><label>Key Points (comma-separated)</label><input name="key_points" /></div>
-      <div class="form-group"><label>Tags (comma-separated)</label><input name="tags" /></div>
-      <div class="form-group"><label>Case Link</label><input name="case_link" /></div>
-      <div class="form-group"><label>Full Case Text</label><textarea name="full_case_text"></textarea></div>
-      <div class="form-group"><label>Printable</label><select name="printable"><option value="true">True</option><option value="false">False</option></select></div>
-      <button type="submit">Validate Citation</button>
-    </form>
+    <div class="drawer-body">
+      <form id="citationForm">
+        <label>ID <input type="text" id="id" /></label>
+        <label>Case Name <input type="text" id="case_name" /></label>
+        <label>Citation <input type="text" id="citation" /></label>
+        <label>Year <input type="number" id="year" /></label>
+        <label>Court <input type="text" id="court" /></label>
+        <label>Jurisdiction <input type="text" id="jurisdiction" /></label>
+        <label>Summary <textarea id="summary"></textarea></label>
+        <label>Legal Principle <textarea id="legal_principle"></textarea></label>
+        <label>Holding <textarea id="holding"></textarea></label>
+        <label>Compliance Flags (comma-separated) <input type="text" id="compliance_flags" /></label>
+        <label>Key Points (comma-separated) <input type="text" id="key_points" /></label>
+        <label>Tags (comma-separated) <input type="text" id="tags" /></label>
+        <label>Case Link <input type="text" id="case_link" /></label>
+        <label>Full Case Text <textarea id="full_case_text"></textarea></label>
+        <label>Printable <input type="checkbox" id="printable" /></label>
+        <label>Breached Law/Rule <textarea id="breached_law_or_rule"></textarea></label>
+        <label>Observed Conduct <textarea id="observed_conduct"></textarea></label>
+        <label>Anomaly Detected <textarea id="anomaly_detected"></textarea></label>
+        <label>Authority Basis <textarea id="authority_basis"></textarea></label>
+        <label>Canonical Breach Tag <input type="text" id="canonical_breach_tag" /></label>
+        <button type="submit">Validate</button>
+      </form>
+    </div>
   </div>
 
   <script src="main.js"></script>
