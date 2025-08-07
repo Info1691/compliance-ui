@@ -14,44 +14,43 @@
 
   <div class="controls">
     <label for="breachFilter">Filter by Breach Type:</label>
-    <select id="breachFilter"><option>Loading...</option></select>
+    <select id="breachFilter">
+      <option value="">Loading...</option>
+    </select>
     <input type="text" id="searchInput" placeholder="Search by keyword..." />
     <button id="openDrawerBtn">Add/Edit Citation</button>
   </div>
 
-  <div id="citationsContainer"></div>
+  <main id="citationContainer">Loading citations...</main>
 
-  <!-- Drawer -->
-  <div id="drawer" class="drawer hidden">
-    <div class="drawer-header">
-      <h2>Citation Entry</h2>
-      <button id="closeDrawerBtn">&times;</button>
-    </div>
+  <!-- Drawer Panel -->
+  <div id="drawer" class="drawer">
     <div class="drawer-content">
+      <span id="closeDrawerBtn" class="close-btn">&times;</span>
+      <h2>Citation Entry</h2>
       <form id="citationForm">
-        <input type="text" id="id" placeholder="ID" required />
-        <input type="text" id="case_name" placeholder="Case Name" />
-        <input type="text" id="citation" placeholder="Citation" />
-        <input type="text" id="year" placeholder="Year" />
-        <input type="text" id="court" placeholder="Court" />
-        <input type="text" id="jurisdiction" placeholder="Jurisdiction" />
-        <textarea id="summary" placeholder="Summary"></textarea>
-        <textarea id="legal_principle" placeholder="Legal Principle"></textarea>
-        <textarea id="holding" placeholder="Holding"></textarea>
-        <input type="text" id="compliance_flags" placeholder="Compliance Flags (comma-separated)" />
-        <input type="text" id="key_points" placeholder="Key Points (comma-separated)" />
-        <input type="text" id="tags" placeholder="Tags (comma-separated)" />
-        <textarea id="observed_conduct" placeholder="Observed Conduct"></textarea>
-        <textarea id="anomaly_detected" placeholder="Anomaly Detected"></textarea>
-        <input type="text" id="breached_law_or_rule" placeholder="Breached Law or Rule" />
-        <textarea id="authority_basis" placeholder="Authority Basis"></textarea>
-        <input type="text" id="canonical_breach_tag" placeholder="Canonical Breach Tag" />
-        <input type="text" id="case_link" placeholder="Case Link (optional)" />
-        <textarea id="full_case_text" placeholder="Full Case Text (optional)"></textarea>
-        <label>
-          <input type="checkbox" id="printable" /> Printable
-        </label>
-        <button type="submit">Validate (Save Later)</button>
+        <!-- Repeat for all citation fields -->
+        <input type="text" name="id" placeholder="ID" required />
+        <input type="text" name="case_name" placeholder="Case Name" required />
+        <input type="text" name="citation" placeholder="Citation" required />
+        <input type="number" name="year" placeholder="Year" required />
+        <input type="text" name="court" placeholder="Court" required />
+        <input type="text" name="jurisdiction" placeholder="Jurisdiction" required />
+        <textarea name="summary" placeholder="Summary"></textarea>
+        <textarea name="legal_principle" placeholder="Legal Principle"></textarea>
+        <textarea name="holding" placeholder="Holding"></textarea>
+        <input type="text" name="compliance_flags" placeholder="Compliance Flags (comma-separated)" />
+        <input type="text" name="key_points" placeholder="Key Points (comma-separated)" />
+        <input type="text" name="tags" placeholder="Tags (comma-separated)" />
+        <textarea name="observed_conduct" placeholder="Observed Conduct"></textarea>
+        <textarea name="anomaly_detected" placeholder="Anomaly Detected"></textarea>
+        <textarea name="breached_law_or_rule" placeholder="Breached Law or Rule"></textarea>
+        <textarea name="authority_basis" placeholder="Authority Basis"></textarea>
+        <input type="text" name="canonical_breach_tag" placeholder="Canonical Breach Tag" />
+        <input type="text" name="case_link" placeholder="Case Link (optional)" />
+        <textarea name="full_case_text" placeholder="Full Case Text (optional)"></textarea>
+        <label><input type="checkbox" name="printable" /> Printable</label>
+        <button type="submit">Validate & Save</button>
       </form>
     </div>
   </div>
