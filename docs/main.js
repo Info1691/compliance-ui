@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const openDrawer = document.getElementById("openDrawer");
   const closeDrawer = document.getElementById("closeDrawer");
 
-  fetch("citations.json")
+  fetch("data/citations/citations.json")
     .then(response => response.json())
     .then(data => {
       renderCitations(data);
