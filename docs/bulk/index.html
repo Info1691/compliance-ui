@@ -1,90 +1,74 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Bulk Import — Compliance Citations</title>
-  <!-- Bulk tool styles -->
-  <link rel="stylesheet" href="./style.css" />
+  <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-  <!-- Brand header w/ Back link -->
-  <header class="app-header">
+  <header class="appbar">
     <div class="brand">
-      <img src="../logo.png" alt="BB" class="logo" />
+      <img src="../logo.png" alt="Logo" class="logo">
       <h1>Bulk Import — Compliance Citations</h1>
     </div>
-
-    <div class="header-actions">
+    <nav class="appbar-actions">
       <a class="btn secondary" href="/compliance-ui/citations/">Back to Viewer</a>
-    </div>
+    </nav>
   </header>
 
-  <main class="bulk-wrap">
-    <!-- 1) Load current dataset -->
-    <section class="panel">
+  <main class="container">
+    <!-- 1) Load current -->
+    <section class="card">
       <h2>1) Load current dataset</h2>
       <p>This reads the live file you serve at <code>../data/citations/citations.json</code>.</p>
       <button id="btnLoadCurrent" class="btn">Load current citations.json</button>
     </section>
 
-    <!-- 2) Add new data -->
-    <section class="panel">
+    <!-- 2) Add new -->
+    <section class="card">
       <h2>2) Add new data (JSON preferred)</h2>
-
-      <div class="btn-row">
-        <button id="btnPasteJson" class="btn">Paste JSON</button>
-        <label class="btn file">
-          <input id="csvFile" type="file" accept=".csv" hidden />
-          <span>Choose CSV</span>
+      <div class="row gap">
+        <button id="btnPasteJSON" class="btn secondary">Paste JSON</button>
+        <label class="btn file-btn">
+          <input id="csvInput" type="file" accept=".csv" hidden>
+          Choose CSV
         </label>
-        <button id="btnParseCsv" class="btn">Parse CSV</button>
+        <button id="btnParseCSV" class="btn secondary">Parse CSV</button>
       </div>
-
-      <p class="hint">
+      <p class="muted">
         CSV must include headers at least:
         <code>id,case_name,citation,year,court,jurisdiction,summary</code>.
         Use pipe <code>|</code> to separate items for arrays (e.g., <code>compliance_flags</code>).
       </p>
-
-      <textarea id="pasteZone" placeholder="(optional) Pasted JSON appears here…"></textarea>
+      <textarea id="pasteArea" class="mono" placeholder="(optional) Pasted JSON appears here…" rows="8"></textarea>
     </section>
 
     <!-- 3) Validate -->
-    <section class="panel">
+    <section class="card">
       <h2>3) Validate</h2>
-      <label class="checkbox">
-        <input id="allowUpdates" type="checkbox" />
-        Allow updates for matching IDs (otherwise duplicates are rejected)
-      </label>
-      <button id="btnValidate" class="btn">Run Validation</button>
-      <div id="validationReport" class="report" aria-live="polite"></div>
+      <label><input id="allowUpdates" type="checkbox"> Allow updates for matching IDs (otherwise duplicates are rejected)</label>
+      <div class="row">
+        <button id="btnValidate" class="btn">Run Validation</button>
+      </div>
     </section>
 
     <!-- 4) Merge & Download -->
-    <section class="panel">
+    <section class="card">
       <h2>4) Merge &amp; Download</h2>
-      <div class="btn-row">
-        <button id="btnMerge" class="btn">Merge into Current (in-memory)</button>
+      <div class="row gap">
+        <button id="btnMerge" class="btn primary">Merge into Current (in-memory)</button>
         <button id="btnDownload" class="btn" disabled>Download merged citations.json</button>
       </div>
-      <p class="hint">
-        No data is written to GitHub from this page. You’ll download a file and commit it yourself.
-      </p>
+      <p class="muted">No data is written to GitHub from this page. You’ll download a file and commit it yourself.</p>
     </section>
 
-    <section class="panel">
-      <h2>Log</h2>
-      <pre id="log" class="log"><code id="logText" class="log-text hidden"></code></pre>
+    <section class="card">
+      <h3>Log</h3>
+      <pre id="log" class="log mono"><span id="logText" class="hidden"></span></pre>
     </section>
   </main>
 
-  <!-- Paths the bulk tool needs -->
-  <script>
-    window.CITATIONS_JSON_PATH = "../data/citations/citations.json";
-  </script>
-
-  <!-- Bulk tool behaviour -->
   <script src="./main.js"></script>
 </body>
 </html>
