@@ -1,76 +1,87 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Compliance Citation Viewer</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header class="app-header">
-    <div class="brand">
-      <img src="logo.png" alt="Logo" class="logo"/>
-      <h1>Compliance Citation Viewer</h1>
-    </div>
-    <nav class="header-actions">
-      <a class="btn link" href="/compliance-ui/bulk/">Go to Bulk Import</a>
-    </nav>
+  <header>
+    <img src="logo.png" alt="Logo" class="logo" />
+    <h1>Compliance Citation Viewer</h1>
   </header>
 
-  <section class="controls">
+  <div class="controls">
     <label for="breachFilter">Filter by Breach Type:</label>
     <select id="breachFilter">
       <option>Loading...</option>
     </select>
 
-    <form id="searchForm" class="search">
-      <input id="keywordSearch" type="search" placeholder="Search by keyword…" />
-      <button id="searchBtn" type="submit" class="btn">Search</button>
-    </form>
+    <input id="keywordSearch" type="text" placeholder="Search by keyword..." />
+    <button id="openDrawerBtn" type="button">Add/Edit Citation</button>
 
-    <button id="openDrawerBtn" type="button" class="btn">Add/Edit Citation</button>
-  </section>
+    <!-- NEW: button to bulk importer -->
+    <a id="toBulkBtn" class="btn link-btn" href="bulk/">Go to Bulk Import</a>
+  </div>
 
-  <main id="citationsContainer">Loading citations…</main>
+  <main id="citationsContainer">
+    <p>Loading citations...</p>
+  </main>
 
   <!-- Drawer (left slide-out) -->
   <aside id="drawer" class="drawer" aria-hidden="true">
     <div class="drawer-header">
       <h2>Add Citations</h2>
-      <button id="closeDrawerBtn" type="button" class="close-btn" aria-label="Close">×</button>
+      <button id="closeDrawerBtn" class="close-btn" type="button" aria-label="Close">✕</button>
     </div>
 
     <form id="citationForm" class="drawer-form" onsubmit="return false;">
-      <div class="grid-2">
+      <div class="grid-two">
         <input id="f-id" placeholder="ID (unique)" />
         <input id="f-case_name" placeholder="Case Name" />
+      </div>
+
+      <div class="grid-two">
         <input id="f-citation" placeholder="Neutral Citation" />
         <input id="f-year" placeholder="Year" inputmode="numeric" />
+      </div>
+
+      <div class="grid-two">
         <input id="f-court" placeholder="Court" />
         <input id="f-jurisdiction" placeholder="Jurisdiction" />
-        <input id="f-legal_principle" placeholder="Legal Principle" />
-        <input id="f-holding" placeholder="Holding" />
       </div>
 
       <textarea id="f-summary" placeholder="Summary"></textarea>
+      <input id="f-legal_principle" placeholder="Legal Principle" />
+      <input id="f-holding" placeholder="Holding" />
 
-      <div class="grid-2">
-        <input id="f-compliance_flags" placeholder="Compliance Flags (comma-separated)" />
+      <div class="grid-two">
         <input id="f-key_points" placeholder="Key Points (comma-separated)" />
         <input id="f-tags" placeholder="Tags (comma-separated)" />
+      </div>
+
+      <div class="grid-two">
         <input id="f-observed_conduct" placeholder="Observed Conduct" />
         <input id="f-anomaly_detected" placeholder="Anomaly Detected" />
+      </div>
+
+      <div class="grid-two">
         <input id="f-breached_law_or_rule" placeholder="Breached Law or Rule" />
         <input id="f-authority_basis" placeholder="Authority Basis" />
+      </div>
+
+      <div class="grid-two">
         <input id="f-canonical_breach_tag" placeholder="Canonical Breach Tag" />
         <input id="f-case_link" placeholder="Case Link (optional)" />
       </div>
 
-      <label class="checkbox">
-        <input id="f-printable" type="checkbox" /> Printable
-      </label>
+      <textarea id="f-full_case_text" placeholder="Full Case Text (optional)"></textarea>
 
-      <button id="btnValidate" class="btn primary" type="button">Validate &amp; Save</button>
+      <div class="form-actions">
+        <label><input id="f-printable" type="checkbox" /> Printable</label>
+        <button id="btnValidate" class="primary" type="button">Validate & Save</button>
+      </div>
     </form>
   </aside>
 
