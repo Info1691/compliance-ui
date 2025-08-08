@@ -85,4 +85,134 @@ header h1 {
   height: 100%;
   background: #fff;
   border-right: 1px solid #ddd;
-  box-shadow: 2px
+  box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+  overflow-y: auto;
+  transition: left 0.3s ease;
+  z-index: 1000;
+}
+.drawer.open { left: 0; }
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid #eee;
+}
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+}
+.drawer-form {
+  padding: 12px 14px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.grid-two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.drawer-form input,
+.drawer-form textarea,
+.drawer-form select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  background: #fff;
+}
+.drawer-form textarea { min-height: 90px; resize: vertical; }
+.small-label { font-size: 12px; color: #555; }
+
+/* Buttons */
+.primary {
+  background: #005a9c;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+.primary:hover { background: #004680; }
+.secondary {
+  background: #e9ecef;
+  color: #222;
+  border: 1px solid #d6d8db;
+  border-radius: 6px;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+/* Preview modal */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+.modal.open { display: flex; }
+.modal-dialog {
+  background: #fff;
+  border-radius: 8px;
+  width: min(860px, 92vw);
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #eee;
+}
+.codeblock {
+  margin: 0;
+  padding: 12px 16px;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow: auto;
+  flex: 1;
+}
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid #eee;
+}
+.hint {
+  font-size: 12px;
+  color: #555;
+  padding: 0 16px 12px;
+}
+
+/* Download bar */
+.download-bar {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px 12px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+  z-index: 1500;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .drawer { width: 100%; left: -100%; }
+  .drawer.open { left: 0; }
+  .grid-two { grid-template-columns: 1fr; }
+}
