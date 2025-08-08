@@ -1,137 +1,162 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const drawer         = document.getElementById('drawer');
-  const openDrawerBtn  = document.getElementById('openDrawerBtn');
-  const closeDrawerBtn = document.getElementById('closeDrawerBtn');
-  const citationsEl    = document.getElementById('citationsContainer');
-  const breachFilter   = document.getElementById('breachFilter');
-  const searchForm     = document.getElementById('searchForm');
-  const searchInput    = document.getElementById('keywordSearch');
-  const validateBtn    = document.getElementById('btnValidate');
+  // ---------- Robust paths for GH Pages ----------
+  // Viewer runs at /compliance-ui/ (docs/)
+  const CITATIONS_URL = 'data/citations/citations.json?v=' + Date.now();
+  const BREACHES_URL  = 'data/breaches/breaches.json?v=' + Date.now();
 
-  // ---- Drawer handlers (null-safe) ----
-  if (openDrawerBtn && drawer) {
+  // ---------- DOM ----------
+  const citationsContainer = document.getElementById('citationsContainer');
+  const breachFilter = document.getElementById('breachFilter');
+  const keywordSearch = document.getElementById('keywordSearch');
+
+  // Drawer bits (bind only if present)
+  const openDrawerBtn  = document.getElementById('openDrawerBtn');
+  const drawer         = document.getElementById('drawer');
+  const closeDrawerBtn = document.getElementById('closeDrawerBtn');
+  const btnValidate    = document.getElementById('btnValidate');
+
+  if (openDrawerBtn && drawer && closeDrawerBtn) {
     openDrawerBtn.addEventListener('click', () => drawer.classList.add('open'));
-  }
-  if (closeDrawerBtn && drawer) {
     closeDrawerBtn.addEventListener('click', () => drawer.classList.remove('open'));
   }
+  if (btnValidate) {
+    btnValidate.addEventListener('click', () => alert('Validate & Save is a no-op in viewer (manual commit only).'));
+  }
 
-  // ---- Load data ----
-  const CITATIONS_URL = 'data/citations/citations.json';
-  const BREACHES_URL  = 'data/breaches/breaches.json';
+  // ---------- State ----------
+  let ALL_CITATIONS = [];
+  let ALL_BREACH_TAGS = [];
 
-  let allCitations = [];
+  // ---------- Load data ----------
+  Promise.all([
+    fetch(CITATIONS_URL).then(r => {
+      console.log('CITATIONS fetch:', r.status, r.url);
+      if (!r.ok) throw new Error('citations.json HTTP ' + r.status);
+      return r.json();
+    }),
+    fetch(BREACHES_URL).then(r => {
+      console.log('BREACHES fetch:', r.status, r.url);
+      if (!r.ok) throw new Error('breaches.json HTTP ' + r.status);
+      return r.json();
+    })
+  ])
+  .then(([citations, breaches]) => {
+    ALL_CITATIONS  = Array.isArray(citations) ? citations : [];
+    ALL_BREACH_TAGS = Array.isArray(breaches) ? breaches : [];
 
-  function render(list) {
-    if (!citationsEl) return;
-    if (!Array.isArray(list) || list.length === 0) {
-      citationsEl.innerHTML = '<p>No citations found.</p>';
+    renderCitations(ALL_CITATIONS);
+    populateBreachFilter(ALL_BREACH_TAGS);
+
+    // search
+    if (keywordSearch) {
+      keywordSearch.addEventListener('input', () => {
+        applyFilters();
+      });
+    }
+    if (breachFilter) {
+      breachFilter.addEventListener('change', applyFilters);
+    }
+  })
+  .catch(err => {
+    console.error('Error loading data:', err);
+    if (citationsContainer) {
+      citationsContainer.innerHTML = `<p>Error loading citations.</p>
+<pre style="white-space:pre-wrap">${String(err)}</pre>`;
+    }
+  });
+
+  // ---------- Filtering ----------
+  function applyFilters() {
+    const q = (keywordSearch?.value || '').trim().toLowerCase();
+    const tag = (breachFilter?.value || 'All');
+
+    let list = ALL_CITATIONS.slice();
+
+    if (tag && tag !== 'All') {
+      list = list.filter(c => {
+        const flags = Array.isArray(c.compliance_flags) ? c.compliance_flags : [];
+        return flags.includes(tag);
+      });
+    }
+
+    if (q) {
+      list = list.filter(c => {
+        const hay = [
+          c.case_name, c.citation, c.summary, c.legal_principle,
+          c.holding, c.authority_basis, (c.sources || []).join(' ')
+        ].join(' ').toLowerCase();
+        return hay.includes(q);
+      });
+    }
+
+    renderCitations(list);
+  }
+
+  // ---------- UI helpers ----------
+  function populateBreachFilter(breaches) {
+    if (!breachFilter) return;
+    const unique = new Set();
+    breaches.forEach(b => {
+      if (b && b.tag) unique.add(b.tag);
+    });
+
+    breachFilter.innerHTML = '';
+    const optAll = document.createElement('option');
+    optAll.value = 'All';
+    optAll.textContent = 'All';
+    breachFilter.appendChild(optAll);
+
+    [...unique].sort().forEach(tag => {
+      const o = document.createElement('option');
+      o.value = tag;
+      o.textContent = tag;
+      breachFilter.appendChild(o);
+    });
+  }
+
+  function renderCitations(list) {
+    if (!citationsContainer) return;
+    if (!list || !list.length) {
+      citationsContainer.innerHTML = '<p>No citations found.</p>';
       return;
     }
-    const html = list.map(renderCard).join('');
-    citationsEl.innerHTML = html;
+
+    citationsContainer.innerHTML = list.map(renderCard).join('\n');
+  }
+
+  function escapeHTML(s) {
+    return String(s ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
   }
 
   function renderCard(c) {
-    const srcs = (c.sources && c.sources.length)
-      ? `<p><strong>Sources:</strong> ${c.sources.map(s => escapeHTML(s)).join(', ')}</p>`
-      : '';
-    const flags = (c.compliance_flags && c.compliance_flags.length)
-      ? `<p><strong>Compliance Flags:</strong> ${c.compliance_flags.map(escapeHTML).join(', ')}</p>`
-      : '';
+    const sources = Array.isArray(c.sources) ? c.sources : [];
+    const flags   = Array.isArray(c.compliance_flags) ? c.compliance_flags : [];
+
     return `
-      <article class="card">
+      <article class="citation-card">
         <h2>${escapeHTML(c.case_name || '')}</h2>
+
         <p><strong>Citation:</strong> ${escapeHTML(c.citation || '')}</p>
         <p><strong>Year:</strong> ${escapeHTML(c.year || '')}</p>
         <p><strong>Court:</strong> ${escapeHTML(c.court || '')}</p>
         <p><strong>Jurisdiction:</strong> ${escapeHTML(c.jurisdiction || '')}</p>
+
         <p><strong>Summary:</strong> ${escapeHTML(c.summary || '')}</p>
-        ${c.legal_principle ? `<p><strong>Legal Principle:</strong> ${escapeHTML(c.legal_principle)}</p>` : ''}
-        ${c.holding ? `<p><strong>Holding:</strong> ${escapeHTML(c.holding)}</p>` : ''}
-        ${c.authority_basis ? `<p><strong>Authority Basis:</strong> ${escapeHTML(c.authority_basis)}</p>` : ''}
-        ${srcs}
-        ${flags}
+        ${c.legal_principle ? `<p><strong>Legal Principle:</strong> ${escapeHTML(c.legal_principle)}</p>` : '' }
+        ${c.holding ? `<p><strong>Holding:</strong> ${escapeHTML(c.holding)}</p>` : '' }
+
+        ${c.authority_basis ? `<p><strong>Authority Basis:</strong> ${escapeHTML(c.authority_basis)}</p>` : '' }
+
+        ${sources.length ? `<p><strong>Sources:</strong> ${sources.map(s => {
+            // allow plain text or markdown-like (text)(url)
+            return escapeHTML(s);
+          }).join(', ')}</p>` : ''}
+
+        ${flags.length ? `<p><strong>Compliance Flags:</strong> ${flags.map(escapeHTML).join(', ')}</p>` : '' }
       </article>
     `;
-  }
-
-  function escapeHTML(s='') {
-    return String(s)
-      .replaceAll('&','&amp;')
-      .replaceAll('<','&lt;')
-      .replaceAll('>','&gt;')
-      .replaceAll('"','&quot;')
-      .replaceAll("'",'&#39;');
-  }
-
-  // Populate breach filter
-  fetch(BREACHES_URL)
-    .then(r => r.ok ? r.json() : Promise.reject(r))
-    .then(data => {
-      if (!breachFilter) return;
-      const tags = Array.isArray(data) ? data.map(x => x.tag).filter(Boolean) : [];
-      breachFilter.innerHTML = `<option value="">All</option>` +
-        [...new Set(tags)].sort().map(t => `<option>${escapeHTML(t)}</option>`).join('');
-    })
-    .catch(() => { /* non-fatal */ });
-
-  // Load citations
-  fetch(CITATIONS_URL)
-    .then(r => r.ok ? r.json() : Promise.reject(r))
-    .then(data => {
-      allCitations = Array.isArray(data) ? data : [];
-      render(allCitations);
-    })
-    .catch(err => {
-      console.error('Error loading citations:', err);
-      if (citationsEl) citationsEl.innerHTML = '<p>Error loading citations.</p>';
-    });
-
-  // Filter + search
-  if (breachFilter) {
-    breachFilter.addEventListener('change', () => applyFilters());
-  }
-  if (searchForm && searchInput) {
-    searchForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      applyFilters();
-    });
-  }
-
-  function applyFilters() {
-    const tag = breachFilter ? (breachFilter.value || '').trim().toLowerCase() : '';
-    const q   = searchInput ? (searchInput.value || '').trim().toLowerCase() : '';
-
-    const list = allCitations.filter(c => {
-      const tagMatch = !tag || (Array.isArray(c.compliance_flags) && c.compliance_flags.some(f => String(f).toLowerCase().includes(tag)));
-      const hay = [
-        c.case_name, c.citation, c.summary, c.legal_principle, c.holding,
-        c.authority_basis
-      ].filter(Boolean).join(' ').toLowerCase();
-      const qMatch = !q || hay.includes(q);
-      return tagMatch && qMatch;
-    });
-
-    render(list);
-  }
-
-  // Drawer validate (no save to repo here; this is local validation only)
-  if (validateBtn) {
-    validateBtn.addEventListener('click', () => {
-      const required = [
-        'f-id','f-case_name','f-citation','f-year','f-court','f-jurisdiction','f-summary'
-      ];
-      const missing = required.filter(id => {
-        const el = document.getElementById(id);
-        return !el || !String(el.value).trim();
-      });
-
-      if (missing.length) {
-        alert(`Please complete required fields: ${missing.join(', ')}`);
-        return;
-      }
-      alert('Looks valid. (This form does not write to GitHub. Use Bulk Import for batch updates.)');
-    });
   }
 });
