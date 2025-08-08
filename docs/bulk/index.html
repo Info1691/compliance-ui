@@ -1,99 +1,77 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1"
-  />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Bulk Import — Compliance Citations</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header class="app-header">
+  <header class="topbar">
     <div class="brand">
-      <img src="../logo.png" alt="Logo" class="logo" />
-      <h1>Bulk Import — Compliance Citations</h1>
+      <img src="../logo.png" alt="Logo" />
+      <span>Bulk Import — Compliance Citations</span>
     </div>
-    <nav class="top-links">
+    <nav>
       <a class="back-link" href="../">Back to Viewer</a>
     </nav>
   </header>
 
   <main class="container">
-    <!-- 1) Load current dataset -->
-    <section class="panel">
+    <!-- 1) Load current -->
+    <section class="card">
       <h2>1) Load current dataset</h2>
-      <p class="hint">
-        This reads the live file you serve at
-        <code>../data/citations/citations.json</code>.
-      </p>
+      <p>This reads the live file you serve at <code>../data/citations/citations.json</code>.</p>
       <button id="btnLoadCurrent" class="btn">Load current citations.json</button>
-      <div id="loadStatus" class="status"></div>
+      <div id="currentCount" class="muted"></div>
     </section>
 
-    <!-- 2) Add new data (JSON preferred) -->
-    <section class="panel">
+    <!-- 2) Add new -->
+    <section class="card">
       <h2>2) Add new data (JSON preferred)</h2>
-
-      <div class="row">
-        <button id="btnPasteJson" class="btn btn-light">Paste JSON</button>
-        <input id="fileCsv" type="file" accept=".csv" />
-        <button id="btnParseCsv" class="btn btn-light">Parse CSV</button>
+      <div class="btn-row">
+        <button id="btnPasteJSON" class="btn btn-light">Paste JSON</button>
+        <label class="btn btn-light">
+          <input id="fileCSV" type="file" accept=".csv" hidden />
+          Choose CSV
+        </label>
+        <button id="btnParseCSV" class="btn btn-light">Parse CSV</button>
       </div>
-
-      <p class="hint">
+      <p class="muted">
         CSV must include headers at least:
         <code>id,case_name,citation,year,court,jurisdiction,summary</code>.
-        Use pipe <code>|</code> to separate items for arrays (e.g.,
-        <code>compliance_flags</code>).
+        Use pipe <code>|</code> to separate array items (e.g., <code>compliance_flags</code>).
       </p>
-
-      <textarea id="jsonInput" class="codearea" placeholder="(optional) Pasted JSON appears here…" spellcheck="false"></textarea>
-      <div id="parseStatus" class="status"></div>
+      <textarea id="pasteArea" placeholder="(optional) Pasted JSON appears here…" rows="8"></textarea>
+      <div id="newCount" class="muted"></div>
     </section>
 
     <!-- 3) Validate -->
-    <section class="panel">
+    <section class="card">
       <h2>3) Validate</h2>
-
-      <label class="chk">
+      <label class="checkbox">
         <input id="allowUpdates" type="checkbox" />
         Allow updates for matching IDs (otherwise duplicates are rejected)
       </label>
-
       <button id="btnValidate" class="btn">Run Validation</button>
-      <div id="validationReport" class="report"></div>
+      <div id="validationStatus" class="status"></div>
     </section>
 
-    <!-- 4) Merge & Download -->
-    <section class="panel">
+    <!-- 4) Merge -->
+    <section class="card">
       <h2>4) Merge &amp; Download</h2>
-
-      <div class="row">
+      <div class="btn-row">
         <button id="btnMerge" class="btn">Merge into Current (in-memory)</button>
         <button id="btnDownload" class="btn btn-light" disabled>Download merged citations.json</button>
       </div>
+      <div class="muted">No data is written to GitHub from this page. You’ll download a file and commit it yourself.</div>
+    </section>
 
-      <p class="hint">
-        No data is written to GitHub from this page. You’ll download a file and
-        commit it yourself.
-      </p>
-      <div id="mergeStatus" class="status"></div>
+    <section id="log" class="card hidden">
+      <h3>Log</h3>
+      <pre id="logText"></pre>
     </section>
   </main>
-
-  <!-- Paste JSON modal -->
-  <dialog id="pasteModal">
-    <form method="dialog" class="modal">
-      <h3>Paste JSON</h3>
-      <textarea id="pasteArea" class="codearea" placeholder='Paste an array of citation objects, e.g. [{"id":"..."}]'></textarea>
-      <div class="modal-actions">
-        <button id="pasteCancel" class="btn btn-light">Cancel</button>
-        <button id="pasteApply" class="btn">Apply</button>
-      </div>
-    </form>
-  </dialog>
 
   <script src="main.js"></script>
 </body>
