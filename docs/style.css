@@ -17,7 +17,7 @@ header {
 }
 .logo {
   height: 40px;
-  background: #fff; /* keep white BG */
+  background: #fff;
   padding: 4px;
   border-radius: 4px;
 }
@@ -51,9 +51,7 @@ header h1 {
 .controls button:hover { background: #004680; }
 
 /* Citations */
-#citationsContainer {
-  padding: 16px;
-}
+#citationsContainer { padding: 16px; }
 .citation-card {
   background: #fff;
   border-radius: 6px;
@@ -74,7 +72,7 @@ header h1 {
 .citation-card p a {
   color: #005a9c;
   text-decoration: none;
-  word-break: break-word; /* wrap long URLs */
+  word-break: break-word;
 }
 .citation-card p a:hover { text-decoration: underline; }
 
@@ -82,68 +80,9 @@ header h1 {
 .drawer {
   position: fixed;
   top: 0;
-  left: -520px;              /* hidden by default */
-  width: 520px;              /* wider drawer */
+  left: -520px;
+  width: 520px;
   height: 100%;
   background: #fff;
   border-right: 1px solid #ddd;
-  box-shadow: 2px 0 8px rgba(0,0,0,0.2);
-  overflow-y: auto;
-  transition: left 0.3s ease;
-  z-index: 1000;
-}
-.drawer.open { left: 0; }
-.drawer-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 14px;
-  border-bottom: 1px solid #eee;
-}
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 22px;
-  cursor: pointer;
-}
-.drawer-form {
-  padding: 12px 14px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.grid-two {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-.drawer-form input,
-.drawer-form textarea {
-  width: 100%;
-  padding: 8px 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 14px;
-  background: #fff;
-}
-.drawer-form textarea {
-  min-height: 90px;
-  resize: vertical;
-}
-.checkbox { display: inline-flex; align-items: center; gap: 6px; }
-.primary {
-  background: #005a9c;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 10px 12px;
-  cursor: pointer;
-}
-.primary:hover { background: #004680; }
-
-/* Mobile */
-@media (max-width: 640px) {
-  .drawer { width: 100%; left: -100%; }
-  .drawer.open { left: 0; }
-  .grid-two { grid-template-columns: 1fr; }
-}
+  box-shadow: 2px
