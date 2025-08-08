@@ -2,38 +2,42 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Compliance Citation Viewer</title>
-  <!-- paths are relative to /docs/citations/ -->
+  <!-- Brand/global styles for the viewer live here -->
   <link rel="stylesheet" href="../style.css" />
 </head>
 <body>
-  <header>
-    <!-- logo path is one level up from /docs/citations/ -->
-    <img src="../logo.png" alt="Logo" class="logo" />
-    <h1>Compliance Citation Viewer</h1>
+  <!-- Brand header -->
+  <header class="app-header">
+    <div class="brand">
+      <img src="../logo.png" alt="BB" class="logo" />
+      <h1>Compliance Citation Viewer</h1>
+    </div>
+
+    <!-- Controls row (right side) -->
+    <div class="header-actions">
+      <a class="btn secondary" href="../bulk/">Go to Bulk Import</a>
+    </div>
   </header>
 
-  <div class="controls">
+  <!-- Controls under header -->
+  <section class="controls">
     <label for="breachFilter">Filter by Breach Type:</label>
     <select id="breachFilter">
-      <option>Loading...</option>
+      <option>Loading…</option>
     </select>
 
-    <input id="keywordSearch" type="text" placeholder="Search by keyword..." />
+    <input id="keywordSearch" type="text" placeholder="Search by keyword…" />
+    <button id="openDrawerBtn" type="button" class="btn">Add/Edit Citation</button>
+  </section>
 
-    <!-- existing drawer button -->
-    <button id="openDrawerBtn" type="button">Add/Edit Citation</button>
-
-    <!-- NEW: go to bulk import -->
-    <button id="goBulkBtn" type="button" class="secondary-btn">Go to Bulk Import</button>
-  </div>
-
+  <!-- Main list -->
   <main id="citationsContainer">
-    <p>Loading citations...</p>
+    <p>Loading citations…</p>
   </main>
 
-  <!-- Drawer (left slide-out) -->
+  <!-- Drawer (left slide-out) for single-item add/edit -->
   <aside id="drawer" class="drawer" aria-hidden="true">
     <div class="drawer-header">
       <h2>Add Citations</h2>
@@ -57,8 +61,11 @@
       </div>
 
       <textarea id="f-summary" placeholder="Summary"></textarea>
-      <input id="f-legal_principle" placeholder="Legal Principle" />
-      <input id="f-holding" placeholder="Holding" />
+
+      <div class="grid-two">
+        <input id="f-legal_principle" placeholder="Legal Principle" />
+        <input id="f-holding" placeholder="Holding" />
+      </div>
 
       <div class="grid-two">
         <input id="f-compliance_flags" placeholder="Compliance Flags (comma-separated)" />
@@ -82,29 +89,24 @@
 
       <div class="grid-two">
         <input id="f-case_link" placeholder="Case Link (optional)" />
-        <input id="f-printable" type="checkbox" /> <label for="f-printable">Printable</label>
+        <input id="f-full_case_text" placeholder="Full Case Text (optional)" />
       </div>
 
-      <textarea id="f-full_case_text" placeholder="Full Case Text (optional)"></textarea>
+      <label class="checkbox">
+        <input id="f-printable" type="checkbox" /> Printable
+      </label>
 
-      <button id="validateAndSaveBtn" class="primary-btn" type="button">Validate &amp; Save</button>
+      <button id="validateAndSaveBtn" class="btn primary" type="button">Validate &amp; Save</button>
     </form>
   </aside>
 
-  <!-- page JS (works for citations viewer + drawer); path is one level up -->
-  <script src="../main.js"></script>
-
-  <!-- Tiny inline script just to wire the new button without touching main.js -->
+  <!-- Data endpoints the viewer JS expects -->
   <script>
-    (function () {
-      const goBtn = document.getElementById('goBulkBtn');
-      if (goBtn) {
-        goBtn.addEventListener('click', () => {
-          // from /docs/citations/ to /docs/bulk/
-          window.location.href = '../bulk/';
-        });
-      }
-    })();
+    window.CITATIONS_JSON_PATH = "../data/citations/citations.json";
+    window.BREACHES_JSON_PATH  = "../data/breaches/breaches.json";
   </script>
+
+  <!-- Viewer behaviour -->
+  <script src="../main.js"></script>
 </body>
 </html>
