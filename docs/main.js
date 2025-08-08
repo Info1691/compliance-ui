@@ -1,37 +1,48 @@
 document.addEventListener('DOMContentLoaded', () => {
+  // Elements
   const citationsContainer = document.getElementById('citationsContainer');
   const breachFilter = document.getElementById('breachFilter');
   const keywordSearch = document.getElementById('keywordSearch');
 
-  const CITATION_PATHS = ['data/citations/citations.json'];
-  const BREACHES_PATH = 'data/breaches/breaches.json';
+  const drawer = document.getElementById('drawer');
+  const openDrawerBtn = document.getElementById('openDrawerBtn');
+  const closeDrawerBtn = document.getElementById('closeDrawerBtn');
 
-  let citations = [];
+  // Drawer open/close (guarded)
+  if (openDrawerBtn && drawer) {
+    openDrawerBtn.addEventListener('click', () => {
+      drawer.classList.add('open');
+      drawer.setAttribute('aria-hidden', 'false');
+    });
+  }
+  if (closeDrawerBtn && drawer) {
+    closeDrawerBtn.addEventListener('click', () => {
+      drawer.classList.remove('open');
+      drawer.setAttribute('aria-hidden', 'true');
+    });
+  }
+
+  // Data paths (GitHub Pages under /docs)
+  const CITATIONS_URL = 'data/citations/citations.json';
+  const BREACHES_URL  = 'data/breaches/breaches.json';
+
+  let allCitations = [];
   let breaches = [];
-  let aliasToCanonical = {};
 
-  // ---------- helpers ----------
-  const normalize = (s) => (s || '').toLowerCase().replace(/\s+/g, '');
-
+  // Helpers
   const extractUrls = (text) => {
     if (!text) return [];
-    // find http/https links; ignore trailing punctuation
-    const re = /(https?:\/\/[^\s)>\]]+)/gi;
+    const re = /(https?:\/\/[^\s)<>\]]+)/gi;
     const out = [];
     let m;
     while ((m = re.exec(text)) !== null) {
-      let url = m[1].replace(/[),.;]+$/,'');
-      out.push(url);
+      out.push(m[1].replace(/[),.;]+$/, ''));
     }
-    // de-dup
     return [...new Set(out)];
   };
+  const host = (u) => { try { return new URL(u).hostname; } catch { return u; } };
 
-  const host = (u) => {
-    try { return new URL(u).hostname; } catch { return u; }
-  };
-
-  // ---------- render ----------
+  // Render
   function renderCitations(list) {
     citationsContainer.innerHTML = '';
     if (!list.length) {
@@ -39,128 +50,104 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    list.forEach(citation => {
+    list.forEach(c => {
       const card = document.createElement('div');
       card.className = 'citation-card';
 
-      // Sources: prefer citation.sources (array); else extract from authority_basis
-      let srcs = Array.isArray(citation.sources) ? citation.sources : [];
-      if (!srcs.length) srcs = extractUrls(citation.authority_basis);
+      // Sources: prefer c.sources[]; else extract from authority_basis
+      let srcs = Array.isArray(c.sources) ? c.sources : [];
+      if (!srcs.length) srcs = extractUrls(c.authority_basis);
 
       const sourcesHtml = srcs.length
-        ? `<p><strong>Sources:</strong> ${srcs.map(u => `<a href="${u}" target="_blank" rel="noopener">${host(u)}</a>`).join(' · ')}</p>`
+        ? `<p><strong>Sources:</strong> ${
+            srcs.map(u => `<a href="${u}" target="_blank" rel="noopener">${host(u)}</a>`).join(' · ')
+          }</p>`
         : '';
 
       card.innerHTML = `
-        <h2>${citation.case_name || ''}</h2>
-        <p><strong>Citation:</strong> ${citation.citation || ''}</p>
-        <p><strong>Year:</strong> ${citation.year ?? ''}</p>
-        <p><strong>Court:</strong> ${citation.court || ''}</p>
-        <p><strong>Jurisdiction:</strong> ${citation.jurisdiction || ''}</p>
-        ${citation.summary ? `<p><strong>Summary:</strong> ${citation.summary}</p>` : ''}
-        ${citation.legal_principle ? `<p><strong>Legal Principle:</strong> ${citation.legal_principle}</p>` : ''}
-        ${citation.holding ? `<p><strong>Holding:</strong> ${citation.holding}</p>` : ''}
-        ${citation.authority_basis ? `<p><strong>Authority Basis:</strong> ${citation.authority_basis}</p>` : ''}
+        <h2>${c.case_name || ''}</h2>
+        <p><strong>Citation:</strong> ${c.citation || ''}</p>
+        <p><strong>Year:</strong> ${c.year ?? ''}</p>
+        <p><strong>Court:</strong> ${c.court || ''}</p>
+        <p><strong>Jurisdiction:</strong> ${c.jurisdiction || ''}</p>
+        ${c.summary ? `<p><strong>Summary:</strong> ${c.summary}</p>` : ''}
+        ${c.legal_principle ? `<p><strong>Legal Principle:</strong> ${c.legal_principle}</p>` : ''}
+        ${c.holding ? `<p><strong>Holding:</strong> ${c.holding}</p>` : ''}
+        ${c.authority_basis ? `<p><strong>Authority Basis:</strong> ${c.authority_basis}</p>` : ''}
         ${sourcesHtml}
-        ${Array.isArray(citation.compliance_flags) && citation.compliance_flags.length
-          ? `<p><strong>Compliance Flags:</strong> ${citation.compliance_flags.join(', ')}</p>` : ''
+        ${Array.isArray(c.compliance_flags) && c.compliance_flags.length
+          ? `<p><strong>Compliance Flags:</strong> ${c.compliance_flags.join(', ')}</p>` : ''
         }
       `;
       citationsContainer.appendChild(card);
     });
   }
 
-  // ---------- filtering ----------
-  function buildAliasMap() {
-    aliasToCanonical = {};
-    breaches.forEach(b => {
-      if (!b || !b.tag) return;
-      aliasToCanonical[normalize(b.tag)] = b.tag;
-      if (Array.isArray(b.aliases)) {
-        b.aliases.forEach(a => aliasToCanonical[normalize(a)] = b.tag);
-      }
-    });
-  }
-
-  function populateBreachDropdown() {
-    breachFilter.innerHTML = '';
-    const optAll = document.createElement('option');
-    optAll.value = 'all';
-    optAll.textContent = 'All';
-    breachFilter.appendChild(optAll);
-
-    // sort by tag
-    breaches
-      .slice()
-      .sort((a,b)=> (a.tag||'').localeCompare(b.tag||''))
-      .forEach(b => {
-        const o = document.createElement('option');
-        o.value = b.tag;
-        o.textContent = b.tag;
-        breachFilter.appendChild(o);
-      });
-
-    breachFilter.addEventListener('change', applyFilters);
-    keywordSearch.addEventListener('input', applyFilters);
-  }
-
   function applyFilters() {
-    const selected = breachFilter.value;
-    const q = (keywordSearch.value || '').toLowerCase().trim();
+    const tag = (breachFilter.value || '').trim().toLowerCase();
+    const q = (keywordSearch.value || '').trim().toLowerCase();
 
-    const filtered = citations.filter(c => {
-      // breach filtering uses compliance_flags exact tag matches
-      const tagOk = selected === 'all'
-        ? true
-        : Array.isArray(c.compliance_flags) && c.compliance_flags.includes(selected);
+    const filtered = allCitations.filter(c => {
+      const flags = (c.compliance_flags || []).map(s => (s || '').toLowerCase());
+      const tagOk = !tag || tag === 'all' || flags.includes(tag);
 
       if (!tagOk) return false;
-
       if (!q) return true;
 
-      // keyword search across several fields
       const hay = [
         c.case_name, c.citation, c.summary, c.legal_principle, c.holding,
-        c.authority_basis, Array.isArray(c.tags) ? c.tags.join(' ') : ''
-      ].join(' ').toLowerCase();
-
+        c.authority_basis, (Array.isArray(c.tags) ? c.tags.join(' ') : '')
+      ].map(x => (x || '').toLowerCase()).join(' ');
       return hay.includes(q);
     });
 
     renderCitations(filtered);
   }
 
-  // ---------- load ----------
-  async function loadAll() {
+  // Load breaches (non-blocking)
+  async function loadBreaches() {
     try {
-      // load breaches first (for dropdown)
-      const bRes = await fetch(BREACHES_PATH);
-      if (!bRes.ok) throw new Error('breaches fetch failed');
-      breaches = await bRes.json();
-      buildAliasMap();
-      populateBreachDropdown();
-    } catch (e) {
-      console.error('Error loading breaches:', e);
-      // still continue; UI can work without dropdown
-    }
+      const r = await fetch(BREACHES_URL, { cache: 'no-store' });
+      if (!r.ok) throw new Error(`breaches fetch: HTTP ${r.status}`);
+      breaches = await r.json();
 
-    try {
-      // load citations (supports multiple files if needed later)
-      const parts = await Promise.all(
-        CITATION_PATHS.map(async p => {
-          const r = await fetch(p);
-          if (!r.ok) throw new Error(`citations fetch failed: ${p}`);
-          return r.json();
-        })
-      );
-      // flatten arrays
-      citations = parts.flat();
-      renderCitations(citations);
+      // Populate dropdown
+      breachFilter.innerHTML = '<option value="all">All</option>';
+      breaches
+        .slice()
+        .sort((a,b)=> (a.tag||'').localeCompare(b.tag||''))
+        .forEach(b => {
+          const opt = document.createElement('option');
+          opt.value = b.tag || '';
+          opt.textContent = b.tag || '';
+          breachFilter.appendChild(opt);
+        });
+
+      breachFilter.addEventListener('change', applyFilters);
+      keywordSearch.addEventListener('input', applyFilters);
     } catch (e) {
-      console.error('Error loading citations:', e);
-      citationsContainer.innerHTML = '<p>Error loading citations.</p>';
+      console.warn('Breaches unavailable:', e.message);
+      breachFilter.innerHTML = '<option value="all">All</option>';
+      breachFilter.addEventListener('change', applyFilters);
+      keywordSearch.addEventListener('input', applyFilters);
     }
   }
 
-  loadAll();
+  // Load citations
+  async function loadCitations() {
+    try {
+      const r = await fetch(CITATIONS_URL, { cache: 'no-store' });
+      if (!r.ok) throw new Error(`citations fetch: HTTP ${r.status}`);
+      allCitations = await r.json();
+      renderCitations(allCitations);
+    } catch (e) {
+      console.error('Error loading citations:', e);
+      citationsContainer.innerHTML = `<p>Error loading citations.</p>
+        <pre style="white-space:pre-wrap;font-size:12px;background:#fff;border:1px solid #eee;padding:8px;">${e.message}</pre>`;
+    }
+  }
+
+  // Init
+  loadBreaches();
+  loadCitations();
 });
