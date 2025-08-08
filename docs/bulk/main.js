@@ -1,124 +1,146 @@
-let currentData = [];
-let incomingData = [];
+(function () {
+  const PATH_CURRENT = '../data/citations/citations.json';
 
-// Parse CSV where array fields are pipe-delimited
-function parseCSV(text) {
-  const lines = text.trim().split(/\r?\n/);
-  if (!lines.length) return [];
-  const headers = lines.shift().split(',').map(h => h.trim());
-  return lines.map(line => {
-    const cols = line.split(',').map(c => c.trim());
-    const obj = {};
-    headers.forEach((h, i) => obj[h] = cols[i] ?? '');
+  // working state
+  let current = [];     // current citations.json (fetched)
+  let incoming = [];    // parsed/pasted/uploaded data
+  let merged = null;    // merged array ready for download
 
-    // normalize arrays
-    ['compliance_flags','key_points','tags'].forEach(k => {
-      if (obj[k]) obj[k] = obj[k].split('|').map(v => v.trim()).filter(Boolean);
+  // els
+  const elLoadStatus   = byId('loadStatus');
+  const elParseStatus  = byId('parseStatus');
+  const elValReport    = byId('validationReport');
+  const elMergeStatus  = byId('mergeStatus');
+
+  const elJsonInput    = byId('jsonInput');
+  const elFileCsv      = byId('fileCsv');
+  const elAllowUpdates = byId('allowUpdates');
+
+  const btnLoadCurrent = byId('btnLoadCurrent');
+  const btnPasteJson   = byId('btnPasteJson');
+  const btnParseCsv    = byId('btnParseCsv');
+  const btnValidate    = byId('btnValidate');
+  const btnMerge       = byId('btnMerge');
+  const btnDownload    = byId('btnDownload');
+
+  const dlgPaste       = byId('pasteModal');
+  const pasteArea      = byId('pasteArea');
+  const pasteApply     = byId('pasteApply');
+  const pasteCancel    = byId('pasteCancel');
+
+  // helpers
+  function byId(id){ return document.getElementById(id); }
+  function setStatus(el,msg){ el.textContent = msg || ''; }
+  function isArray(v){ return Array.isArray(v); }
+
+  function normalizeCitation(obj){
+    // ensure stable keys; coerce some fields
+    const clone = { ...obj };
+    if (clone.year !== undefined) clone.year = Number(clone.year);
+    const arrFields = ['compliance_flags','key_points','tags','oai_citations'];
+    arrFields.forEach(k=>{
+      if (clone[k] == null) return;
+      if (typeof clone[k] === 'string'){
+        // allow pipe-separated strings -> array
+        clone[k] = clone[k].split('|').map(s=>s.trim()).filter(Boolean);
+      } else if (!Array.isArray(clone[k])) {
+        clone[k] = [ String(clone[k]) ].filter(Boolean);
+      }
     });
+    return clone;
+  }
 
-    // types
-    if (obj.year !== undefined && obj.year !== '') obj.year = Number(obj.year);
-    if (obj.printable !== undefined) obj.printable = String(obj.printable).toLowerCase() === 'true';
+  // CSV -> JSON
+  function parseCsv(text){
+    // super tolerant CSV parser for simple use
+    const lines = text.replace(/\r/g,'').split('\n').filter(Boolean);
+    const headers = lines.shift().split(',').map(h=>h.trim());
+    return lines.map(line=>{
+      // naive split, fine for this controlled input (no embedded commas expected)
+      const cols = line.split(',').map(c=>c.trim());
+      const obj = {};
+      headers.forEach((h,i)=> obj[h] = cols[i] ?? '');
+      return obj;
+    });
+  }
 
-    return obj;
+  // load current
+  btnLoadCurrent.addEventListener('click', async ()=>{
+    try{
+      setStatus(elLoadStatus,'Loading current citations.json …');
+      const res = await fetch(PATH_CURRENT, { cache: 'no-store' });
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      current = await res.json();
+      if(!isArray(current)) throw new Error('citations.json must be an array');
+      setStatus(elLoadStatus, `Loaded ${current.length} records from citations.json`);
+    }catch(err){
+      console.error(err);
+      setStatus(elLoadStatus, 'Failed to load current dataset.');
+    }
   });
-}
 
-const out = document.getElementById('output');
+  // paste JSON dialog
+  btnPasteJson.addEventListener('click', ()=>{
+    pasteArea.value = '';
+    dlgPaste.showModal();
+  });
+  pasteCancel.addEventListener('click', ()=> dlgPaste.close());
+  pasteApply.addEventListener('click', ()=>{
+    elJsonInput.value = pasteArea.value.trim();
+    dlgPaste.close();
+    setStatus(elParseStatus, 'JSON pasted. You can validate when ready.');
+  });
 
-document.getElementById('loadCurrent').addEventListener('click', async () => {
-  out.textContent = 'Loading ../data/citations/citations.json …';
-  try {
-    const res = await fetch('../data/citations/citations.json', { cache: 'no-store' });
-    if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
-    currentData = await res.json();
-    out.textContent = `Loaded ${currentData.length} records from citations.json.`;
-  } catch (e) {
-    out.textContent = 'Failed to load current: ' + e.message;
-  }
-});
-
-document.getElementById('pasteJson').addEventListener('click', () => {
-  const txt = prompt('Paste a JSON array of citation objects:');
-  if (!txt) return;
-  try {
-    const arr = JSON.parse(txt);
-    if (!Array.isArray(arr)) throw new Error('JSON must be an array of objects.');
-    incomingData = arr;
-    out.textContent = `Staged ${incomingData.length} records from pasted JSON.`;
-  } catch (e) {
-    alert('Invalid JSON: ' + e.message);
-  }
-});
-
-document.getElementById('csvFile').addEventListener('change', (e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    try {
-      incomingData = parseCSV(String(reader.result));
-      out.textContent = `Staged ${incomingData.length} records from CSV.`;
-    } catch (err) {
-      alert('CSV parse error: ' + err.message);
+  // parse CSV
+  btnParseCsv.addEventListener('click', async ()=>{
+    if(!elFileCsv.files || !elFileCsv.files[0]){
+      setStatus(elParseStatus,'Choose a CSV file first.'); return;
     }
-  };
-  reader.readAsText(file);
-});
-
-document.getElementById('runValidation').addEventListener('click', () => {
-  if (!currentData.length) return (out.textContent = 'Load current dataset first.');
-  if (!incomingData.length) return (out.textContent = 'Stage new data (JSON/CSV) first.');
-
-  const allowUpdates = document.getElementById('allowUpdates').checked;
-  const existingIds = new Set(currentData.map(r => r.id));
-  const seen = new Set();
-  const problems = [];
-
-  for (const r of incomingData) {
-    if (!r.id) { problems.push('Missing id on an incoming record'); continue; }
-    if (seen.has(r.id)) problems.push(`Duplicate id within incoming: ${r.id}`);
-    seen.add(r.id);
-
-    const exists = existingIds.has(r.id);
-    if (exists && !allowUpdates) problems.push(`Incoming id already exists: ${r.id} (updates not allowed)`);
-
-    // required fields
-    ['case_name','citation','year','court','jurisdiction','summary'].forEach(f => {
-      if (r[f] === undefined || r[f] === '') problems.push(`id ${r.id}: missing ${f}`);
-    });
-
-    // array normalization guard
-    if (!Array.isArray(r.compliance_flags)) r.compliance_flags = r.compliance_flags ? [String(r.compliance_flags)] : [];
-    if (!Array.isArray(r.key_points)) r.key_points = r.key_points ? [String(r.key_points)] : [];
-    if (!Array.isArray(r.tags)) r.tags = r.tags ? [String(r.tags)] : [];
-  }
-
-  out.innerHTML = problems.length
-    ? 'Validation FAILED:<br>• ' + problems.join('<br>• ')
-    : 'Validation OK.';
-});
-
-document.getElementById('mergeInMemory').addEventListener('click', () => {
-  if (!currentData.length || !incomingData.length) {
-    out.textContent = 'Load current & stage new data first.'; return;
-  }
-  const allowUpdates = document.getElementById('allowUpdates').checked;
-  const byId = new Map(currentData.map(r => [r.id, r]));
-
-  for (const r of incomingData) {
-    if (byId.has(r.id)) {
-      if (allowUpdates) byId.set(r.id, { ...byId.get(r.id), ...r });
-    } else {
-      byId.set(r.id, r);
+    try{
+      const text = await elFileCsv.files[0].text();
+      const rows = parseCsv(text);
+      incoming = rows.map(normalizeCitation);
+      elJsonInput.value = JSON.stringify(incoming, null, 2);
+      setStatus(elParseStatus, `Parsed ${incoming.length} records from CSV.`);
+    }catch(err){
+      console.error(err);
+      setStatus(elParseStatus,'Failed to parse CSV.');
     }
-  }
-  const merged = Array.from(byId.values());
-  const blob = new Blob([JSON.stringify(merged, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
+  });
 
-  const dl = document.getElementById('downloadBtn');
-  dl.href = url;
-  dl.removeAttribute('disabled');
-  out.textContent = `Merged file prepared (${merged.length} records). Click “Download merged citations.json”, then commit it to /docs/data/citations/citations.json.`;
-});
+  // validate
+  btnValidate.addEventListener('click', ()=>{
+    try{
+      const source = elJsonInput.value.trim();
+      incoming = source ? JSON.parse(source) : incoming;
+      if(!isArray(incoming)) throw new Error('Input must be a JSON array');
+      incoming = incoming.map(normalizeCitation);
+
+      // basic schema checks
+      const required = ['id','case_name','citation','year','court','jurisdiction','summary'];
+      const errors = [];
+      const seen = new Set();
+
+      incoming.forEach((it,idx)=>{
+        required.forEach(k=>{
+          if(it[k] === undefined || it[k] === null || (typeof it[k] === 'string' && it[k].trim()==='')){
+            errors.push(`Row ${idx+1}: missing required field "${k}"`);
+          }
+        });
+        // unique in incoming
+        if(seen.has(it.id)) errors.push(`Row ${idx+1}: duplicate id "${it.id}" within incoming data`);
+        seen.add(it.id);
+      });
+
+      // duplicates vs current when updates not allowed
+      if(current.length && !elAllowUpdates.checked){
+        const currentIds = new Set(current.map(x=>x.id));
+        incoming.forEach((it,idx)=>{
+          if(currentIds.has(it.id)) errors.push(`Row ${idx+1}: id "${it.id}" already exists in current (uncheck "Allow updates" to see this).`);
+        });
+      }
+
+      if(errors.length){
+        elValReport.innerHTML = `<div class="error-list"><strong>Validation failed:</strong><ul>${errors.map(e=>`<li>${escapeHtml(e)}</li>`).join('')}</ul></div>`;
+      }else{
+        elVal
