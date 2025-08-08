@@ -3,87 +3,81 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Compliance Citation Viewer</title>
+  <title>Bulk Import — Compliance Citations</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header>
-    <img src="logo.png" alt="Logo" class="logo" />
-    <h1>Compliance Citation Viewer</h1>
+  <header class="site-header">
+    <img src="../logo.png" alt="Logo" class="logo" />
+    <h1>Bulk Import — Compliance Citations</h1>
+    <nav class="top-links">
+      <!-- Back to the viewer root: /compliance-ui/ -->
+      <a class="btn-link" href="../">Back to Viewer</a>
+    </nav>
   </header>
 
-  <div class="controls">
-    <label for="breachFilter">Filter by Breach Type:</label>
-    <select id="breachFilter">
-      <option>Loading...</option>
-    </select>
+  <main class="container">
 
-    <input id="keywordSearch" type="text" placeholder="Search by keyword..." />
-    <button id="openDrawerBtn" type="button">Add/Edit Citation</button>
+    <!-- 1) Load current dataset -->
+    <section class="card">
+      <h2>1) Load current dataset</h2>
+      <p>This reads the live file you serve at <code>../data/citations/citations.json</code>.</p>
+      <button id="btnLoadCurrent" class="btn">Load current citations.json</button>
+      <div id="loadInfo" class="muted tiny"></div>
+    </section>
 
-    <!-- NEW: button to bulk importer -->
-    <a id="toBulkBtn" class="btn link-btn" href="bulk/">Go to Bulk Import</a>
-  </div>
+    <!-- 2) Add new data -->
+    <section class="card">
+      <h2>2) Add new data (JSON preferred)</h2>
 
-  <main id="citationsContainer">
-    <p>Loading citations...</p>
+      <div class="row gap">
+        <button id="btnPasteJSON" class="btn">Paste JSON</button>
+        <label class="btn file">
+          <input type="file" id="csvFile" accept=".csv" />
+          Choose CSV
+        </label>
+        <button id="btnParseCSV" class="btn">Parse CSV</button>
+      </div>
+
+      <p class="muted tiny">
+        CSV must include headers at least:
+        <code>id,case_name,citation,year,court,jurisdiction,summary</code>.
+        Use pipe <code>|</code> to separate items for arrays (e.g., <code>compliance_flags</code>, <code>tags</code>, <code>key_points</code>, <code>sources</code>).
+      </p>
+
+      <textarea id="pasteBox" placeholder="(optional) Paste JSON here…" rows="8"></textarea>
+    </section>
+
+    <!-- 3) Validate -->
+    <section class="card">
+      <h2>3) Validate</h2>
+      <label class="check">
+        <input type="checkbox" id="chkAllowUpdates" />
+        Allow updates for matching IDs (otherwise duplicates are rejected)
+      </label>
+      <button id="btnRunValidation" class="btn">Run Validation</button>
+      <pre id="validationReport" class="report" aria-live="polite"></pre>
+    </section>
+
+    <!-- 4) Merge & Download -->
+    <section class="card">
+      <h2>4) Merge & Download</h2>
+      <div class="row gap">
+        <button id="btnMerge" class="btn">Merge into Current (in-memory)</button>
+        <button id="btnDownload" class="btn" disabled>Download merged citations.json</button>
+      </div>
+      <p class="muted tiny">
+        No data is written to GitHub from this page. You’ll download a file and commit it yourself.
+      </p>
+      <pre id="mergeReport" class="report"></pre>
+    </section>
+
+    <section class="card">
+      <h2>Status</h2>
+      <pre id="status" class="report small"></pre>
+    </section>
+
   </main>
-
-  <!-- Drawer (left slide-out) -->
-  <aside id="drawer" class="drawer" aria-hidden="true">
-    <div class="drawer-header">
-      <h2>Add Citations</h2>
-      <button id="closeDrawerBtn" class="close-btn" type="button" aria-label="Close">✕</button>
-    </div>
-
-    <form id="citationForm" class="drawer-form" onsubmit="return false;">
-      <div class="grid-two">
-        <input id="f-id" placeholder="ID (unique)" />
-        <input id="f-case_name" placeholder="Case Name" />
-      </div>
-
-      <div class="grid-two">
-        <input id="f-citation" placeholder="Neutral Citation" />
-        <input id="f-year" placeholder="Year" inputmode="numeric" />
-      </div>
-
-      <div class="grid-two">
-        <input id="f-court" placeholder="Court" />
-        <input id="f-jurisdiction" placeholder="Jurisdiction" />
-      </div>
-
-      <textarea id="f-summary" placeholder="Summary"></textarea>
-      <input id="f-legal_principle" placeholder="Legal Principle" />
-      <input id="f-holding" placeholder="Holding" />
-
-      <div class="grid-two">
-        <input id="f-key_points" placeholder="Key Points (comma-separated)" />
-        <input id="f-tags" placeholder="Tags (comma-separated)" />
-      </div>
-
-      <div class="grid-two">
-        <input id="f-observed_conduct" placeholder="Observed Conduct" />
-        <input id="f-anomaly_detected" placeholder="Anomaly Detected" />
-      </div>
-
-      <div class="grid-two">
-        <input id="f-breached_law_or_rule" placeholder="Breached Law or Rule" />
-        <input id="f-authority_basis" placeholder="Authority Basis" />
-      </div>
-
-      <div class="grid-two">
-        <input id="f-canonical_breach_tag" placeholder="Canonical Breach Tag" />
-        <input id="f-case_link" placeholder="Case Link (optional)" />
-      </div>
-
-      <textarea id="f-full_case_text" placeholder="Full Case Text (optional)"></textarea>
-
-      <div class="form-actions">
-        <label><input id="f-printable" type="checkbox" /> Printable</label>
-        <button id="btnValidate" class="primary" type="button">Validate & Save</button>
-      </div>
-    </form>
-  </aside>
 
   <script src="main.js"></script>
 </body>
