@@ -1,74 +1,41 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Bulk Import — Compliance Citations</title>
-  <link rel="stylesheet" href="./style.css">
+    <meta charset="UTF-8">
+    <title>Bulk Import — Compliance Citations</title>
+    <link rel="stylesheet" href="../style.css">
 </head>
 <body>
-  <header class="appbar">
-    <div class="brand">
-      <img src="../logo.png" alt="Logo" class="logo">
-      <h1>Bulk Import — Compliance Citations</h1>
-    </div>
-    <nav class="appbar-actions">
-      <a class="btn secondary" href="/compliance-ui/citations/">Back to Viewer</a>
-    </nav>
-  </header>
+<header>
+    <img src="../logo.png" alt="Blue Chip Consultancy Logo" class="logo">
+    <h1>Bulk Import — Compliance Citations</h1>
+</header>
 
-  <main class="container">
-    <!-- 1) Load current -->
-    <section class="card">
-      <h2>1) Load current dataset</h2>
-      <p>This reads the live file you serve at <code>../data/citations/citations.json</code>.</p>
-      <button id="btnLoadCurrent" class="btn">Load current citations.json</button>
-    </section>
+<main>
+    <!-- Back to Viewer -->
+    <a href="https://info1691.github.io/compliance-ui/citations/" class="nav-button">Back to Viewer</a>
 
-    <!-- 2) Add new -->
-    <section class="card">
-      <h2>2) Add new data (JSON preferred)</h2>
-      <div class="row gap">
-        <button id="btnPasteJSON" class="btn secondary">Paste JSON</button>
-        <label class="btn file-btn">
-          <input id="csvInput" type="file" accept=".csv" hidden>
-          Choose CSV
-        </label>
-        <button id="btnParseCSV" class="btn secondary">Parse CSV</button>
-      </div>
-      <p class="muted">
-        CSV must include headers at least:
-        <code>id,case_name,citation,year,court,jurisdiction,summary</code>.
-        Use pipe <code>|</code> to separate items for arrays (e.g., <code>compliance_flags</code>).
-      </p>
-      <textarea id="pasteArea" class="mono" placeholder="(optional) Pasted JSON appears here…" rows="8"></textarea>
-    </section>
+    <h2>1) Load current dataset</h2>
+    <p>This reads the live file you serve at ../data/citations/citations.json.</p>
+    <button id="btnLoadCurrent">Load current citations.json</button>
 
-    <!-- 3) Validate -->
-    <section class="card">
-      <h2>3) Validate</h2>
-      <label><input id="allowUpdates" type="checkbox"> Allow updates for matching IDs (otherwise duplicates are rejected)</label>
-      <div class="row">
-        <button id="btnValidate" class="btn">Run Validation</button>
-      </div>
-    </section>
+    <h2>2) Add new data (JSON preferred)</h2>
+    <button id="btnPasteJSON">Paste JSON</button>
+    <input type="file" id="fileCSV" accept=".csv">
+    <button id="btnParseCSV">Parse CSV</button>
+    <textarea id="pastedJSON" placeholder="(optional) Pasted JSON appears here..."></textarea>
 
-    <!-- 4) Merge & Download -->
-    <section class="card">
-      <h2>4) Merge &amp; Download</h2>
-      <div class="row gap">
-        <button id="btnMerge" class="btn primary">Merge into Current (in-memory)</button>
-        <button id="btnDownload" class="btn" disabled>Download merged citations.json</button>
-      </div>
-      <p class="muted">No data is written to GitHub from this page. You’ll download a file and commit it yourself.</p>
-    </section>
+    <h2>3) Validate</h2>
+    <label><input type="checkbox" id="allowDuplicates"> Allow updates for matching IDs</label>
+    <button id="btnValidate">Run Validation</button>
 
-    <section class="card">
-      <h3>Log</h3>
-      <pre id="log" class="log mono"><span id="logText" class="hidden"></span></pre>
-    </section>
-  </main>
+    <h2>4) Merge & Download</h2>
+    <button id="btnMerge">Merge into Current (in-memory)</button>
+    <button id="btnDownload">Download merged citations.json</button>
 
-  <script src="./main.js"></script>
+    <pre id="log" class="hidden"><code id="logText"></code></pre>
+</main>
+
+<script src="main.js"></script>
 </body>
 </html>
