@@ -1,218 +1,62 @@
-/* Base */
-body {
-  margin: 0;
-  font-family: Arial, Helvetica, sans-serif;
-  background: #f7f7f7;
-  color: #222;
+:root{
+  --brand: #1e5699;
+  --bg: #f5f6f8;
+  --card: #fff;
+  --text: #1c1e21;
+  --muted: #6b7280;
+  --border: #d9dee7;
+  --btn: #1e5699;
+  --btn-text: #fff;
 }
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif}
 
 /* Header */
-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: #005a9c;
-  color: #fff;
-  padding: 12px 16px;
+.app-header{
+  background:var(--brand);
+  color:#fff;
+  padding:12px 16px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
 }
-.logo {
-  height: 40px;
-  background: #fff;
-  padding: 4px;
-  border-radius: 4px;
-}
-header h1 {
-  font-size: 1.25rem;
-  margin: 0;
-}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{height:34px; width:auto; background:#fff; padding:4px; border-radius:4px}
+.app-header h1{margin:0;font-size:20px;font-weight:700}
+.header-actions .btn.link{background:transparent;border:1px solid #fff;color:#fff}
 
 /* Controls */
-.controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 12px 16px;
-  background: #e9ecef;
-  border-bottom: 1px solid #d6d8db;
+.controls{
+  display:flex;gap:12px;align-items:center;flex-wrap:wrap;
+  padding:12px 16px;background:#fff;border-bottom:1px solid var(--border)
 }
-.controls select,
-.controls input,
-.controls button {
-  padding: 8px 10px;
-  font-size: 14px;
-}
-.controls button {
-  background: #005a9c;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.controls button:hover { background: #004680; }
-
-/* Citations */
-#citationsContainer { padding: 16px; }
-.citation-card {
-  background: #fff;
-  border-radius: 6px;
-  padding: 14px;
-  margin-bottom: 12px;
-  border-left: 4px solid #005a9c;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-}
-.citation-card h2 {
-  margin: 0 0 6px;
-  font-size: 1.1rem;
-  color: #005a9c;
-}
-.citation-card p {
-  margin: 6px 0;
-  line-height: 1.4;
-}
-.citation-card p a {
-  color: #005a9c;
-  text-decoration: none;
-  word-break: break-word;
-}
-.citation-card p a:hover { text-decoration: underline; }
-
-/* Drawer */
-.drawer {
-  position: fixed;
-  top: 0;
-  left: -520px;
-  width: 520px;
-  height: 100%;
-  background: #fff;
-  border-right: 1px solid #ddd;
-  box-shadow: 2px 0 8px rgba(0,0,0,0.2);
-  overflow-y: auto;
-  transition: left 0.3s ease;
-  z-index: 1000;
-}
-.drawer.open { left: 0; }
-.drawer-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 14px;
-  border-bottom: 1px solid #eee;
-}
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 22px;
-  cursor: pointer;
-}
-.drawer-form {
-  padding: 12px 14px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.grid-two {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-.drawer-form input,
-.drawer-form textarea,
-.drawer-form select {
-  width: 100%;
-  padding: 8px 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 14px;
-  background: #fff;
-}
-.drawer-form textarea { min-height: 90px; resize: vertical; }
-.small-label { font-size: 12px; color: #555; }
+.controls label{color:var(--muted)}
+.search{display:flex;gap:6px}
 
 /* Buttons */
-.primary {
-  background: #005a9c;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 10px 12px;
-  cursor: pointer;
-}
-.primary:hover { background: #004680; }
-.secondary {
-  background: #e9ecef;
-  color: #222;
-  border: 1px solid #d6d8db;
-  border-radius: 6px;
-  padding: 10px 12px;
-  cursor: pointer;
-}
+.btn{background:var(--btn);color:var(--btn-text);border:none;border-radius:6px;padding:8px 12px;cursor:pointer}
+.btn.link{background:transparent;color:var(--brand);border:1px solid var(--brand)}
+.btn.primary{background:var(--brand);color:#fff}
 
-/* Preview modal */
-.modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.45);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
+/* Cards */
+#citationsContainer{padding:16px;max-width:1100px;margin:0 auto}
+.card{
+  background:var(--card);border:1px solid var(--border);border-left:6px solid var(--brand);
+  border-radius:10px;padding:14px;margin:12px 0;box-shadow:0 1px 2px rgba(0,0,0,.04)
 }
-.modal.open { display: flex; }
-.modal-dialog {
-  background: #fff;
-  border-radius: 8px;
-  width: min(860px, 92vw);
-  max-height: 85vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-.modal-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border-bottom: 1px solid #eee;
-}
-.codeblock {
-  margin: 0;
-  padding: 12px 16px;
-  background: #0f172a;
-  color: #e2e8f0;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 12px;
-  line-height: 1.4;
-  overflow: auto;
-  flex: 1;
-}
-.modal-actions {
-  display: flex;
-  gap: 8px;
-  padding: 12px 16px;
-  border-top: 1px solid #eee;
-}
-.hint {
-  font-size: 12px;
-  color: #555;
-  padding: 0 16px 12px;
-}
+.card h2{margin:0 0 8px 0}
 
-/* Download bar */
-.download-bar {
-  position: fixed;
-  right: 16px;
-  bottom: 16px;
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 10px 12px;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.15);
-  z-index: 1500;
+/* Drawer */
+.drawer{
+  position:fixed;top:0;left:0;height:100%;width:0;overflow:auto;background:#fff;
+  border-right:1px solid var(--border);transition:width .22s ease;z-index:10;padding:0
 }
-
-/* Mobile */
-@media (max-width: 640px) {
-  .drawer { width: 100%; left: -100%; }
-  .drawer.open { left: 0; }
-  .grid-two { grid-template-columns: 1fr; }
-}
+.drawer.open{width:420px}
+.drawer-header{display:flex;align-items:center;justify-content:space-between;padding:12px;border-bottom:1px solid var(--border);background:#fff;position:sticky;top:0}
+.close-btn{background:transparent;border:1px solid var(--border);border-radius:6px;padding:4px 8px;cursor:pointer}
+.drawer-form{padding:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+textarea{width:100%;min-height:90px}
+input,textarea,select{border:1px solid var(--border);border-radius:6px;padding:8px;background:#fff}
+.checkbox{display:flex;align-items:center;gap:8px;margin:8px 0}
