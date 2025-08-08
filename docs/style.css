@@ -1,160 +1,207 @@
-/* ---------- Base ---------- */
-:root{
-  --bb-blue:#1f4f8b;
-  --bb-blue-dark:#163a66;
-  --bb-bg:#f5f7fb;
-  --bb-card:#ffffff;
-  --bb-text:#1e2a36;
-  --bb-muted:#6b7a8c;
-  --bb-border:#d9e0ea;
-  --bb-btn:#1f4f8b;
-  --bb-btn-hover:#1a4376;
-  --drawer-w:420px; /* keep the drawer a decent width */
+:root {
+  --bb-blue: #1f4d8f;
+  --bb-blue-dark: #163a6a;
+  --bb-blue-verydark: #0f2a4a;
+  --bb-gray-100: #f6f7fb;
+  --bb-gray-150: #eef1f6;
+  --bb-gray-200: #e5e9f2;
+  --bb-gray-400: #cdd6e4;
+  --bb-text: #1b2430;
+
+  /* Buttons */
+  --bb-btn: #1f4d8f;
+  --bb-btn-hover: #173a6c;
+
+  /* Drawer width (requested 480px) */
+  --drawer-w: 480px;
 }
 
-*{box-sizing:border-box}
-html,body{
-  margin:0;
-  padding:0;
-  color:var(--bb-text);
-  background:var(--bb-bg);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji", "Segoe UI Symbol";
-  line-height:1.45;
+/* Reset-ish */
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+  color: var(--bb-text);
+  background: white;
 }
 
-/* ---------- Header (shared) ---------- */
-.site-header{
-  background:var(--bb-blue);
-  color:#fff;
-  border-bottom:4px solid var(--bb-blue-dark);
+/* Header */
+header {
+  background: var(--bb-blue);
+  color: white;
+  padding: 16px 16px 10px;
 }
-.brand{
-  max-width:1200px;
-  margin:0 auto;
-  display:flex;
-  align-items:center;
-  gap:16px;
-  padding:12px 16px;
+header .bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
-.brand .logo{
-  height:56px;
-  width:auto;
-  display:block;
-  background:#fff;        /* keeps white frame behind your logo */
-  padding:6px 8px;
-  border-radius:4px;
+.logo {
+  height: 54px;
+  width: auto;
+  display: block;
+  background: white; /* keep white backdrop */
+  padding: 6px 10px;
+  border-radius: 6px;
 }
-.brand h1{
-  margin:0;
-  font-size:22px;
-  font-weight:700;
+h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
 }
 
-/* ---------- Toolbar (filters / buttons) ---------- */
-.toolbar{
-  max-width:1200px;
-  margin:8px auto 0;
-  padding:8px 16px 12px;
-  display:flex;
-  gap:8px;
-  align-items:center;
+/* Controls row under header */
+.controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 16px 14px;
+  background: var(--bb-gray-100);
+  border-bottom: 1px solid var(--bb-gray-200);
 }
-.toolbar select,
-.toolbar input[type="text"]{
-  padding:8px 10px;
-  border:1px solid var(--bb-border);
-  border-radius:6px;
-  background:#fff;
-  min-width:220px;
+.controls label {
+  font-weight: 600;
+  margin-right: 6px;
 }
-.bb-btn{
-  background:var(--bb-btn);
-  color:#fff;
-  border:none;
-  border-radius:6px;
-  padding:8px 12px;
-  font-weight:600;
-  cursor:pointer;
-}
-.bb-btn:disabled{opacity:.6; cursor:not-allowed}
-.bb-btn:hover{ background:var(--bb-btn-hover) }
-.bb-link{
-  color:#fff; text-decoration:underline; font-weight:600;
+.controls select,
+.controls input[type="text"] {
+  height: 34px;
+  padding: 6px 10px;
+  border: 1px solid var(--bb-gray-400);
+  border-radius: 6px;
+  background: white;
 }
 
-/* ---------- Content / cards ---------- */
-#citationsContainer, .container{
-  max-width:1200px;
-  margin:0 auto;
-  padding:12px 16px 40px;
+/* Buttons */
+.bb-btn {
+  background: var(--bb-btn);
+  color: #fff;
+  border: 1px solid var(--bb-btn);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
 }
-.citation-card{
-  background:var(--bb-card);
-  border:1px solid var(--bb-border);
-  border-left:6px solid var(--bb-blue);
-  border-radius:8px;
-  padding:16px;
-  margin:12px 0;
+.bb-btn:hover { background: var(--bb-btn-hover); border-color: var(--bb-btn-hover); }
+
+/* White button variant (for blue header contrast) */
+.bb-btn-white {
+  background: #fff;
+  color: var(--bb-btn);
+  border: 1px solid var(--bb-btn);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+}
+.bb-btn-white:hover { background: #f4f6fa; }
+
+/* Card list */
+main {
+  padding: 16px;
+}
+.citation-card {
+  border: 1px solid var(--bb-gray-200);
+  border-left: 6px solid var(--bb-blue);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin: 0 0 14px;
+  background: #fff;
+}
+.citation-card h2 {
+  margin: 0 0 10px;
+  font-size: 20px;
+}
+.citation-card p {
+  margin: 6px 0;
+  line-height: 1.45;
+}
+.muted { color: #667; }
+
+/* Drawer (left slide-out) */
+.drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--drawer-w);
+  max-width: 100vw;
+  height: 100%;
+  background: #fff;
+  border-right: 1px solid var(--bb-gray-200);
+  box-shadow: 0 0 0 rgba(0,0,0,0);
+  transform: translateX(-100%);
+  transition: transform .18s ease-out, box-shadow .18s ease-out;
+  z-index: 9999;
+  overflow: auto;
+}
+.drawer.open { 
+  transform: translateX(0);
+  box-shadow: 0 8px 30px rgba(0,0,0,.15);
+}
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--bb-gray-200);
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 2;
+}
+.drawer-header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+.close-btn {
+  border: 1px solid var(--bb-gray-400);
+  background: #fff;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
 }
 
-/* ---------- Drawer (viewer only) ---------- */
-.drawer{
-  position:fixed;
-  top:0; left:0;
-  height:100vh;
-  width:var(--drawer-w);
-  max-width:100%;
-  transform:translateX(-100%);
-  transition:transform .25s ease;
-  background:#fff;
-  border-right:1px solid var(--bb-border);
-  z-index:9999;
-  overflow:auto;
-  box-shadow: 0 0 20px rgba(0,0,0,.15);
+/* Drawer form */
+.drawer-form {
+  padding: 12px 16px 24px;
 }
-.drawer.open{ transform:translateX(0) }
-.drawer .drawer-header{
-  position:sticky; top:0;
-  background:#fff;
-  border-bottom:1px solid var(--bb-border);
-  padding:12px 16px;
-  display:flex; align-items:center; justify-content:space-between;
-}
-.close-btn{
-  border:none; background:#eef2f8; color:#1e2a36;
-  padding:6px 10px; border-radius:6px; cursor:pointer;
-}
-.drawer form{
-  padding:12px 16px 24px;
-  display:grid;
+.drawer-form .grid-two {
+  display: grid;
   grid-template-columns: 1fr 1fr;
-  gap:10px;
+  gap: 10px;
 }
-.drawer form textarea{ grid-column:1 / -1; min-height:90px; }
-.form-row-full{ grid-column:1 / -1; }
-.form-actions{
-  display:flex; align-items:center; gap:10px;
-  padding:0 16px 16px;
+.drawer-form input[type="text"],
+.drawer-form input[type="number"],
+.drawer-form textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--bb-gray-400);
+  border-radius: 6px;
+  background: #fff;
+}
+.drawer-form textarea { min-height: 84px; }
+.drawer-form .row {
+  margin: 10px 0;
+}
+.drawer-form .actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
 
-/* ---------- Bulk page blocks ---------- */
-.panel{
-  background:#fff;
-  border:1px solid var(--bb-border);
-  border-radius:10px;
-  margin:16px 0;
-  padding:16px;
-}
-.panel h3{ margin:6px 0 10px; }
-.controls-row{ display:flex; gap:8px; flex-wrap:wrap; }
-.controls-row input[type="file"]{ padding:6px; }
-.log{
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
-  font-size:12px;
-  background:#0b1220;
-  color:#c8e1ff;
-  padding:10px;
-  border-radius:8px;
-  min-height:18px;
-  white-space:pre-wrap;
+/* Status/info text blocks */
+.status {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  color: #3b4555;
+  background: var(--bb-gray-150);
+  border: 1px solid var(--bb-gray-200);
+  border-radius: 6px;
+  padding: 10px;
 }
