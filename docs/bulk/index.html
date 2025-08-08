@@ -1,41 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Bulk Import — Compliance Citations</title>
-    <link rel="stylesheet" href="../style.css">
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Bulk Import — Compliance Citations</title>
+  <link rel="stylesheet" href="../style.css"/>
 </head>
 <body>
-<header>
-    <img src="../logo.png" alt="Blue Chip Consultancy Logo" class="logo">
-    <h1>Bulk Import — Compliance Citations</h1>
-</header>
+  <header class="app-header">
+    <div class="brand">
+      <img src="../logo.png" alt="Logo" class="logo"/>
+      <h1>Bulk Import — Compliance Citations</h1>
+    </div>
+    <nav class="header-actions">
+      <a class="btn link" href="/compliance-ui/">Back to Viewer</a>
+    </nav>
+  </header>
 
-<main>
-    <!-- Back to Viewer -->
-    <a href="https://info1691.github.io/compliance-ui/citations/" class="nav-button">Back to Viewer</a>
+  <main id="bulkMain" style="max-width:1100px;margin:12px auto;padding:0 16px;">
+    <section class="card">
+      <h2>1) Load current dataset</h2>
+      <p>This reads the live file you serve at <code>../data/citations/citations.json</code>.</p>
+      <button id="btnLoadCurrent" class="btn">Load current citations.json</button>
+    </section>
 
-    <h2>1) Load current dataset</h2>
-    <p>This reads the live file you serve at ../data/citations/citations.json.</p>
-    <button id="btnLoadCurrent">Load current citations.json</button>
+    <section class="card">
+      <h2>2) Add new data (JSON preferred)</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+        <button id="btnPasteJSON" class="btn link">Paste JSON</button>
+        <label class="btn link" style="position:relative;overflow:hidden;">
+          <input id="csvFile" type="file" accept=".csv" style="position:absolute;inset:0;opacity:0;cursor:pointer;" />
+          Choose CSV
+        </label>
+        <button id="btnParseCSV" class="btn link">Parse CSV</button>
+      </div>
+      <p>CSV must include headers at least: <code>id,case_name,citation,year,court,jurisdiction,summary</code>. Use pipe <code>|</code> to separate items for arrays (e.g., <code>compliance_flags</code>).</p>
+      <textarea id="jsonPaste" placeholder="(optional) Pasted JSON appears here…" style="width:100%;min-height:120px;"></textarea>
+    </section>
 
-    <h2>2) Add new data (JSON preferred)</h2>
-    <button id="btnPasteJSON">Paste JSON</button>
-    <input type="file" id="fileCSV" accept=".csv">
-    <button id="btnParseCSV">Parse CSV</button>
-    <textarea id="pastedJSON" placeholder="(optional) Pasted JSON appears here..."></textarea>
+    <section class="card">
+      <h2>3) Validate</h2>
+      <label class="checkbox"><input id="allowUpdates" type="checkbox" /> Allow updates for matching IDs (otherwise duplicates are rejected)</label>
+      <button id="btnValidate" class="btn">Run Validation</button>
+      <pre id="log" class="log muted" style="margin-top:10px;white-space:pre-wrap;"></pre>
+    </section>
 
-    <h2>3) Validate</h2>
-    <label><input type="checkbox" id="allowDuplicates"> Allow updates for matching IDs</label>
-    <button id="btnValidate">Run Validation</button>
+    <section class="card">
+      <h2>4) Merge &amp; Download</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button id="btnMerge" class="btn">Merge into Current (in-memory)</button>
+        <button id="btnDownload" class="btn link" disabled>Download merged citations.json</button>
+      </div>
+      <p class="muted">No data is written to GitHub from this page. You’ll download a file and commit it yourself.</p>
+    </section>
+  </main>
 
-    <h2>4) Merge & Download</h2>
-    <button id="btnMerge">Merge into Current (in-memory)</button>
-    <button id="btnDownload">Download merged citations.json</button>
-
-    <pre id="log" class="hidden"><code id="logText"></code></pre>
-</main>
-
-<script src="main.js"></script>
+  <script src="main.js"></script>
 </body>
 </html>
