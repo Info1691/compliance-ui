@@ -1,69 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Bulk Import — Compliance Citations</title>
-  <link rel="stylesheet" href="style.css"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Import — Compliance Citations</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="header">
-    <h1>Bulk Import — Compliance Citations</h1>
-    <a class="link" href="../index.html">← Back to Viewer</a>
-  </header>
+    <header>
+        <img src="../logo.png" alt="Logo" class="logo">
+        <h1>Bulk Import — Compliance Citations</h1>
+        <div class="header-buttons">
+            <button onclick="window.location.href='../index.html'">Back to Viewer</button>
+        </div>
+    </header>
 
-  <main class="container">
-    <section class="panel">
-      <h2>1) Load current dataset</h2>
-      <p>This reads the live file you serve at <code>../data/citations/citations.json</code>.</p>
-      <button id="btnLoadCurrent" class="primary">Load Current citations.json</button>
-      <div id="currentStatus" class="status"></div>
-    </section>
+    <main>
+        <section>
+            <h2>1) Load current dataset</h2>
+            <p>This reads the live file you serve at ../data/citations/citations.json.</p>
+            <button id="load-current">Load Current citations.json</button>
+        </section>
 
-    <section class="panel">
-      <h2>2) Add new data (JSON preferred)</h2>
+        <section>
+            <h2>2) Add new data (JSON preferred)</h2>
+            <button id="paste-json">Paste JSON</button>
+            <button id="upload-json">Upload CSV</button>
+            <p>CSV must include headers at least: <code>id,case_name,citation,year,court,jurisdiction,summary</code>. For array fields use pipe <code>|</code> to separate items.</p>
+            <input type="file" id="csv-file">
+            <button id="parse-csv">Parse CSV</button>
+        </section>
 
-      <div class="tabs">
-        <button class="tab active" data-tab="json">Paste JSON</button>
-        <button class="tab" data-tab="csv">Upload CSV</button>
-      </div>
+        <section>
+            <h2>3) Validate</h2>
+            <label>
+                <input type="checkbox" id="allow-updates"> Allow updates for matching IDs (otherwise duplicates are rejected)
+            </label>
+            <button id="run-validation">Run Validation</button>
+        </section>
 
-      <div id="tab-json" class="tabpane active">
-        <textarea id="jsonInput" placeholder='[ { "id": "...", "case_name": "...", ... }, ... ]'></textarea>
-        <button id="btnParseJSON">Parse JSON</button>
-      </div>
+        <section>
+            <h2>4) Merge & Download</h2>
+            <button id="merge-data">Merge into Current (in-memory)</button>
+            <button id="download-json" disabled>Download merged citations.json</button>
+        </section>
 
-      <div id="tab-csv" class="tabpane">
-        <p>CSV must include headers at least: <code>id,case_name,citation,year,court,jurisdiction,summary</code>. For array fields use pipe <code>|</code> to separate items.</p>
-        <input type="file" id="csvFile" accept=".csv,text/csv"/>
-        <button id="btnParseCSV">Parse CSV</button>
-      </div>
+        <p style="font-size: 0.9em; color: gray;">
+            No data is written to GitHub from this page. You’ll download a file and commit it yourself.
+        </p>
+    </main>
 
-      <div id="importStatus" class="status"></div>
-    </section>
-
-    <section class="panel">
-      <h2>3) Validate</h2>
-      <label class="checkbox">
-        <input type="checkbox" id="allowUpdates"/> Allow updates for matching IDs (otherwise duplicates are rejected)
-      </label>
-      <button id="btnValidate" class="primary">Run Validation</button>
-      <div id="validationSummary" class="status"></div>
-      <div id="validationTable" class="tablewrap"></div>
-    </section>
-
-    <section class="panel">
-      <h2>4) Merge & Download</h2>
-      <button id="btnMerge" class="primary">Merge into Current (in-memory)</button>
-      <button id="btnDownload" class="secondary" disabled>Download merged citations.json</button>
-      <div id="mergeStatus" class="status"></div>
-    </section>
-  </main>
-
-  <footer class="footer">
-    <small>No data is written to GitHub from this page. You’ll download a file and commit it yourself.</small>
-  </footer>
-
-  <script src="main.js"></script>
+    <script src="main.js"></script>
 </body>
 </html>
