@@ -1,262 +1,150 @@
-(() => {
-  // -------------------- Config & State --------------------
-  const CURRENT_URL = '../data/citations/citations.json?v=' + Date.now();
+<script>
+/* Bulk Importer — robust, complete, null-safe */
+document.addEventListener('DOMContentLoaded', () => {
+  // Elements (may be absent in other pages; guard everything)
+  const btnLoad     = document.getElementById('btnLoadCurrent');
+  const btnPaste    = document.getElementById('btnPasteJSON');
+  const fileCsv     = document.getElementById('fileCsv');
+  const btnParseCsv = document.getElementById('btnParseCsv');
+  const allowUpd    = document.getElementById('allowUpdates');
+  const btnValidate = document.getElementById('btnValidate');
+  const btnMerge    = document.getElementById('btnMerge');
+  const btnDownload = document.getElementById('btnDownload');
+  const pasteArea   = document.getElementById('pasteArea');
+  const statusBar   = document.getElementById('statusBar');
 
-  let currentData = [];   // loaded from repo
-  let newData = [];       // from paste JSON or parsed CSV
-  let merged = null;      // result of merge
+  const bust = `?v=${Date.now()}`;
+  const DATA_URL = `../data/citations/citations.json${bust}`;
 
-  // -------------------- DOM helpers -----------------------
-  const $ = (sel) => document.querySelector(sel);
+  let currentData = [];
+  let incomingData = [];
+  let merged = null;
 
-  const el = {
-    btnLoadCurrent:     $('#btnLoadCurrent'),
-    loadInfo:           $('#loadInfo'),
-    btnPasteJSON:       $('#btnPasteJSON'),
-    csvFile:            $('#csvFile'),
-    btnParseCSV:        $('#btnParseCSV'),
-    pasteBox:           $('#pasteBox'),
-    chkAllowUpdates:    $('#chkAllowUpdates'),
-    btnRunValidation:   $('#btnRunValidation'),
-    validationReport:   $('#validationReport'),
-    btnMerge:           $('#btnMerge'),
-    btnDownload:        $('#btnDownload'),
-    mergeReport:        $('#mergeReport'),
-    status:             $('#status')
-  };
-
-  const log = (msg) => {
-    if (!el.status) return;
-    const line = (typeof msg === 'string') ? msg : JSON.stringify(msg, null, 2);
-    el.status.textContent += line + '\n';
-  };
-  const clear = (node) => { if (node) node.textContent = ''; };
-
-  // -------------------- CSV parsing (robust enough) -------
-  function parseCSV(text) {
-    // Basic RFC4180-ish parser to handle quotes/commas/newlines.
-    const rows = [];
-    let cur = '', row = [], inQuotes = false;
-
-    for (let i = 0; i < text.length; i++) {
-      const c = text[i], n = text[i+1];
-
-      if (c === '"' && inQuotes && n === '"') { cur += '"'; i++; continue; }
-      if (c === '"') { inQuotes = !inQuotes; continue; }
-
-      if (!inQuotes && (c === ',')) { row.push(cur); cur=''; continue; }
-      if (!inQuotes && (c === '\n' || c === '\r')) {
-        if (c === '\r' && n === '\n') i++; // CRLF
-        row.push(cur); rows.push(row); row=[]; cur=''; continue;
-      }
-      cur += c;
-    }
-    row.push(cur); rows.push(row);
-
-    // convert to objects using first row as header
-    const header = rows.shift().map(h => h.trim());
-    return rows
-      .filter(r => r.some(v => v.trim() !== ''))
-      .map(r => {
-        const obj = {};
-        header.forEach((h, idx) => obj[h] = (r[idx] ?? '').trim());
-        return obj;
-      });
+  function setStatus(msg) {
+    if (!statusBar) return;
+    statusBar.textContent = (typeof msg === 'string') ? msg : JSON.stringify(msg, null, 2);
   }
 
-  // -------------------- Normalizers -----------------------
-  const ARRAY_FIELDS = ['compliance_flags', 'tags', 'key_points', 'sources'];
-
-  function normalizeRecord(obj) {
-    const out = { ...obj };
-
-    // year -> number if possible
-    if (out.year && /^\d{4}$/.test(String(out.year))) out.year = Number(out.year);
-
-    // split array fields on pipe |
-    ARRAY_FIELDS.forEach(f => {
-      if (out[f] == null || out[f] === '') { out[f] = []; return; }
-      if (Array.isArray(out[f])) return;
-      out[f] = String(out[f]).split('|').map(s => s.trim()).filter(Boolean);
-    });
-
-    // printable -> boolean
-    if (typeof out.printable === 'string') {
-      out.printable = /^(true|1|yes)$/i.test(out.printable.trim());
-    } else if (out.printable == null) {
-      out.printable = true; // default
-    }
-
-    return out;
-  }
-
-  function normalizeRecords(arr) {
-    return arr.map(normalizeRecord);
-  }
-
-  // -------------------- Validation ------------------------
-  const REQUIRED = ['id', 'case_name', 'citation', 'year', 'court', 'jurisdiction', 'summary'];
-
-  function validate(records, allowUpdates, currentIndex) {
-    const errors = [];
-    const seen = new Set();
-
-    records.forEach((r, i) => {
-      // required fields present
-      const missing = REQUIRED.filter(k => {
-        const v = r[k];
-        return v === undefined || v === null || String(v).trim() === '';
-      });
-      if (missing.length) {
-        errors.push(`Row ${i+1}: missing required fields: ${missing.join(', ')}`);
-      }
-
-      // id uniqueness within new batch
-      if (r.id) {
-        if (seen.has(r.id)) errors.push(`Row ${i+1}: duplicate id within import: ${r.id}`);
-        seen.add(r.id);
-      }
-
-      // id collision vs current
-      if (!allowUpdates && r.id && currentIndex.has(r.id)) {
-        errors.push(`Row ${i+1}: id already exists in current dataset (updates disabled): ${r.id}`);
+  // Load current dataset
+  if (btnLoad) {
+    btnLoad.addEventListener('click', async () => {
+      try {
+        setStatus('Loading current dataset…');
+        const res = await fetch(DATA_URL, {cache: 'no-store'});
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        currentData = await res.json();
+        setStatus(`Loaded ${currentData.length} records from live citations.json`);
+      } catch (e) {
+        console.error(e);
+        setStatus(`Failed to load: ${e.message}`);
       }
     });
-
-    return { ok: errors.length === 0, errors };
   }
-
-  function indexById(arr) {
-    const m = new Map();
-    arr.forEach((r, i) => { if (r.id) m.set(r.id, i); });
-    return m;
-  }
-
-  // -------------------- Merge -----------------------------
-  function doMerge(current, incoming, allowUpdates) {
-    const out = current.map(x => ({ ...x })); // clone
-    const idx = indexById(out);
-
-    let added = 0, updated = 0;
-    incoming.forEach(r => {
-      if (r.id && idx.has(r.id)) {
-        if (allowUpdates) {
-          out[idx.get(r.id)] = { ...out[idx.get(r.id)], ...r };
-          updated++;
-        }
-        // else: skip (already validated)
-      } else {
-        out.push(r);
-        added++;
-      }
-    });
-
-    return { merged: out, added, updated };
-  }
-
-  // -------------------- Wire up UI ------------------------
-  // Load current
-  el.btnLoadCurrent?.addEventListener('click', async () => {
-    clear(el.status); clear(el.loadInfo);
-    try {
-      log(`Fetching: ${CURRENT_URL}`);
-      const res = await fetch(CURRENT_URL);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      currentData = await res.json();
-      if (!Array.isArray(currentData)) currentData = [];
-      el.loadInfo.textContent = `Loaded ${currentData.length} records.`;
-      log('Loaded current dataset.');
-    } catch (e) {
-      log(`Load error: ${e.message || e}`);
-    }
-  });
 
   // Paste JSON
-  el.btnPasteJSON?.addEventListener('click', () => {
-    try {
-      const txt = (el.pasteBox?.value || '').trim();
-      if (!txt) { alert('Paste JSON into the box first.'); return; }
-      const parsed = JSON.parse(txt);
-      if (!Array.isArray(parsed)) throw new Error('Pasted JSON must be an array of records.');
-      newData = normalizeRecords(parsed);
-      el.validationReport.textContent = `Pasted ${newData.length} records.`;
-    } catch (e) {
-      el.validationReport.textContent = `Paste/Parse error: ${e.message || e}`;
-    }
-  });
+  if (btnPaste && pasteArea) {
+    btnPaste.addEventListener('click', () => {
+      const text = (pasteArea.value || '').trim();
+      if (!text) { setStatus('Nothing in the paste box.'); return; }
+      try {
+        const parsed = JSON.parse(text);
+        incomingData = Array.isArray(parsed) ? parsed : [parsed];
+        setStatus(`Parsed ${incomingData.length} records from pasted JSON.`);
+      } catch (e) {
+        console.error(e);
+        setStatus('Invalid JSON.');
+      }
+    });
+  }
 
   // Parse CSV
-  el.btnParseCSV?.addEventListener('click', async () => {
-    clear(el.validationReport);
-    const file = el.csvFile?.files?.[0];
-    if (!file) { alert('Choose a CSV file first.'); return; }
-    try {
-      const text = await file.text();
-      const rows = parseCSV(text);
-      if (!rows.length) throw new Error('CSV appears to be empty.');
-      newData = normalizeRecords(rows);
-      el.validationReport.textContent = `Parsed ${newData.length} records from CSV.`;
-    } catch (e) {
-      el.validationReport.textContent = `CSV parse error: ${e.message || e}`;
-    }
-  });
+  if (btnParseCsv && fileCsv) {
+    btnParseCsv.addEventListener('click', () => {
+      const file = fileCsv.files && fileCsv.files[0];
+      if (!file) { setStatus('Choose a CSV first.'); return; }
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const rows = reader.result.split(/\r?\n/).filter(Boolean);
+          if (!rows.length) throw new Error('CSV appears empty');
+          const headers = rows[0].split(',').map(h => h.trim());
+          const need = ['id','case_name','citation','year','court','jurisdiction','summary'];
+          const missing = need.filter(h => !headers.includes(h));
+          if (missing.length) {
+            throw new Error('Missing required headers: ' + missing.join(', '));
+          }
+          const data = rows.slice(1).map(line => {
+            const cells = line.split(',').map(s => s.trim());
+            const obj = {};
+            headers.forEach((h,i) => obj[h] = cells[i] ?? '');
+            // pipe-delimited arrays
+            ['compliance_flags','tags','key_points','sources'].forEach(k => {
+              if (obj[k]) obj[k] = String(obj[k]).split('|').map(s => s.trim()).filter(Boolean);
+            });
+            return obj;
+          });
+          incomingData = data;
+          setStatus(`Parsed ${incomingData.length} records from CSV.`);
+        } catch (e) {
+          console.error(e);
+          setStatus('CSV parse failed: ' + e.message);
+        }
+      };
+      reader.readAsText(file);
+    });
+  }
 
-  // Validate
-  el.btnRunValidation?.addEventListener('click', () => {
-    clear(el.mergeReport);
-    if (!currentData.length) {
-      el.validationReport.textContent = 'Load current dataset first.';
-      return;
-    }
-    if (!newData.length) {
-      el.validationReport.textContent = 'Add new data (paste JSON or parse CSV) before validating.';
-      return;
-    }
-    const allowUpdates = !!el.chkAllowUpdates?.checked;
-    const idx = indexById(currentData);
-    const { ok, errors } = validate(newData, allowUpdates, idx);
-    if (ok) {
-      el.validationReport.textContent = `Validation OK. ${newData.length} record(s) ready.`;
-    } else {
-      el.validationReport.textContent = `Validation FAILED:\n- ` + errors.join('\n- ');
-    }
-  });
+  // Validate (schema-ish)
+  if (btnValidate) {
+    btnValidate.addEventListener('click', () => {
+      if (!incomingData.length) { setStatus('No incoming data to validate.'); return; }
+      const need = ['id','case_name','citation','year','court','jurisdiction','summary'];
+      const errors = [];
+      const seen = new Set();
+      incomingData.forEach((r, idx) => {
+        const miss = need.filter(k => r[k] === undefined || r[k] === null || String(r[k]).trim() === '');
+        if (miss.length) errors.push(`Row ${idx+1} missing: ${miss.join(', ')}`);
+        if (seen.has(r.id)) errors.push(`Duplicate ID in incoming: ${r.id}`);
+        seen.add(r.id);
+      });
+      setStatus(errors.length ? errors.join('\n') : 'Validation OK.');
+    });
+  }
 
-  // Merge
-  el.btnMerge?.addEventListener('click', () => {
-    clear(el.mergeReport);
-    if (!currentData.length || !newData.length) {
-      el.mergeReport.textContent = 'Load current and add new data first.';
-      return;
-    }
-    const allowUpdates = !!el.chkAllowUpdates?.checked;
-    const idx = indexById(currentData);
-    const { ok, errors } = validate(newData, allowUpdates, idx);
-    if (!ok) {
-      el.mergeReport.textContent = 'Please fix validation errors before merging.';
-      return;
-    }
-    const res = doMerge(currentData, newData, allowUpdates);
-    merged = res.merged;
-    el.mergeReport.textContent = `Merged. Added: ${res.added}, Updated: ${res.updated}. Total: ${merged.length}.`;
-    if (el.btnDownload) el.btnDownload.disabled = false;
-  });
+  // Merge in-memory
+  if (btnMerge) {
+    btnMerge.addEventListener('click', () => {
+      if (!currentData.length) { setStatus('Load current dataset first.'); return; }
+      if (!incomingData.length) { setStatus('Nothing to merge.'); return; }
+      const byId = new Map(currentData.map(r => [r.id, r]));
+      const updatesAllowed = !!(allowUpd && allowUpd.checked);
+      let adds = 0, upds = 0, rejects = 0;
+      incomingData.forEach(r => {
+        if (byId.has(r.id)) {
+          if (updatesAllowed) { byId.set(r.id, {...byId.get(r.id), ...r}); upds++; }
+          else { rejects++; }
+        } else { byId.set(r.id, r); adds++; }
+      });
+      merged = [...byId.values()];
+      setStatus(`Merge complete. Adds: ${adds}, Updates: ${upds}, Rejected dupes: ${rejects}. Total: ${merged.length}`);
+    });
+  }
 
-  // Download
-  el.btnDownload?.addEventListener('click', () => {
-    if (!merged || !merged.length) {
-      alert('Nothing to download. Merge first.');
-      return;
-    }
-    const blob = new Blob([JSON.stringify(merged, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'citations.json';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  });
-
-})();
+  // Download merged file
+  if (btnDownload) {
+    btnDownload.addEventListener('click', () => {
+      if (!merged || !merged.length) { setStatus('Nothing merged yet.'); return; }
+      const blob = new Blob([JSON.stringify(merged, null, 2)], {type: 'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'citations.json';
+      document.body.appendChild(a);
+      a.click();
+      URL.revokeObjectURL(url);
+      a.remove();
+      setStatus('Downloaded merged citations.json — commit it to /docs/data/citations/citations.json');
+    });
+  }
+});
+</script>
