@@ -1,169 +1,262 @@
 (() => {
-  // ---- State ----
-  let currentData = []; // currently loaded citations.json
-  let newData = [];     // new records (from JSON or CSV)
-  let merged = null;    // merged result after validation/merge
+  // -------------------- Config & State --------------------
+  const CURRENT_URL = '../data/citations/citations.json?v=' + Date.now();
 
-  // ---- Helpers ----
+  let currentData = [];   // loaded from repo
+  let newData = [];       // from paste JSON or parsed CSV
+  let merged = null;      // result of merge
+
+  // -------------------- DOM helpers -----------------------
   const $ = (sel) => document.querySelector(sel);
-  const logNode = $('#log');
-  function log(msg){
-    if (!logNode) return;
-    logNode.textContent += (typeof msg === 'string' ? msg : JSON.stringify(msg, null, 2)) + "\n";
-  }
-  function clearLog(){ if (logNode) logNode.textContent = ''; }
 
-  function requiredFieldsPresent(obj){
-    const req = ['id','case_name','citation','year','court','jurisdiction','summary'];
-    const missing = req.filter(k => obj[k] === undefined || obj[k] === null || String(obj[k]).trim() === '');
-    return { ok: missing.length === 0, missing };
-  }
-  function splitPipesToArray(v){
-    if (Array.isArray(v)) return v.map(s => String(s).trim()).filter(Boolean);
-    if (typeof v === 'string') return v.split('|').map(s => s.trim()).filter(Boolean);
-    return [];
+  const el = {
+    btnLoadCurrent:     $('#btnLoadCurrent'),
+    loadInfo:           $('#loadInfo'),
+    btnPasteJSON:       $('#btnPasteJSON'),
+    csvFile:            $('#csvFile'),
+    btnParseCSV:        $('#btnParseCSV'),
+    pasteBox:           $('#pasteBox'),
+    chkAllowUpdates:    $('#chkAllowUpdates'),
+    btnRunValidation:   $('#btnRunValidation'),
+    validationReport:   $('#validationReport'),
+    btnMerge:           $('#btnMerge'),
+    btnDownload:        $('#btnDownload'),
+    mergeReport:        $('#mergeReport'),
+    status:             $('#status')
+  };
+
+  const log = (msg) => {
+    if (!el.status) return;
+    const line = (typeof msg === 'string') ? msg : JSON.stringify(msg, null, 2);
+    el.status.textContent += line + '\n';
+  };
+  const clear = (node) => { if (node) node.textContent = ''; };
+
+  // -------------------- CSV parsing (robust enough) -------
+  function parseCSV(text) {
+    // Basic RFC4180-ish parser to handle quotes/commas/newlines.
+    const rows = [];
+    let cur = '', row = [], inQuotes = false;
+
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i], n = text[i+1];
+
+      if (c === '"' && inQuotes && n === '"') { cur += '"'; i++; continue; }
+      if (c === '"') { inQuotes = !inQuotes; continue; }
+
+      if (!inQuotes && (c === ',')) { row.push(cur); cur=''; continue; }
+      if (!inQuotes && (c === '\n' || c === '\r')) {
+        if (c === '\r' && n === '\n') i++; // CRLF
+        row.push(cur); rows.push(row); row=[]; cur=''; continue;
+      }
+      cur += c;
+    }
+    row.push(cur); rows.push(row);
+
+    // convert to objects using first row as header
+    const header = rows.shift().map(h => h.trim());
+    return rows
+      .filter(r => r.some(v => v.trim() !== ''))
+      .map(r => {
+        const obj = {};
+        header.forEach((h, idx) => obj[h] = (r[idx] ?? '').trim());
+        return obj;
+      });
   }
 
-  // ---- Wire up buttons (null-safe) ----
-  const btnLoadCurrent = $('#btnLoadCurrent');
-  const btnPasteJSON   = $('#btnPasteJSON');
-  const csvInput       = $('#csvFile');
-  const btnParseCSV    = $('#btnParseCSV');
-  const btnValidate    = $('#btnValidate');
-  const btnMerge       = $('#btnMerge');
-  const btnDownload    = $('#btnDownload');
-  const jsonPaste      = $('#jsonPaste');
-  const allowUpdates   = $('#allowUpdates');
+  // -------------------- Normalizers -----------------------
+  const ARRAY_FIELDS = ['compliance_flags', 'tags', 'key_points', 'sources'];
 
-  // Load current dataset
-  if (btnLoadCurrent) {
-    btnLoadCurrent.addEventListener('click', async () => {
-      clearLog();
-      try{
-        const r = await fetch('../data/citations/citations.json', { cache:'no-store' });
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        currentData = await r.json();
-        log(`Loaded current citations: ${currentData.length} records`);
-      }catch(err){
-        log(`Error loading current dataset: ${err.message}`);
+  function normalizeRecord(obj) {
+    const out = { ...obj };
+
+    // year -> number if possible
+    if (out.year && /^\d{4}$/.test(String(out.year))) out.year = Number(out.year);
+
+    // split array fields on pipe |
+    ARRAY_FIELDS.forEach(f => {
+      if (out[f] == null || out[f] === '') { out[f] = []; return; }
+      if (Array.isArray(out[f])) return;
+      out[f] = String(out[f]).split('|').map(s => s.trim()).filter(Boolean);
+    });
+
+    // printable -> boolean
+    if (typeof out.printable === 'string') {
+      out.printable = /^(true|1|yes)$/i.test(out.printable.trim());
+    } else if (out.printable == null) {
+      out.printable = true; // default
+    }
+
+    return out;
+  }
+
+  function normalizeRecords(arr) {
+    return arr.map(normalizeRecord);
+  }
+
+  // -------------------- Validation ------------------------
+  const REQUIRED = ['id', 'case_name', 'citation', 'year', 'court', 'jurisdiction', 'summary'];
+
+  function validate(records, allowUpdates, currentIndex) {
+    const errors = [];
+    const seen = new Set();
+
+    records.forEach((r, i) => {
+      // required fields present
+      const missing = REQUIRED.filter(k => {
+        const v = r[k];
+        return v === undefined || v === null || String(v).trim() === '';
+      });
+      if (missing.length) {
+        errors.push(`Row ${i+1}: missing required fields: ${missing.join(', ')}`);
+      }
+
+      // id uniqueness within new batch
+      if (r.id) {
+        if (seen.has(r.id)) errors.push(`Row ${i+1}: duplicate id within import: ${r.id}`);
+        seen.add(r.id);
+      }
+
+      // id collision vs current
+      if (!allowUpdates && r.id && currentIndex.has(r.id)) {
+        errors.push(`Row ${i+1}: id already exists in current dataset (updates disabled): ${r.id}`);
       }
     });
+
+    return { ok: errors.length === 0, errors };
   }
+
+  function indexById(arr) {
+    const m = new Map();
+    arr.forEach((r, i) => { if (r.id) m.set(r.id, i); });
+    return m;
+  }
+
+  // -------------------- Merge -----------------------------
+  function doMerge(current, incoming, allowUpdates) {
+    const out = current.map(x => ({ ...x })); // clone
+    const idx = indexById(out);
+
+    let added = 0, updated = 0;
+    incoming.forEach(r => {
+      if (r.id && idx.has(r.id)) {
+        if (allowUpdates) {
+          out[idx.get(r.id)] = { ...out[idx.get(r.id)], ...r };
+          updated++;
+        }
+        // else: skip (already validated)
+      } else {
+        out.push(r);
+        added++;
+      }
+    });
+
+    return { merged: out, added, updated };
+  }
+
+  // -------------------- Wire up UI ------------------------
+  // Load current
+  el.btnLoadCurrent?.addEventListener('click', async () => {
+    clear(el.status); clear(el.loadInfo);
+    try {
+      log(`Fetching: ${CURRENT_URL}`);
+      const res = await fetch(CURRENT_URL);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      currentData = await res.json();
+      if (!Array.isArray(currentData)) currentData = [];
+      el.loadInfo.textContent = `Loaded ${currentData.length} records.`;
+      log('Loaded current dataset.');
+    } catch (e) {
+      log(`Load error: ${e.message || e}`);
+    }
+  });
 
   // Paste JSON
-  if (btnPasteJSON) {
-    btnPasteJSON.addEventListener('click', () => {
-      if (!jsonPaste) return;
-      const raw = jsonPaste.value.trim();
-      if (!raw) {
-        log('Paste JSON into the box first.');
-        return;
-      }
-      try{
-        const parsed = JSON.parse(raw);
-        if (!Array.isArray(parsed)) throw new Error('JSON must be an array of records.');
-        newData = parsed;
-        log(`Parsed JSON: ${newData.length} records`);
-      }catch(err){
-        log(`JSON parse error: ${err.message}`);
-      }
-    });
-  }
+  el.btnPasteJSON?.addEventListener('click', () => {
+    try {
+      const txt = (el.pasteBox?.value || '').trim();
+      if (!txt) { alert('Paste JSON into the box first.'); return; }
+      const parsed = JSON.parse(txt);
+      if (!Array.isArray(parsed)) throw new Error('Pasted JSON must be an array of records.');
+      newData = normalizeRecords(parsed);
+      el.validationReport.textContent = `Pasted ${newData.length} records.`;
+    } catch (e) {
+      el.validationReport.textContent = `Paste/Parse error: ${e.message || e}`;
+    }
+  });
 
-  // Parse CSV (simple)
-  if (btnParseCSV && csvInput) {
-    btnParseCSV.addEventListener('click', async () => {
-      clearLog();
-      const file = csvInput.files && csvInput.files[0];
-      if (!file) { log('Choose a CSV file first.'); return; }
-
+  // Parse CSV
+  el.btnParseCSV?.addEventListener('click', async () => {
+    clear(el.validationReport);
+    const file = el.csvFile?.files?.[0];
+    if (!file) { alert('Choose a CSV file first.'); return; }
+    try {
       const text = await file.text();
-      const rows = text.split(/\r?\n/).filter(Boolean);
-      if (rows.length < 2) { log('CSV has no data rows.'); return; }
-
-      const headers = rows[0].split(',').map(h => h.trim());
-      const out = [];
-      for (let i=1;i<rows.length;i++){
-        const vals = rows[i].split(',').map(v => v.trim());
-        const obj = {};
-        headers.forEach((h, idx) => { obj[h] = vals[idx] ?? ''; });
-        // normalize arrays for a few known fields if pipe-separated
-        obj.compliance_flags = splitPipesToArray(obj.compliance_flags || obj.flags || '');
-        obj.key_points       = splitPipesToArray(obj.key_points || '');
-        obj.tags             = splitPipesToArray(obj.tags || '');
-        out.push(obj);
-      }
-      newData = out;
-      log(`Parsed CSV: ${newData.length} records`);
-    });
-  }
+      const rows = parseCSV(text);
+      if (!rows.length) throw new Error('CSV appears to be empty.');
+      newData = normalizeRecords(rows);
+      el.validationReport.textContent = `Parsed ${newData.length} records from CSV.`;
+    } catch (e) {
+      el.validationReport.textContent = `CSV parse error: ${e.message || e}`;
+    }
+  });
 
   // Validate
-  if (btnValidate) {
-    btnValidate.addEventListener('click', () => {
-      clearLog();
-      if (!currentData.length) return log('Load current dataset first.');
-      if (!newData.length)    return log('Add new data via JSON or CSV first.');
+  el.btnRunValidation?.addEventListener('click', () => {
+    clear(el.mergeReport);
+    if (!currentData.length) {
+      el.validationReport.textContent = 'Load current dataset first.';
+      return;
+    }
+    if (!newData.length) {
+      el.validationReport.textContent = 'Add new data (paste JSON or parse CSV) before validating.';
+      return;
+    }
+    const allowUpdates = !!el.chkAllowUpdates?.checked;
+    const idx = indexById(currentData);
+    const { ok, errors } = validate(newData, allowUpdates, idx);
+    if (ok) {
+      el.validationReport.textContent = `Validation OK. ${newData.length} record(s) ready.`;
+    } else {
+      el.validationReport.textContent = `Validation FAILED:\n- ` + errors.join('\n- ');
+    }
+  });
 
-      let okCount = 0, bad = 0;
-      for (const rec of newData){
-        const { ok, missing } = requiredFieldsPresent(rec);
-        if (!ok){ bad++; log({ id: rec.id || '(no id)', error: 'Missing required fields', missing }); }
-        else okCount++;
-      }
-      log(`Validation complete: OK=${okCount}, Errors=${bad}`);
-      if (bad === 0) log('You can now Merge into Current.');
-    });
-  }
+  // Merge
+  el.btnMerge?.addEventListener('click', () => {
+    clear(el.mergeReport);
+    if (!currentData.length || !newData.length) {
+      el.mergeReport.textContent = 'Load current and add new data first.';
+      return;
+    }
+    const allowUpdates = !!el.chkAllowUpdates?.checked;
+    const idx = indexById(currentData);
+    const { ok, errors } = validate(newData, allowUpdates, idx);
+    if (!ok) {
+      el.mergeReport.textContent = 'Please fix validation errors before merging.';
+      return;
+    }
+    const res = doMerge(currentData, newData, allowUpdates);
+    merged = res.merged;
+    el.mergeReport.textContent = `Merged. Added: ${res.added}, Updated: ${res.updated}. Total: ${merged.length}.`;
+    if (el.btnDownload) el.btnDownload.disabled = false;
+  });
 
-  // Merge (in memory)
-  if (btnMerge) {
-    btnMerge.addEventListener('click', () => {
-      clearLog();
-      if (!currentData.length) return log('Load current dataset first.');
-      if (!newData.length)     return log('Add new data first.');
+  // Download
+  el.btnDownload?.addEventListener('click', () => {
+    if (!merged || !merged.length) {
+      alert('Nothing to download. Merge first.');
+      return;
+    }
+    const blob = new Blob([JSON.stringify(merged, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'citations.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  });
 
-      const allow = !!(allowUpdates && allowUpdates.checked);
-      const byId = new Map(currentData.map(r => [String(r.id), r]));
-      let rejected = 0, updated = 0, inserted = 0;
-
-      for (const rec of newData) {
-        const id = String(rec.id || '').trim();
-        if (!id){ rejected++; continue; }
-        if (byId.has(id)) {
-          if (allow){
-            byId.set(id, {...byId.get(id), ...rec}); // shallow merge update
-            updated++;
-          } else {
-            rejected++;
-          }
-        } else {
-          byId.set(id, rec);
-          inserted++;
-        }
-      }
-
-      merged = Array.from(byId.values());
-      log({ inserted, updated, rejected, total: merged.length });
-      if (btnDownload) btnDownload.disabled = !merged || merged.length === 0;
-      log('Merged in memory. Click "Download merged citations.json" to save.');
-    });
-  }
-
-  // Download merged
-  if (btnDownload) {
-    btnDownload.addEventListener('click', () => {
-      if (!merged || !merged.length) { log('Nothing to download.'); return; }
-      const blob = new Blob([JSON.stringify(merged, null, 2)], {type:'application/json'});
-      const url  = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'citations.json';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-      log('Download started: citations.json');
-    });
-  }
 })();
