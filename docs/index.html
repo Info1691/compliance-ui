@@ -16,7 +16,7 @@
     <div class="controls">
       <label for="breachFilter">Filter by Breach Type:</label>
       <select id="breachFilter">
-        <option value="all">All</option>
+        <option value="">All</option>
       </select>
       <input type="text" id="searchInput" placeholder="Search by keyword..." />
       <button id="openDrawerBtn">Add/Edit Citation</button>
@@ -25,35 +25,36 @@
     <div id="citationsContainer">Loading citations...</div>
   </main>
 
+  <!-- Drawer -->
   <div id="drawer" class="drawer">
     <div class="drawer-header">
       <h2>Citation Entry</h2>
-      <button id="closeDrawerBtn">×</button>
+      <button id="closeDrawerBtn" class="close-btn">×</button>
     </div>
     <form id="citationForm">
-      <div class="form-columns">
-        <input type="text" placeholder="ID" id="id" />
-        <input type="text" placeholder="Case Name" id="case_name" />
-        <input type="text" placeholder="Citation" id="citation" />
-        <input type="text" placeholder="Year" id="year" />
-        <input type="text" placeholder="Court" id="court" />
-        <input type="text" placeholder="Jurisdiction" id="jurisdiction" />
-        <input type="text" placeholder="Summary" id="summary" />
-        <input type="text" placeholder="Legal Principle" id="legal_principle" />
-        <input type="text" placeholder="Holding" id="holding" />
-        <input type="text" placeholder="Compliance Flags (comma-separated)" id="compliance_flags" />
-        <input type="text" placeholder="Key Points (comma-separated)" id="key_points" />
-        <input type="text" placeholder="Tags (comma-separated)" id="tags" />
-        <input type="text" placeholder="Observed Conduct" id="observed_conduct" />
-        <input type="text" placeholder="Anomaly Detected" id="anomaly_detected" />
-        <input type="text" placeholder="Breached Law or Rule" id="breached_law_or_rule" />
-        <input type="text" placeholder="Authority Basis" id="authority_basis" />
-        <input type="text" placeholder="Canonical Breach Tag" id="canonical_breach_tag" />
-        <input type="text" placeholder="Case Link (optional)" id="case_link" />
-        <textarea placeholder="Full Case Text (optional)" id="full_case_text"></textarea>
-        <label><input type="checkbox" id="printable" /> Printable</label>
-        <button type="submit" id="validateBtn">Validate & Save</button>
+      <div class="form-grid">
+        <input type="text" id="id" placeholder="ID" />
+        <input type="text" id="case_name" placeholder="Case Name" />
+        <input type="text" id="citation" placeholder="Citation" />
+        <input type="text" id="year" placeholder="Year" />
+        <input type="text" id="court" placeholder="Court" />
+        <input type="text" id="jurisdiction" placeholder="Jurisdiction" />
+        <input type="text" id="summary" placeholder="Summary" />
+        <input type="text" id="legal_principle" placeholder="Legal Principle" />
+        <input type="text" id="holding" placeholder="Holding" />
+        <input type="text" id="compliance_flags" placeholder="Compliance Flags (comma-separated)" />
+        <input type="text" id="key_points" placeholder="Key Points (comma-separated)" />
+        <input type="text" id="tags" placeholder="Tags (comma-separated)" />
+        <input type="text" id="observed_conduct" placeholder="Observed Conduct" />
+        <input type="text" id="anomaly_detected" placeholder="Anomaly Detected" />
+        <input type="text" id="breached_law_or_rule" placeholder="Breached Law or Rule" />
+        <input type="text" id="authority_basis" placeholder="Authority Basis" />
+        <input type="text" id="canonical_breach_tag" placeholder="Canonical Breach Tag" />
+        <input type="text" id="case_link" placeholder="Case Link (optional)" />
+        <textarea id="full_case_text" placeholder="Full Case Text (optional)"></textarea>
       </div>
+      <label class="checkbox"><input type="checkbox" id="printable" /> Printable</label>
+      <button type="submit" id="validateBtn">Validate & Save</button>
     </form>
   </div>
 
