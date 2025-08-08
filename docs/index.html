@@ -1,63 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Compliance Citation Viewer</title>
-    <link rel="stylesheet" href="../style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Compliance Citation Viewer</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<header>
-    <img src="../logo.png" alt="Blue Chip Consultancy Logo" class="logo">
-    <h1>Compliance Citation Viewer</h1>
-</header>
+  <header class="app-header">
+    <div class="brand">
+      <img src="logo.png" alt="Logo" class="logo"/>
+      <h1>Compliance Citation Viewer</h1>
+    </div>
+    <nav class="header-actions">
+      <a class="btn link" href="/compliance-ui/bulk/">Go to Bulk Import</a>
+    </nav>
+  </header>
 
-<main>
-    <!-- Navigation to Bulk Import -->
-    <a href="https://info1691.github.io/compliance-ui/bulk/" class="nav-button">Go to Bulk Import</a>
+  <section class="controls">
+    <label for="breachFilter">Filter by Breach Type:</label>
+    <select id="breachFilter">
+      <option>Loading...</option>
+    </select>
 
-    <!-- Search and Filter -->
-    <div class="filter-bar">
-        <select id="breachFilter"><option>Loading...</option></select>
-        <input type="text" id="searchBox" placeholder="Search by keyword...">
-        <button id="searchButton">Search</button>
-        <button id="addCitationButton">Add/Edit Citation</button>
+    <form id="searchForm" class="search">
+      <input id="keywordSearch" type="search" placeholder="Search by keyword…" />
+      <button id="searchBtn" type="submit" class="btn">Search</button>
+    </form>
+
+    <button id="openDrawerBtn" type="button" class="btn">Add/Edit Citation</button>
+  </section>
+
+  <main id="citationsContainer">Loading citations…</main>
+
+  <!-- Drawer (left slide-out) -->
+  <aside id="drawer" class="drawer" aria-hidden="true">
+    <div class="drawer-header">
+      <h2>Add Citations</h2>
+      <button id="closeDrawerBtn" type="button" class="close-btn" aria-label="Close">×</button>
     </div>
 
-    <!-- Citations Container -->
-    <div id="citationsContainer">Loading citations...</div>
+    <form id="citationForm" class="drawer-form" onsubmit="return false;">
+      <div class="grid-2">
+        <input id="f-id" placeholder="ID (unique)" />
+        <input id="f-case_name" placeholder="Case Name" />
+        <input id="f-citation" placeholder="Neutral Citation" />
+        <input id="f-year" placeholder="Year" inputmode="numeric" />
+        <input id="f-court" placeholder="Court" />
+        <input id="f-jurisdiction" placeholder="Jurisdiction" />
+        <input id="f-legal_principle" placeholder="Legal Principle" />
+        <input id="f-holding" placeholder="Holding" />
+      </div>
 
-    <!-- Citation Editor Drawer -->
-    <div id="drawer">
-        <button id="closeDrawer">×</button>
-        <h2>Add Citations</h2>
-        <form id="citationForm">
-            <input name="id" placeholder="ID (unique)">
-            <input name="case_name" placeholder="Case Name">
-            <input name="citation" placeholder="Neutral Citation">
-            <input name="year" placeholder="Year">
-            <input name="court" placeholder="Court">
-            <input name="jurisdiction" placeholder="Jurisdiction">
-            <textarea name="summary" placeholder="Summary"></textarea>
-            <input name="legal_principle" placeholder="Legal Principle">
-            <input name="holding" placeholder="Holding">
-            <input name="compliance_flags" placeholder="Compliance Flags (comma-separated)">
-            <input name="key_points" placeholder="Key Points (comma-separated)">
-            <input name="tags" placeholder="Tags (comma-separated)">
-            <input name="observed_conduct" placeholder="Observed Conduct">
-            <input name="anomaly_detected" placeholder="Anomaly Detected">
-            <input name="breached_law_or_rule" placeholder="Breached Law or Rule">
-            <input name="authority_basis" placeholder="Authority Basis">
-            <input name="canonical_breach_tag" placeholder="Canonical Breach Tag">
-            <input name="case_link" placeholder="Case Link (optional)">
-            <textarea name="full_case_text" placeholder="Full Case Text (optional)"></textarea>
-            <label>
-                <input type="checkbox" name="printable"> Printable
-            </label>
-            <button type="submit">Validate & Save</button>
-        </form>
-    </div>
-</main>
+      <textarea id="f-summary" placeholder="Summary"></textarea>
 
-<script src="main.js"></script>
+      <div class="grid-2">
+        <input id="f-compliance_flags" placeholder="Compliance Flags (comma-separated)" />
+        <input id="f-key_points" placeholder="Key Points (comma-separated)" />
+        <input id="f-tags" placeholder="Tags (comma-separated)" />
+        <input id="f-observed_conduct" placeholder="Observed Conduct" />
+        <input id="f-anomaly_detected" placeholder="Anomaly Detected" />
+        <input id="f-breached_law_or_rule" placeholder="Breached Law or Rule" />
+        <input id="f-authority_basis" placeholder="Authority Basis" />
+        <input id="f-canonical_breach_tag" placeholder="Canonical Breach Tag" />
+        <input id="f-case_link" placeholder="Case Link (optional)" />
+      </div>
+
+      <label class="checkbox">
+        <input id="f-printable" type="checkbox" /> Printable
+      </label>
+
+      <button id="btnValidate" class="btn primary" type="button">Validate &amp; Save</button>
+    </form>
+  </aside>
+
+  <script src="main.js"></script>
 </body>
 </html>
