@@ -1,57 +1,39 @@
 :root{
-  --blue:#1f4e8c;
-  --blue-dark:#173b68;
-  --bg:#f5f7fb;
-  --panel:#ffffff;
-  --text:#1a1a1a;
+  --blue:#184b86;
+  --blue-dark:#143e6f;
+  --gray:#f5f6f8;
   --muted:#6b7280;
-  --line:#e5e7eb;
+  --border:#e5e7eb;
 }
 
 *{box-sizing:border-box}
-html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
+html,body{margin:0;padding:0;background:#fff;color:#111;font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
 
-.app-header{
-  position:sticky;top:0;z-index:10;
+.topbar{
   display:flex;align-items:center;justify-content:space-between;
-  padding:14px 18px;background:var(--blue);color:#fff;box-shadow:0 2px 0 rgba(0,0,0,.05)
+  background:var(--blue);color:#fff;padding:.75rem 1rem;
 }
-.brand{display:flex;align-items:center;gap:12px}
-.logo{height:40px;width:auto;display:block;background:#fff;border-radius:4px;padding:2px}
-.app-header h1{margin:0;font-size:20px;font-weight:700;letter-spacing:.2px}
-.top-links a{color:#dbeafe;text-decoration:none;font-weight:600}
-.top-links a:hover{text-decoration:underline}
+.topbar .brand{display:flex;align-items:center;gap:.75rem;font-weight:700}
+.topbar .brand img{height:36px;width:auto;background:#fff;border-radius:4px;padding:4px}
+.topbar .back-link{color:#cde3ff;text-decoration:none;font-weight:600}
+.topbar .back-link:hover{text-decoration:underline}
 
-.container{max-width:980px;margin:22px auto;padding:0 16px}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px 16px 18px;margin:0 0 16px}
-.panel h2{margin:0 0 10px;font-size:18px}
-.hint{margin:8px 0 0;color:var(--muted);font-size:14px}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:8px 0}
-
-.btn{
-  appearance:none;border:0;border-radius:8px;padding:8px 12px;
-  background:var(--blue);color:#fff;font-weight:600;cursor:pointer
+.container{max-width:1000px;margin:1rem auto;padding:0 1rem}
+.card{
+  background:#fff;border:1px solid var(--border);border-radius:8px;
+  padding:1rem;margin-bottom:1rem;box-shadow:0 1px 0 rgba(0,0,0,.03);
 }
+.btn{background:var(--blue);color:#fff;border:none;border-radius:6px;padding:.5rem .8rem;cursor:pointer}
 .btn:hover{background:var(--blue-dark)}
-.btn:disabled{opacity:.5;cursor:not-allowed}
-.btn-light{background:#e5e7eb;color:#111}
-.btn-light:hover{background:#d1d5db}
-
-.codearea{
-  width:100%;min-height:160px;margin-top:8px;
-  font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-  border:1px solid var(--line);border-radius:8px;padding:10px;background:#fff;resize:vertical
+.btn-light{background:#eef2f7;color:#111;border:1px solid var(--border)}
+.btn-row{display:flex;gap:.5rem;flex-wrap:wrap}
+.muted{color:var(--muted);margin-top:.5rem}
+.checkbox{display:flex;align-items:center;gap:.5rem;margin:.5rem 0}
+textarea{
+  width:100%;border:1px solid var(--border);border-radius:6px;padding:.6rem;
+  font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background:#fff;resize:vertical;margin-top:.6rem
 }
-
-.status{margin-top:8px;color:var(--muted);font-size:14px}
-.report{margin-top:10px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px}
-
-.chk{display:flex;align-items:center;gap:8px;margin:10px 0}
-
-dialog::backdrop{background:rgba(0,0,0,.35)}
-.modal{display:flex;flex-direction:column;gap:10px;min-width:min(720px,95vw)}
-.modal-actions{display:flex;gap:10px;justify-content:flex-end}
-
-@media (max-width:700px){
-  .modal{min-width:95vw}
-}
+.status{margin-top:.5rem;white-space:pre-wrap}
+.hidden{display:none}
+pre{white-space:pre-wrap;word-wrap:break-word;background:var(--gray);border:1px solid var(--border);padding:.75rem;border-radius:6px}
