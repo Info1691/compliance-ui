@@ -2,99 +2,109 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Compliance Citation Viewer</title>
-  <link rel="stylesheet" href="style.css"/>
+  <!-- paths are relative to /docs/citations/ -->
+  <link rel="stylesheet" href="../style.css" />
 </head>
 <body>
   <header>
-    <img src="logo.png" alt="Logo" class="logo"/>
+    <!-- logo path is one level up from /docs/citations/ -->
+    <img src="../logo.png" alt="Logo" class="logo" />
     <h1>Compliance Citation Viewer</h1>
   </header>
 
   <div class="controls">
     <label for="breachFilter">Filter by Breach Type:</label>
-    <select id="breachFilter"><option>Loading…</option></select>
-    <input id="keywordSearch" type="text" placeholder="Search by keyword…"/>
+    <select id="breachFilter">
+      <option>Loading...</option>
+    </select>
+
+    <input id="keywordSearch" type="text" placeholder="Search by keyword..." />
+
+    <!-- existing drawer button -->
     <button id="openDrawerBtn" type="button">Add/Edit Citation</button>
+
+    <!-- NEW: go to bulk import -->
+    <button id="goBulkBtn" type="button" class="secondary-btn">Go to Bulk Import</button>
   </div>
 
   <main id="citationsContainer">
-    <p>Loading citations…</p>
+    <p>Loading citations...</p>
   </main>
 
   <!-- Drawer (left slide-out) -->
   <aside id="drawer" class="drawer" aria-hidden="true">
     <div class="drawer-header">
-      <h2>Add Citation</h2>
+      <h2>Add Citations</h2>
       <button id="closeDrawerBtn" class="close-btn" type="button" aria-label="Close">×</button>
     </div>
 
     <form id="citationForm" class="drawer-form" onsubmit="return false;">
-      <input id="f-id" placeholder="ID (unique)" />
-      <input id="f-case_name" placeholder="Case Name" />
-      <input id="f-citation" placeholder="Neutral Citation" />
       <div class="grid-two">
+        <input id="f-id" placeholder="ID (unique)" />
+        <input id="f-case_name" placeholder="Case Name" />
+      </div>
+
+      <div class="grid-two">
+        <input id="f-citation" placeholder="Neutral Citation" />
         <input id="f-year" placeholder="Year" inputmode="numeric" />
-        <input id="f-court" placeholder="Court" />
       </div>
+
       <div class="grid-two">
+        <input id="f-court" placeholder="Court" />
         <input id="f-jurisdiction" placeholder="Jurisdiction" />
-        <input id="f-canonical_breach_tag" placeholder="Canonical Breach Tag" />
       </div>
+
       <textarea id="f-summary" placeholder="Summary"></textarea>
       <input id="f-legal_principle" placeholder="Legal Principle" />
       <input id="f-holding" placeholder="Holding" />
-      <input id="f-compliance_flags" placeholder="Compliance Flags (comma-separated)" />
-      <input id="f-key_points" placeholder="Key Points (comma-separated)" />
-      <input id="f-tags" placeholder="Tags (comma-separated)" />
-      <input id="f-observed_conduct" placeholder="Observed Conduct" />
-      <input id="f-anomaly_detected" placeholder="Anomaly Detected" />
-      <input id="f-breached_law_or_rule" placeholder="Breached Law or Rule" />
-      <input id="f-authority_basis" placeholder="Authority Basis" />
-      <input id="f-case_link" placeholder="Case Link (optional)" />
-      <textarea id="f-full_case_text" placeholder="Full Case Text (optional)"></textarea>
 
-      <!-- Sources (verified URLs; comma or newline separated) -->
-      <label class="small-label">Sources (verified URLs)</label>
-      <textarea id="f-sources" placeholder="https://www.jerseylaw.je/..., https://www.bailii.org/..."></textarea>
-
-      <!-- Audit (non-displayed) -->
       <div class="grid-two">
-        <input id="f-added_by" placeholder="Added By (name/initials)" />
-        <select id="f-source_confidence">
-          <option value="">Source Confidence (optional)</option>
-          <option value="verified">verified</option>
-          <option value="law-firm">law-firm</option>
-          <option value="secondary">secondary</option>
-        </select>
+        <input id="f-compliance_flags" placeholder="Compliance Flags (comma-separated)" />
+        <input id="f-key_points" placeholder="Key Points (comma-separated)" />
       </div>
 
-      <button id="btnValidate" class="primary" type="button">Validate & Preview</button>
+      <div class="grid-two">
+        <input id="f-tags" placeholder="Tags (comma-separated)" />
+        <input id="f-observed_conduct" placeholder="Observed Conduct" />
+      </div>
+
+      <div class="grid-two">
+        <input id="f-anomaly_detected" placeholder="Anomaly Detected" />
+        <input id="f-breached_law_or_rule" placeholder="Breached Law or Rule" />
+      </div>
+
+      <div class="grid-two">
+        <input id="f-authority_basis" placeholder="Authority Basis" />
+        <input id="f-canonical_breach_tag" placeholder="Canonical Breach Tag" />
+      </div>
+
+      <div class="grid-two">
+        <input id="f-case_link" placeholder="Case Link (optional)" />
+        <input id="f-printable" type="checkbox" /> <label for="f-printable">Printable</label>
+      </div>
+
+      <textarea id="f-full_case_text" placeholder="Full Case Text (optional)"></textarea>
+
+      <button id="validateAndSaveBtn" class="primary-btn" type="button">Validate &amp; Save</button>
     </form>
   </aside>
 
-  <!-- Preview Modal -->
-  <div id="previewModal" class="modal" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-head">
-        <h3>Review JSON (read-only)</h3>
-        <button id="modalClose" class="close-btn" aria-label="Close">×</button>
-      </div>
-      <pre id="previewJson" class="codeblock">{}</pre>
-      <div class="modal-actions">
-        <button id="modalConfirm" class="primary">Add to List</button>
-        <button id="modalCancel" class="secondary">Cancel</button>
-      </div>
-      <p class="hint">No repo writes. After adding, click “Download updated citations.json”.</p>
-    </div>
-  </div>
+  <!-- page JS (works for citations viewer + drawer); path is one level up -->
+  <script src="../main.js"></script>
 
-  <!-- Download bar -->
-  <div id="downloadBar" class="download-bar" hidden>
-    <button id="btnDownload" class="primary">Download updated citations.json</button>
-  </div>
-
-  <script src="main.js"></script>
+  <!-- Tiny inline script just to wire the new button without touching main.js -->
+  <script>
+    (function () {
+      const goBtn = document.getElementById('goBulkBtn');
+      if (goBtn) {
+        goBtn.addEventListener('click', () => {
+          // from /docs/citations/ to /docs/bulk/
+          window.location.href = '../bulk/';
+        });
+      }
+    })();
+  </script>
 </body>
 </html>
