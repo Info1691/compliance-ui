@@ -1,207 +1,33 @@
-:root {
-  --bb-blue: #1f4d8f;
-  --bb-blue-dark: #163a6a;
-  --bb-blue-verydark: #0f2a4a;
-  --bb-gray-100: #f6f7fb;
-  --bb-gray-150: #eef1f6;
-  --bb-gray-200: #e5e9f2;
-  --bb-gray-400: #cdd6e4;
-  --bb-text: #1b2430;
+/* Core layout & branding already present in your file.
+   Add/replace the blocks below. */
 
-  /* Buttons */
-  --bb-btn: #1f4d8f;
-  --bb-btn-hover: #173a6c;
-
-  /* Drawer width (requested 480px) */
-  --drawer-w: 480px;
-}
-
-/* Reset-ish */
-* { box-sizing: border-box; }
-html, body {
-  margin: 0;
-  padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
-  color: var(--bb-text);
-  background: white;
-}
-
-/* Header */
-header {
-  background: var(--bb-blue);
-  color: white;
-  padding: 16px 16px 10px;
-}
-header .bar {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-.logo {
-  height: 54px;
-  width: auto;
-  display: block;
-  background: white; /* keep white backdrop */
-  padding: 6px 10px;
-  border-radius: 6px;
-}
-h1 {
-  margin: 0;
-  font-size: 26px;
-  font-weight: 700;
-}
-
-/* Controls row under header */
-.controls {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  padding: 10px 16px 14px;
-  background: var(--bb-gray-100);
-  border-bottom: 1px solid var(--bb-gray-200);
-}
-.controls label {
-  font-weight: 600;
-  margin-right: 6px;
-}
-.controls select,
-.controls input[type="text"] {
-  height: 34px;
-  padding: 6px 10px;
-  border: 1px solid var(--bb-gray-400);
-  border-radius: 6px;
-  background: white;
-}
-
-/* Buttons */
-.bb-btn {
-  background: var(--bb-btn);
-  color: #fff;
-  border: 1px solid var(--bb-btn);
-  border-radius: 6px;
-  padding: 8px 12px;
-  font-weight: 600;
-  cursor: pointer;
-  text-decoration: none;
-  display: inline-block;
-}
-.bb-btn:hover { background: var(--bb-btn-hover); border-color: var(--bb-btn-hover); }
-
-/* White button variant (for blue header contrast) */
-.bb-btn-white {
+/* Make the "Go to Bulk Import" button blue-on-white so it stands out on the blue bar */
+.btn-onblue {
   background: #fff;
-  color: var(--bb-btn);
-  border: 1px solid var(--bb-btn);
-  border-radius: 6px;
-  padding: 8px 12px;
-  font-weight: 600;
-  cursor: pointer;
-  text-decoration: none;
-  display: inline-block;
+  color: #144a8c;
+  border: 1px solid #144a8c;
 }
-.bb-btn-white:hover { background: #f4f6fa; }
+.btn-onblue:hover {
+  background: #f5f8ff;
+}
 
-/* Card list */
-main {
-  padding: 16px;
-}
-.citation-card {
-  border: 1px solid var(--bb-gray-200);
-  border-left: 6px solid var(--bb-blue);
-  border-radius: 8px;
-  padding: 14px 16px;
-  margin: 0 0 14px;
-  background: #fff;
-}
-.citation-card h2 {
-  margin: 0 0 10px;
-  font-size: 20px;
-}
-.citation-card p {
-  margin: 6px 0;
-  line-height: 1.45;
-}
-.muted { color: #667; }
-
-/* Drawer (left slide-out) */
+/* Drawer width bump (and keep it responsive) */
 .drawer {
   position: fixed;
   top: 0;
   left: 0;
-  width: var(--drawer-w);
-  max-width: 100vw;
   height: 100%;
-  background: #fff;
-  border-right: 1px solid var(--bb-gray-200);
-  box-shadow: 0 0 0 rgba(0,0,0,0);
-  transform: translateX(-100%);
-  transition: transform .18s ease-out, box-shadow .18s ease-out;
-  z-index: 9999;
-  overflow: auto;
+  width: 0;                 /* closed */
+  max-width: 100%;
+  overflow-y: auto;
+  background: #ffffff;
+  box-shadow: 2px 0 12px rgba(0,0,0,.15);
+  transition: width .25s ease;
+  z-index: 1000;
 }
-.drawer.open { 
-  transform: translateX(0);
-  box-shadow: 0 8px 30px rgba(0,0,0,.15);
+.drawer.open { width: 480px; }   /* requested width */
+.drawer .drawer-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; border-bottom: 1px solid #e5e7eb;
 }
-.drawer-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--bb-gray-200);
-  position: sticky;
-  top: 0;
-  background: #fff;
-  z-index: 2;
-}
-.drawer-header h2 {
-  margin: 0;
-  font-size: 18px;
-}
-.close-btn {
-  border: 1px solid var(--bb-gray-400);
-  background: #fff;
-  border-radius: 6px;
-  padding: 6px 10px;
-  cursor: pointer;
-}
-
-/* Drawer form */
-.drawer-form {
-  padding: 12px 16px 24px;
-}
-.drawer-form .grid-two {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-.drawer-form input[type="text"],
-.drawer-form input[type="number"],
-.drawer-form textarea {
-  width: 100%;
-  padding: 8px 10px;
-  border: 1px solid var(--bb-gray-400);
-  border-radius: 6px;
-  background: #fff;
-}
-.drawer-form textarea { min-height: 84px; }
-.drawer-form .row {
-  margin: 10px 0;
-}
-.drawer-form .actions {
-  margin-top: 10px;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-/* Status/info text blocks */
-.status {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 12px;
-  color: #3b4555;
-  background: var(--bb-gray-150);
-  border: 1px solid var(--bb-gray-200);
-  border-radius: 6px;
-  padding: 10px;
-}
+.close-btn { background: transparent; border: none; font-size: 18px; cursor: pointer; }
