@@ -2,61 +2,64 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Compliance Citation Viewer</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
   <header>
-    <img src="logo.png" alt="Logo" class="logo" />
+    <img src="logo.png" alt="Logo" class="logo"/>
     <h1>Compliance Citation Viewer</h1>
   </header>
 
-  <main>
-    <div class="controls">
-      <label for="breachFilter">Filter by Breach Type:</label>
-      <select id="breachFilter">
-        <option value="">All</option>
-      </select>
-      <input type="text" id="searchInput" placeholder="Search by keyword..." />
-      <button id="openDrawerBtn">Add/Edit Citation</button>
-    </div>
+  <div class="controls">
+    <label for="breachFilter">Filter by Breach Type:</label>
+    <select id="breachFilter"><option>Loading…</option></select>
+    <input id="keywordSearch" type="text" placeholder="Search by keyword…"/>
+    <button id="openDrawerBtn" type="button">Add/Edit Citation</button>
+  </div>
 
-    <div id="citationsContainer">Loading citations...</div>
+  <main id="citationsContainer">
+    <p>Loading citations…</p>
   </main>
 
-  <!-- Drawer -->
-  <div id="drawer" class="drawer">
+  <!-- Drawer (left slide-out) -->
+  <aside id="drawer" class="drawer" aria-hidden="true">
     <div class="drawer-header">
       <h2>Citation Entry</h2>
-      <button id="closeDrawerBtn" class="close-btn">×</button>
+      <button id="closeDrawerBtn" class="close-btn" type="button" aria-label="Close">×</button>
     </div>
-    <form id="citationForm">
-      <div class="form-grid">
-        <input type="text" id="id" placeholder="ID" />
-        <input type="text" id="case_name" placeholder="Case Name" />
-        <input type="text" id="citation" placeholder="Citation" />
-        <input type="text" id="year" placeholder="Year" />
-        <input type="text" id="court" placeholder="Court" />
-        <input type="text" id="jurisdiction" placeholder="Jurisdiction" />
-        <input type="text" id="summary" placeholder="Summary" />
-        <input type="text" id="legal_principle" placeholder="Legal Principle" />
-        <input type="text" id="holding" placeholder="Holding" />
-        <input type="text" id="compliance_flags" placeholder="Compliance Flags (comma-separated)" />
-        <input type="text" id="key_points" placeholder="Key Points (comma-separated)" />
-        <input type="text" id="tags" placeholder="Tags (comma-separated)" />
-        <input type="text" id="observed_conduct" placeholder="Observed Conduct" />
-        <input type="text" id="anomaly_detected" placeholder="Anomaly Detected" />
-        <input type="text" id="breached_law_or_rule" placeholder="Breached Law or Rule" />
-        <input type="text" id="authority_basis" placeholder="Authority Basis" />
-        <input type="text" id="canonical_breach_tag" placeholder="Canonical Breach Tag" />
-        <input type="text" id="case_link" placeholder="Case Link (optional)" />
-        <textarea id="full_case_text" placeholder="Full Case Text (optional)"></textarea>
+
+    <!-- Your form (fields can be adapted later; kept minimal here) -->
+    <form id="citationForm" class="drawer-form" onsubmit="return false;">
+      <input id="field-id" placeholder="ID"/>
+      <input id="field-case_name" placeholder="Case Name"/>
+      <input id="field-citation" placeholder="Citation"/>
+      <div class="grid-two">
+        <input id="field-year" placeholder="Year" inputmode="numeric"/>
+        <input id="field-court" placeholder="Court"/>
       </div>
-      <label class="checkbox"><input type="checkbox" id="printable" /> Printable</label>
-      <button type="submit" id="validateBtn">Validate & Save</button>
+      <div class="grid-two">
+        <input id="field-jurisdiction" placeholder="Jurisdiction"/>
+        <input id="field-legal_principle" placeholder="Legal Principle"/>
+      </div>
+      <textarea id="field-summary" placeholder="Summary"></textarea>
+      <input id="field-holding" placeholder="Holding"/>
+      <input id="field-compliance_flags" placeholder="Compliance Flags (comma-separated)"/>
+      <input id="field-key_points" placeholder="Key Points (comma-separated)"/>
+      <input id="field-tags" placeholder="Tags (comma-separated)"/>
+      <input id="field-observed_conduct" placeholder="Observed Conduct"/>
+      <input id="field-anomaly_detected" placeholder="Anomaly Detected"/>
+      <input id="field-breached_law_or_rule" placeholder="Breached Law or Rule"/>
+      <input id="field-authority_basis" placeholder="Authority Basis"/>
+      <input id="field-canonical_breach_tag" placeholder="Canonical Breach Tag"/>
+      <input id="field-case_link" placeholder="Case Link (optional)"/>
+      <textarea id="field-full_case_text" placeholder="Full Case Text (optional)"></textarea>
+      <label class="checkbox"><input id="field-printable" type="checkbox"/> Printable</label>
+
+      <button id="validateAndSaveBtn" class="primary" type="button">Validate &amp; Save</button>
     </form>
-  </div>
+  </aside>
 
   <script src="main.js"></script>
 </body>
