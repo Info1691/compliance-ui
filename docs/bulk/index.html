@@ -1,55 +1,64 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bulk Import — Compliance Citations</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bulk Import — Compliance Citations</title>
+  <!-- Reuse the main viewer styles for branding/header -->
+  <link rel="stylesheet" href="../style.css" />
+  <!-- Small bulk-only tweaks -->
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <header>
-        <img src="../logo.png" alt="Logo" class="logo">
-        <h1>Bulk Import — Compliance Citations</h1>
-        <div class="header-buttons">
-            <button onclick="window.location.href='../index.html'">Back to Viewer</button>
-        </div>
-    </header>
+  <header>
+    <img src="../logo.png" alt="Logo" class="logo" />
+    <h1>Bulk Import — Compliance Citations</h1>
+    <a class="btn" href="../" style="margin-left:auto;">Back to Viewer</a>
+  </header>
 
-    <main>
-        <section>
-            <h2>1) Load current dataset</h2>
-            <p>This reads the live file you serve at ../data/citations/citations.json.</p>
-            <button id="load-current">Load Current citations.json</button>
-        </section>
+  <main class="container">
+    <section class="panel">
+      <h2>1) Load current dataset</h2>
+      <p>This reads the live file you serve at <code>../data/citations/citations.json</code>.</p>
+      <button id="loadCurrent" class="btn">Load Current citations.json</button>
+    </section>
 
-        <section>
-            <h2>2) Add new data (JSON preferred)</h2>
-            <button id="paste-json">Paste JSON</button>
-            <button id="upload-json">Upload CSV</button>
-            <p>CSV must include headers at least: <code>id,case_name,citation,year,court,jurisdiction,summary</code>. For array fields use pipe <code>|</code> to separate items.</p>
-            <input type="file" id="csv-file">
-            <button id="parse-csv">Parse CSV</button>
-        </section>
+    <section class="panel">
+      <h2>2) Add new data (JSON preferred)</h2>
+      <div class="controls">
+        <button id="pasteJson" class="btn secondary">Paste JSON</button>
+        <label class="btn secondary" for="csvFile">Upload CSV</label>
+        <input id="csvFile" type="file" accept=".csv,.txt" style="display:none" />
+        <small>CSV must include at least: <code>id,case_name,citation,year,court,jurisdiction,summary</code>.
+        Use pipe <code>|</code> to separate items for arrays (e.g., <code>compliance_flags</code>).</small>
+      </div>
+    </section>
 
-        <section>
-            <h2>3) Validate</h2>
-            <label>
-                <input type="checkbox" id="allow-updates"> Allow updates for matching IDs (otherwise duplicates are rejected)
-            </label>
-            <button id="run-validation">Run Validation</button>
-        </section>
+    <section class="panel">
+      <h2>3) Validate</h2>
+      <label>
+        <input type="checkbox" id="allowUpdates" />
+        Allow updates for matching IDs (otherwise duplicates are rejected)
+      </label>
+      <div class="controls">
+        <button id="runValidation" class="btn">Run Validation</button>
+      </div>
+    </section>
 
-        <section>
-            <h2>4) Merge & Download</h2>
-            <button id="merge-data">Merge into Current (in-memory)</button>
-            <button id="download-json" disabled>Download merged citations.json</button>
-        </section>
+    <section class="panel">
+      <h2>4) Merge & Download</h2>
+      <div class="controls">
+        <button id="mergeInMemory" class="btn">Merge into Current (in-memory)</button>
+        <a id="downloadBtn" class="btn secondary" href="#" download="citations.merged.json" disabled>Download merged citations.json</a>
+      </div>
+    </section>
 
-        <p style="font-size: 0.9em; color: gray;">
-            No data is written to GitHub from this page. You’ll download a file and commit it yourself.
-        </p>
-    </main>
+    <section class="panel">
+      <h2>Status</h2>
+      <pre id="output">No data is written to GitHub from this page. You’ll download a file and commit it yourself.</pre>
+    </section>
+  </main>
 
-    <script src="main.js"></script>
+  <script src="main.js"></script>
 </body>
 </html>
