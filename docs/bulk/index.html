@@ -4,59 +4,52 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Bulk Import — Compliance Citations</title>
-  <link rel="stylesheet" href="../style.css"/>
+  <link rel="stylesheet" href="./style.css?v=2025-08-09"/>
 </head>
 <body>
-  <!-- Shared header -->
-  <header class="site-header">
-    <div class="brand">
-      <img src="../logo.png" alt="Logo" class="logo"/>
-      <h1>Bulk Import — Compliance Citations</h1>
+  <header class="masthead">
+    <div class="logo-tile">
+      <img src="../logo.png" alt="BB"/>
     </div>
-    <div class="toolbar">
-      <a href="../" class="bb-btn">Back to Viewer</a>
-    </div>
+    <h1>Bulk Import — Compliance Citations</h1>
+    <a class="btn to-viewer" href="../">Back to Viewer</a>
   </header>
 
-  <main class="container">
+  <main class="bulk">
     <section class="panel">
-      <h3>1) Load current dataset</h3>
+      <h2>1) Load current dataset</h2>
       <p>This reads the live file you serve at <code>../data/citations/citations.json</code>.</p>
-      <button id="btnLoadCurrent" class="bb-btn">Load current citations.json</button>
+      <button id="btnLoad" class="btn primary">Load current citations.json</button>
     </section>
 
     <section class="panel">
-      <h3>2) Add new data (JSON preferred)</h3>
-      <div class="controls-row">
-        <button id="btnPasteJSON" class="bb-btn" type="button">Paste JSON</button>
-        <input id="csvFile" type="file" accept=".csv"/>
-        <button id="btnParseCSV" class="bb-btn" type="button">Parse CSV</button>
+      <h2>2) Add new data (JSON preferred)</h2>
+      <div class="row">
+        <button id="btnPasteJSON" class="btn">Paste JSON</button>
+        <label class="file">
+          <input id="csvFile" type="file" accept=".csv" />
+          <span class="btn">Choose CSV</span>
+        </label>
+        <button id="btnParseCSV" class="btn">Parse CSV</button>
       </div>
-      <p style="margin-top:8px;">
-        CSV must include headers at least:
+      <p class="hint">CSV must include headers at least:
         <code>id, case_name, citation, year, court, jurisdiction, summary</code>.
-        Use pipe <code>|</code> to separate items for arrays (e.g., <code>compliance_flags</code>, <code>tags</code>, <code>key_points</code>, <code>sources</code>).
+        Use pipe <code>|</code> to separate items for arrays (e.g., <code>compliance_flags, tags, key_points, sources</code>).
       </p>
-      <textarea id="jsonPaste" class="form-row-full" placeholder="(optional) Paste JSON here…" style="min-height:140px;"></textarea>
+      <textarea id="jsonPaste" placeholder="(optional) Paste JSON here…"></textarea>
     </section>
 
     <section class="panel">
-      <h3>3) Validate</h3>
-      <label><input id="allowUpdates" type="checkbox"/> Allow updates for matching IDs (otherwise duplicates are rejected)</label>
-      <div id="validateLog" class="log" style="margin-top:10px;"></div>
-      <button id="btnValidate" class="bb-btn" type="button" style="margin-top:10px;">Run Validation</button>
+      <h2>3) Validate</h2>
+      <label class="inline">
+        <input id="allowUpdates" type="checkbox" />
+        Allow updates for matching IDs (otherwise duplicates are rejected)
+      </label>
+      <button id="btnValidate" class="btn">Run Validation</button>
+      <pre id="log" class="log hidden"><code id="logText"></code></pre>
     </section>
 
     <section class="panel">
-      <h3>4) Merge &amp; Download</h3>
-      <div class="controls-row">
-        <button id="btnMerge" class="bb-btn" type="button">Merge into Current (in-memory)</button>
-        <button id="btnDownload" class="bb-btn" type="button">Download merged citations.json</button>
-      </div>
-      <div id="mergeLog" class="log" style="margin-top:10px;"></div>
-    </section>
-  </main>
-
-  <script src="main.js"></script>
-</body>
-</html>
+      <h2>4) Merge & Download</h2>
+      <button id="btnMerge" class="btn primary">Merge into Current (in-memory)</button>
+      <button id="btnDownload" class
