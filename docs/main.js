@@ -2,11 +2,10 @@
    Citations Viewer (Forensic Mode)
    =============================== */
 
-// ---- Configurable Paths ----
+// ---- Configurable Paths (RELATIVE for GitHub Pages) ----
 const PATHS = {
-  CITATIONS_JSON: '/data/citations/citations.json', // adjust if needed
-  BREACHES_JSON:  '/data/breaches/breaches.json',   // adjust if needed
-  LOGO_SRC:       'assets/logo-white-bg.png'
+  CITATIONS_JSON: 'data/citations/citations.json',
+  BREACHES_JSON:  'data/breaches/breaches.json'
 };
 
 // ---- State ----
@@ -17,7 +16,6 @@ let breachSuggestions = [];
 
 // ---- DOM ----
 const els = {
-  logo: document.getElementById('appLogo'),
   card: document.getElementById('citationCard'),
   prev: document.getElementById('prevBtn'),
   next: document.getElementById('nextBtn'),
@@ -56,15 +54,10 @@ const els = {
 };
 
 // ---- Utilities ----
-function toArrayFromDelim(str) {
-  if (!str) return [];
-  return str.split(';').map(s => s.trim()).filter(Boolean);
-}
-function toDelimited(arr) {
-  return (Array.isArray(arr) ? arr : []).join('; ');
-}
-function safeHTML(s) { return (s ?? '').toString(); }
-function clone(obj) { return JSON.parse(JSON.stringify(obj)); }
+const toArrayFromDelim = s => !s ? [] : s.split(';').map(x => x.trim()).filter(Boolean);
+const toDelimited = arr => (Array.isArray(arr) ? arr : []).join('; ');
+const safeHTML = s => (s ?? '').toString();
+const clone = o => JSON.parse(JSON.stringify(o));
 
 function buildIndex() {
   indexById.clear();
@@ -78,7 +71,7 @@ function renderCurrent() {
   }
   const c = citationsData.citations[currentIndex];
 
-  const fieldsHTML = `
+  els.card.innerHTML = `
     <h2>${safeHTML(c.case_name)}</h2>
     <div class="meta">
       <div><strong>Citation:</strong> ${safeHTML(c.citation)}</div>
@@ -127,15 +120,10 @@ function renderCurrent() {
       ${c.canonical_breach_tag ? `<p><strong>Canonical Tag:</strong> ${safeHTML(c.canonical_breach_tag)}</p>` : ''}
     </details>
   `;
-
-  els.card.innerHTML = fieldsHTML;
 }
 
-function openDrawer(modeTitle = 'Edit Citation') {
-  els.drawerTitle.textContent = modeTitle;
-  els.drawer.classList.add('open');
-}
-function closeDrawer() { els.drawer.classList.remove('open'); }
+function openDrawer(title='Edit Citation'){ els.drawerTitle.textContent = title; els.drawer.classList.add('open'); }
+function closeDrawer(){ els.drawer.classList.remove('open'); }
 
 function populateFormFromCitation(c) {
   els.f.id.value = c.id || '';
@@ -161,12 +149,10 @@ function populateFormFromCitation(c) {
 }
 
 function formToCitation() {
-  // Required validation
   if (!els.f.id.checkValidity() || !els.f.case_name.checkValidity() || !els.f.citation.checkValidity() || !els.f.year.checkValidity()) {
     els.form.reportValidity();
     return null;
   }
-
   const obj = {
     id: els.f.id.value.trim(),
     case_name: els.f.case_name.value.trim(),
@@ -183,14 +169,12 @@ function formToCitation() {
     case_link: els.f.case_link.value.trim() || null,
     full_case_text: els.f.full_case_text.value,
     printable: !!els.f.printable.checked,
-    breached_law_or_rule: toArrayFromDelim(els.f_breached_law_or_rule.value),
-    observed_conduct: els.f_observed_conduct.value.trim() || '',
-    anomaly_detected: els.f_anomaly_detected.value.trim() || '',
-    authority_basis: toArrayFromDelim(els.f_authority_basis.value),
-    canonical_breach_tag: els.f_canonical_breach_tag.value.trim() || ''
+    breached_law_or_rule: toArrayFromDelim(els.f.breached_law_or_rule.value),
+    observed_conduct: els.f.observed_conduct.value.trim() || '',
+    anomaly_detected: els.f.anomaly_detected.value.trim() || '',
+    authority_basis: toArrayFromDelim(els.f.authority_basis.value),
+    canonical_breach_tag: els.f.canonical_breach_tag.value.trim() || ''
   };
-
-  // ID collision check (allow if it's the current record)
   if (obj.id && indexById.has(obj.id) && indexById.get(obj.id) !== currentIndex) {
     alert(`ID "${obj.id}" is already used by another citation.`);
     return null;
@@ -198,13 +182,8 @@ function formToCitation() {
   return obj;
 }
 
-function loadIntoForm(index) {
-  const c = citationsData.citations[index];
-  populateFormFromCitation(c);
-  openDrawer('Edit Citation');
-}
-
-function updateSuggestions() {
+function loadIntoForm(i){ populateFormFromCitation(citationsData.citations[i]); openDrawer('Edit Citation'); }
+function updateSuggestions(){
   els.datalist.innerHTML = '';
   breachSuggestions.forEach(tag => {
     const opt = document.createElement('option');
@@ -212,54 +191,39 @@ function updateSuggestions() {
     els.datalist.appendChild(opt);
   });
 }
-
-function exportCurrentCitation() {
+function exportCurrentCitation(){
   if (!citationsData.citations.length) return;
   const c = clone(citationsData.citations[currentIndex]);
   const blob = new Blob([JSON.stringify(c, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${c.id || 'citation'}.json`;
-  document.body.appendChild(a);
-  a.click();
-  URL.revokeObjectURL(url);
-  a.remove();
+  const a = Object.assign(document.createElement('a'), { href: url, download: `${c.id || 'citation'}.json` });
+  document.body.appendChild(a); a.click(); URL.revokeObjectURL(url); a.remove();
 }
 
 // ---- Events ----
-document.getElementById('prevBtn').addEventListener('click', () => {
+els.prev.addEventListener('click', () => {
   if (!citationsData.citations.length) return;
   currentIndex = (currentIndex - 1 + citationsData.citations.length) % citationsData.citations.length;
   renderCurrent();
 });
-document.getElementById('nextBtn').addEventListener('click', () => {
+els.next.addEventListener('click', () => {
   if (!citationsData.citations.length) return;
   currentIndex = (currentIndex + 1) % citationsData.citations.length;
   renderCurrent();
 });
-document.getElementById('editBtn').addEventListener('click', () => {
-  if (!citationsData.citations.length) return;
-  loadIntoForm(currentIndex);
-});
-document.getElementById('printBtn').addEventListener('click', () => window.print());
-document.getElementById('exportBtn').addEventListener('click', exportCurrentCitation);
-document.getElementById('drawerCloseBtn').addEventListener('click', closeDrawer);
-document.getElementById('resetFormBtn').addEventListener('click', () => {
-  if (!citationsData.citations.length) return;
-  populateFormFromCitation(citationsData.citations[currentIndex]);
-});
+els.edit.addEventListener('click', () => { if (citationsData.citations.length) loadIntoForm(currentIndex); });
+els.print.addEventListener('click', () => window.print());
+els.exportBtn.addEventListener('click', exportCurrentCitation);
+els.drawerClose.addEventListener('click', closeDrawer);
+els.resetFormBtn.addEventListener('click', () => { if (citationsData.citations.length) populateFormFromCitation(citationsData.citations[currentIndex]); });
 
-// Validate & Save (staging only)
-document.getElementById('citationForm').addEventListener('submit', (e) => {
+els.form.addEventListener('submit', (e) => {
   e.preventDefault();
   const updated = formToCitation();
   if (!updated) return;
-
   const oldId = citationsData.citations[currentIndex].id;
   citationsData.citations[currentIndex] = updated;
   if (oldId !== updated.id) buildIndex();
-
   renderCurrent();
   alert('Saved to staging (in-memory). No file was written.');
   closeDrawer();
@@ -272,33 +236,29 @@ async function fetchJSON(path) {
   return await res.json();
 }
 
-async function init() {
+async function init(){
   try {
+    // Load citations (relative path)
     const payload = await fetchJSON(PATHS.CITATIONS_JSON);
-    if (!payload || !Array.isArray(payload.citations)) {
-      throw new Error('citations.json missing top-level "citations" array.');
-    }
+    if (!payload || !Array.isArray(payload.citations)) throw new Error('citations.json missing top-level "citations" array.');
     citationsData = payload;
     buildIndex();
 
-    // breach suggestions (optional)
+    // Optional breach suggestions
     try {
       const breaches = await fetchJSON(PATHS.BREACHES_JSON);
-      breachSuggestions = Array.isArray(breaches?.breaches)
-        ? breaches.breaches.map(b => b.tag).filter(Boolean)
-        : [];
+      breachSuggestions = Array.isArray(breaches?.breaches) ? breaches.breaches.map(b => b.tag).filter(Boolean) : [];
       updateSuggestions();
     } catch (e) {
-      console.warn('breaches.json not loaded; proceeding without suggestions.', e);
+      console.warn('breaches.json not loaded; continuing without suggestions.', e);
     }
 
     currentIndex = 0;
     renderCurrent();
-    console.log('Citations Viewer loaded. Records:', citationsData.citations.length);
+    console.log('Citations Viewer ready. Records:', citationsData.citations.length);
   } catch (err) {
     console.error(err);
     els.card.innerHTML = `<p class="error">Error loading citations: ${err.message}</p>`;
   }
 }
-
 document.addEventListener('DOMContentLoaded', init);
