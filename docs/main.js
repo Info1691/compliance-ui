@@ -1,295 +1,273 @@
-/* ===============================
-   Citations Viewer (Forensic Mode)
-   =============================== */
+document.addEventListener('DOMContentLoaded', () => {
+  // Elements
+  const citationsContainer = document.getElementById('citationsContainer');
+  const breachFilter = document.getElementById('breachFilter');
+  const keywordSearch = document.getElementById('keywordSearch');
 
-// ---- Configurable Paths (RELATIVE for GitHub Pages) ----
-const PATHS = {
-  CITATIONS_JSON: 'data/citations/citations.json',
-  BREACHES_JSON:  'data/breaches/breaches.json'
-};
+  const drawer = document.getElementById('drawer');
+  const openDrawerBtn = document.getElementById('openDrawerBtn');
+  const closeDrawerBtn = document.getElementById('closeDrawerBtn');
 
-// ---- State ----
-let citationsData = { timestamp: '', citations: [] };
-let indexById = new Map();
-let currentIndex = 0;
-let breachSuggestions = [];
-
-// ---- DOM ----
-const els = {
-  logo: document.getElementById('appLogo'),
-  card: document.getElementById('citationCard'),
-  prev: document.getElementById('prevBtn'),
-  next: document.getElementById('nextBtn'),
-  edit: document.getElementById('editBtn'),
-  print: document.getElementById('printBtn'),
-  exportBtn: document.getElementById('exportBtn'),
-  drawer: document.getElementById('drawer'),
-  drawerClose: document.getElementById('drawerCloseBtn'),
-  drawerTitle: document.getElementById('drawerTitle'),
-  form: document.getElementById('citationForm'),
-  datalist: document.getElementById('breachTagSuggestions'),
   // Form fields
-  f: {
-    id: document.getElementById('f_id'),
-    case_name: document.getElementById('f_case_name'),
-    citation: document.getElementById('f_citation'),
-    year: document.getElementById('f_year'),
-    court: document.getElementById('f_court'),
-    jurisdiction: document.getElementById('f_jurisdiction'),
-    summary: document.getElementById('f_summary'),
-    legal_principle: document.getElementById('f_legal_principle'),
-    holding: document.getElementById('f_holding'),
-    compliance_flags: document.getElementById('f_compliance_flags'),
-    key_points: document.getElementById('f_key_points'),
-    tags: document.getElementById('f_tags'),
-    case_link: document.getElementById('f_case_link'),
-    full_case_text: document.getElementById('f_full_case_text'),
-    printable: document.getElementById('f_printable'),
-    breached_law_or_rule: document.getElementById('f_breached_law_or_rule'),
-    observed_conduct: document.getElementById('f_observed_conduct'),
-    anomaly_detected: document.getElementById('f_anomaly_detected'),
-    authority_basis: document.getElementById('f_authority_basis'),
-    canonical_breach_tag: document.getElementById('f_canonical_breach_tag')
-  },
-  resetFormBtn: document.getElementById('resetFormBtn')
-};
-
-// ---- Utilities ----
-const toArrayFromDelim = s => !s ? [] : s.split(';').map(x => x.trim()).filter(Boolean);
-const toDelimited = arr => (Array.isArray(arr) ? arr : []).join('; ');
-const safeHTML = s => (s ?? '').toString();
-const clone = o => JSON.parse(JSON.stringify(o));
-
-function buildIndex() {
-  indexById.clear();
-  citationsData.citations.forEach((c, i) => indexById.set(c.id, i));
-}
-
-function renderCurrent() {
-  if (!citationsData.citations.length) {
-    els.card.innerHTML = `<p>No citations loaded.</p>`;
-    return;
-  }
-  const c = citationsData.citations[currentIndex];
-
-  els.card.innerHTML = `
-    <h2>${safeHTML(c.case_name)}</h2>
-    <div class="meta">
-      <div><strong>Citation:</strong> ${safeHTML(c.citation)}</div>
-      <div><strong>Year:</strong> ${safeHTML(c.year)}</div>
-      <div><strong>Court:</strong> ${safeHTML(c.court)}</div>
-      <div><strong>Jurisdiction:</strong> ${safeHTML(c.jurisdiction)}</div>
-    </div>
-
-    ${c.summary ? `<h3>Summary</h3><p>${safeHTML(c.summary)}</p>` : ''}
-
-    <div class="grid-two">
-      ${c.legal_principle ? `<div><h4>Legal Principle</h4><p>${safeHTML(c.legal_principle)}</p></div>` : ''}
-      ${c.holding ? `<div><h4>Holding</h4><p>${safeHTML(c.holding)}</p></div>` : ''}
-    </div>
-
-    <div class="chips">
-      ${Array.isArray(c.compliance_flags) && c.compliance_flags.length
-        ? `<div><strong>Compliance Flags:</strong> ${c.compliance_flags.map(s => `<span class="chip">${safeHTML(s)}</span>`).join(' ')}</div>` : ''}
-      ${Array.isArray(c.key_points) && c.key_points.length
-        ? `<div><strong>Key Points:</strong> ${c.key_points.map(s => `<span class="chip">${safeHTML(s)}</span>`).join(' ')}</div>` : ''}
-      ${Array.isArray(c.tags) && c.tags.length
-        ? `<div><strong>Tags:</strong> ${c.tags.map(s => `<span class="chip">${safeHTML(s)}</span>`).join(' ')}</div>` : ''}
-    </div>
-
-    <div class="links">
-      ${c.case_link ? `<a href="${safeHTML(c.case_link)}" target="_blank" rel="noopener">View Case</a>` : ''}
-      ${c.printable ? `<span class="printable-flag">Printable</span>` : ''}
-    </div>
-
-    ${c.full_case_text ? `<details><summary>Full Case Text</summary><pre class="fulltext">${safeHTML(c.full_case_text)}</pre></details>` : ''}
-
-    <details>
-      <summary>Extended Compliance</summary>
-      <div class="grid-two">
-        <div>
-          <h4>Breached Law or Rule</h4>
-          <ul>${(c.breached_law_or_rule || []).map(s => `<li>${safeHTML(s)}</li>`).join('')}</ul>
-        </div>
-        <div>
-          <h4>Authority Basis</h4>
-          <ul>${(c.authority_basis || []).map(s => `<li>${safeHTML(s)}</li>`).join('')}</ul>
-        </div>
-      </div>
-      ${c.observed_conduct ? `<h4>Observed Conduct</h4><p>${safeHTML(c.observed_conduct)}</p>` : ''}
-      ${c.anomaly_detected ? `<h4>Anomaly Detected</h4><p>${safeHTML(c.anomaly_detected)}</p>` : ''}
-      ${c.canonical_breach_tag ? `<p><strong>Canonical Tag:</strong> ${safeHTML(c.canonical_breach_tag)}</p>` : ''}
-    </details>
-  `;
-}
-
-function openDrawer(title='Edit Citation'){ els.drawerTitle.textContent = title; els.drawer.classList.add('open'); }
-function closeDrawer(){ els.drawer.classList.remove('open'); }
-
-function populateFormFromCitation(c) {
-  els.f.id.value = c.id || '';
-  els.f.case_name.value = c.case_name || '';
-  els.f.citation.value = c.citation || '';
-  els.f.year.value = c.year ?? '';
-  els.f.court.value = c.court || '';
-  els.f.jurisdiction.value = c.jurisdiction || '';
-  els.f.summary.value = c.summary || '';
-  els.f.legal_principle.value = c.legal_principle || '';
-  els.f.holding.value = c.holding || '';
-  els.f.compliance_flags.value = toDelimited(c.compliance_flags);
-  els.f.key_points.value = toDelimited(c.key_points);
-  els.f.tags.value = toDelimited(c.tags);
-  els.f.case_link.value = c.case_link || '';
-  els.f.full_case_text.value = c.full_case_text || '';
-  els.f.printable.checked = !!c.printable;
-  els.f.breached_law_or_rule.value = toDelimited(c.breached_law_or_rule);
-  els.f.observed_conduct.value = c.observed_conduct || '';
-  els.f.anomaly_detected.value = c.anomaly_detected || '';
-  els.f.authority_basis.value = toDelimited(c.authority_basis);
-  els.f.canonical_breach_tag.value = c.canonical_breach_tag || '';
-}
-
-function formToCitation() {
-  if (!els.f.id.checkValidity() || !els.f.case_name.checkValidity() || !els.f.citation.checkValidity() || !els.f.year.checkValidity()) {
-    els.form.reportValidity();
-    return null;
-  }
-  const obj = {
-    id: els.f.id.value.trim(),
-    case_name: els.f.case_name.value.trim(),
-    citation: els.f.citation.value.trim(),
-    year: Number(els.f.year.value),
-    court: els.f.court.value.trim() || '',
-    jurisdiction: els.f.jurisdiction.value.trim() || '',
-    summary: els.f.summary.value.trim() || '',
-    legal_principle: els.f.legal_principle.value.trim() || '',
-    holding: els.f.holding.value.trim() || '',
-    compliance_flags: toArrayFromDelim(els.f.compliance_flags.value),
-    key_points: toArrayFromDelim(els.f.key_points.value),
-    tags: toArrayFromDelim(els.f.tags.value),
-    case_link: els.f.case_link.value.trim() || null,
-    full_case_text: els.f_full_case_text.value,
-    printable: !!els.f.printable.checked,
-    breached_law_or_rule: toArrayFromDelim(els.f_breached_law_or_rule.value),
-    observed_conduct: els.f_observed_conduct.value.trim() || '',
-    anomaly_detected: els.f_anomaly_detected.value.trim() || '',
-    authority_basis: toArrayFromDelim(els.f_authority_basis.value),
-    canonical_breach_tag: els.f_canonical_breach_tag.value.trim() || ''
+  const F = {
+    id: document.getElementById('field-id'),
+    case_name: document.getElementById('field-case_name'),
+    citation: document.getElementById('field-citation'),
+    year: document.getElementById('field-year'),
+    court: document.getElementById('field-court'),
+    jurisdiction: document.getElementById('field-jurisdiction'),
+    legal_principle: document.getElementById('field-legal_principle'),
+    summary: document.getElementById('field-summary'),
+    holding: document.getElementById('field-holding'),
+    compliance_flags: document.getElementById('field-compliance_flags'),
+    key_points: document.getElementById('field-key_points'),
+    tags: document.getElementById('field-tags'),
+    observed_conduct: document.getElementById('field-observed_conduct'),
+    anomaly_detected: document.getElementById('field-anomaly_detected'),
+    breached_law_or_rule: document.getElementById('field-breached_law_or_rule'),
+    authority_basis: document.getElementById('field-authority_basis'),
+    canonical_breach_tag: document.getElementById('field-canonical_breach_tag'),
+    case_link: document.getElementById('field-case_link'),
+    full_case_text: document.getElementById('field-full_case_text'),
+    printable: document.getElementById('field-printable')
   };
-  if (obj.id && indexById.has(obj.id) && indexById.get(obj.id) !== currentIndex) {
-    alert(`ID "${obj.id}" is already used by another citation.`);
-    return null;
+  const validateAndSaveBtn = document.getElementById('validateAndSaveBtn');
+
+  // Drawer open/close (guarded)
+  function openDrawer() {
+    drawer.classList.add('open');
+    drawer.setAttribute('aria-hidden', 'false');
   }
-  return obj;
-}
+  function closeDrawer() {
+    drawer.classList.remove('open');
+    drawer.setAttribute('aria-hidden', 'true');
+  }
+  if (openDrawerBtn && drawer) openDrawerBtn.addEventListener('click', openDrawer);
+  if (closeDrawerBtn && drawer) closeDrawerBtn.addEventListener('click', closeDrawer);
 
-function loadIntoForm(i){ populateFormFromCitation(citationsData.citations[i]); openDrawer('Edit Citation'); }
-function updateSuggestions(){
-  els.datalist.innerHTML = '';
-  breachSuggestions.forEach(tag => {
-    const opt = document.createElement('option');
-    opt.value = tag;
-    els.datalist.appendChild(opt);
-  });
-}
-function exportCurrentCitation(){
-  if (!citationsData.citations.length) return;
-  const c = clone(citationsData.citations[currentIndex]);
-  const blob = new Blob([JSON.stringify(c, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = Object.assign(document.createElement('a'), { href: url, download: `${c.id || 'citation'}.json` });
-  document.body.appendChild(a); a.click(); URL.revokeObjectURL(url); a.remove();
-}
+  // Data paths (relative under /compliance-ui/)
+  const CITATIONS_URL = 'data/citations/citations.json';
+  const BREACHES_URL  = 'data/breaches/breaches.json';
 
-// ---- Robust payload handling ----
-function normalizePayload(payload) {
-  // Accept either a raw array [...] or { citations: [...] }
-  if (Array.isArray(payload)) return { timestamp: '', citations: payload };
-  if (payload && Array.isArray(payload.citations)) return { timestamp: payload.timestamp || '', citations: payload.citations };
-  throw new Error('citations.json missing top-level "citations" array or is not an array itself.');
-}
+  let allCitations = [];
+  let breaches = [];
 
-// ---- Init ----
-async function fetchJSON(path) {
-  const res = await fetch(path, { cache: 'no-store' });
-  if (!res.ok) throw new Error(`Failed to fetch ${path}: ${res.status} ${res.statusText}`);
-  return await res.json();
-}
+  // Helpers
+  const extractUrls = (text) => {
+    if (!text) return [];
+    const re = /(https?:\/\/[^\s)<>\]]+)/gi;
+    const out = [];
+    let m;
+    while ((m = re.exec(text)) !== null) out.push(m[1].replace(/[),.;]+$/, ''));
+    return [...new Set(out)];
+  };
+  const host = (u) => { try { return new URL(u).hostname; } catch { return u; } };
+  const commaToArray = v => (v || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
 
-async function init(){
-  // Keep drawer CLOSED on load
-  closeDrawer();
+  function clearForm() {
+    Object.values(F).forEach(el => {
+      if (el.type === 'checkbox') el.checked = false;
+      else el.value = '';
+    });
+  }
+  function populateForm(c) {
+    F.id.value = c.id || '';
+    F.case_name.value = c.case_name || '';
+    F.citation.value = c.citation || '';
+    F.year.value = (c.year ?? '').toString();
+    F.court.value = c.court || '';
+    F.jurisdiction.value = c.jurisdiction || '';
+    F.legal_principle.value = c.legal_principle || '';
+    F.summary.value = c.summary || '';
+    F.holding.value = c.holding || '';
+    F.compliance_flags.value = Array.isArray(c.compliance_flags) ? c.compliance_flags.join(', ') : (c.compliance_flags || '');
+    F.key_points.value = Array.isArray(c.key_points) ? c.key_points.join(', ') : (c.key_points || '');
+    F.tags.value = Array.isArray(c.tags) ? c.tags.join(', ') : (c.tags || '');
+    F.observed_conduct.value = c.observed_conduct || '';
+    F.anomaly_detected.value = c.anomaly_detected || '';
+    F.breached_law_or_rule.value = Array.isArray(c.breached_law_or_rule) ? c.breached_law_or_rule.join(', ') : (c.breached_law_or_rule || '');
+    F.authority_basis.value = Array.isArray(c.authority_basis) ? c.authority_basis.join(', ') : (c.authority_basis || '');
+    F.canonical_breach_tag.value = c.canonical_breach_tag || '';
+    F.case_link.value = c.case_link || '';
+    F.full_case_text.value = c.full_case_text || '';
+    F.printable.checked = !!c.printable;
+  }
 
-  // Optional logo fallback if filename/path differs (does not change branding)
-  if (els.logo) {
-    let tried = 0;
-    const candidates = [
-      'assets/logo-white-bg.png',
-      'assets/logo.png',
-      './assets/logo-white-bg.png',
-      './assets/logo.png',
-      '../assets/logo-white-bg.png',
-      '../assets/logo.png'
-    ];
-    els.logo.addEventListener('error', () => {
-      tried += 1;
-      if (tried < candidates.length) els.logo.src = candidates[tried];
+  // Render
+  function renderCitations(list) {
+    citationsContainer.innerHTML = '';
+    if (!list.length) {
+      citationsContainer.innerHTML = '<p>No matching citations.</p>';
+      return;
+    }
+
+    list.forEach(c => {
+      const card = document.createElement('div');
+      card.className = 'citation-card';
+      card.dataset.id = c.id || '';
+
+      // Sources: prefer c.sources[]; else extract from authority_basis
+      let srcs = Array.isArray(c.sources) ? c.sources : [];
+      if (!srcs.length) srcs = extractUrls(c.authority_basis);
+
+      const sourcesHtml = srcs.length
+        ? `<p><strong>Sources:</strong> ${srcs.map(u => `<a href="${u}" target="_blank" rel="noopener">${host(u)}</a>`).join(' · ')}</p>`
+        : '';
+
+      card.innerHTML = `
+        <h2>${c.case_name || ''}</h2>
+        <p><strong>Citation:</strong> ${c.citation || ''}</p>
+        <p><strong>Year:</strong> ${c.year ?? ''}</p>
+        <p><strong>Court:</strong> ${c.court || ''}</p>
+        <p><strong>Jurisdiction:</strong> ${c.jurisdiction || ''}</p>
+        ${c.summary ? `<p><strong>Summary:</strong> ${c.summary}</p>` : ''}
+        ${c.legal_principle ? `<p><strong>Legal Principle:</strong> ${c.legal_principle}</p>` : ''}
+        ${c.holding ? `<p><strong>Holding:</strong> ${c.holding}</p>` : ''}
+        ${c.authority_basis ? `<p><strong>Authority Basis:</strong> ${c.authority_basis}</p>` : ''}
+        ${sourcesHtml}
+        ${Array.isArray(c.compliance_flags) && c.compliance_flags.length
+          ? `<p><strong>Compliance Flags:</strong> ${c.compliance_flags.join(', ')}</p>` : ''
+        }
+      `;
+      citationsContainer.appendChild(card);
     });
   }
 
-  try {
-    const raw = await fetchJSON(PATHS.CITATIONS_JSON);
-    citationsData = normalizePayload(raw);
-    buildIndex();
-
-    try {
-      const breaches = await fetchJSON(PATHS.BREACHES_JSON);
-      breachSuggestions = Array.isArray(breaches?.breaches) ? breaches.breaches.map(b => b.tag).filter(Boolean) : [];
-      updateSuggestions();
-    } catch (e) {
-      console.warn('breaches.json not loaded; continuing without suggestions.', e);
+  // Click a card to edit it (fills the drawer)
+  citationsContainer.addEventListener('click', (e) => {
+    const card = e.target.closest('.citation-card');
+    if (!card) return;
+    const id = card.dataset.id;
+    const existing = allCitations.find(x => x.id === id);
+    if (existing) {
+      populateForm(existing);
+      openDrawer();
     }
+  });
 
-    currentIndex = 0;
-    renderCurrent();
-    console.log('Citations Viewer ready. Records:', citationsData.citations.length);
-  } catch (err) {
-    console.error(err);
-    els.card.innerHTML = `<p class="error">Error loading citations: ${err.message}</p>`;
+  function applyFilters() {
+    const tag = (breachFilter.value || '').trim().toLowerCase();
+    const q = (keywordSearch.value || '').trim().toLowerCase();
+
+    const filtered = allCitations.filter(c => {
+      const flags = (c.compliance_flags || []).map(s => (s || '').toLowerCase());
+      const tagOk = !tag || tag === 'all' || flags.includes(tag);
+
+      if (!tagOk) return false;
+      if (!q) return true;
+
+      const hay = [
+        c.case_name, c.citation, c.summary, c.legal_principle, c.holding,
+        c.authority_basis, (Array.isArray(c.tags) ? c.tags.join(' ') : '')
+      ].map(x => (x || '').toLowerCase()).join(' ');
+      return hay.includes(q);
+    });
+
+    renderCitations(filtered);
   }
-}
-document.addEventListener('DOMContentLoaded', init);
 
-// ---- Events ----
-els.prev.addEventListener('click', () => {
-  if (!citationsData.citations.length) return;
-  currentIndex = (currentIndex - 1 + citationsData.citations.length) % citationsData.citations.length;
-  renderCurrent();
-});
-els.next.addEventListener('click', () => {
-  if (!citationsData.citations.length) return;
-  currentIndex = (currentIndex + 1) % citationsData.citations.length;
-  renderCurrent();
-});
-els.edit.addEventListener('click', () => {
-  if (!citationsData.citations.length) { alert('No citations loaded.'); return; }
-  loadIntoForm(currentIndex);
-});
-els.print.addEventListener('click', () => window.print());
-els.exportBtn.addEventListener('click', exportCurrentCitation);
-els.drawerClose.addEventListener('click', closeDrawer);
-els.resetFormBtn.addEventListener('click', () => {
-  if (!citationsData.citations.length) return;
-  populateFormFromCitation(citationsData.citations[currentIndex]);
-});
-els.form.addEventListener('submit', (e) => {
-  e.preventDefault();
-  const updated = formToCitation();
-  if (!updated) return;
-  const oldId = citationsData.citations[currentIndex].id;
-  citationsData.citations[currentIndex] = updated;
-  if (oldId !== updated.id) buildIndex();
-  renderCurrent();
-  alert('Saved to staging (in-memory). No file was written.');
-  closeDrawer();
+  // Load breaches (non-blocking)
+  async function loadBreaches() {
+    try {
+      const r = await fetch(BREACHES_URL, { cache: 'no-store' });
+      if (!r.ok) throw new Error(`breaches fetch: HTTP ${r.status}`);
+      breaches = await r.json();
+
+      // Populate dropdown
+      breachFilter.innerHTML = '<option value="all">All</option>';
+      breaches
+        .slice()
+        .sort((a,b)=> (a.tag||'').localeCompare(b.tag||''))
+        .forEach(b => {
+          const opt = document.createElement('option');
+          opt.value = b.tag || '';
+          opt.textContent = b.tag || '';
+          breachFilter.appendChild(opt);
+        });
+
+      breachFilter.addEventListener('change', applyFilters);
+      keywordSearch.addEventListener('input', applyFilters);
+    } catch (e) {
+      console.warn('Breaches unavailable:', e.message);
+      breachFilter.innerHTML = '<option value="all">All</option>';
+      breachFilter.addEventListener('change', applyFilters);
+      keywordSearch.addEventListener('input', applyFilters);
+    }
+  }
+
+  // Load citations
+  async function loadCitations() {
+    try {
+      const r = await fetch(CITATIONS_URL, { cache: 'no-store' });
+      if (!r.ok) throw new Error(`citations fetch: HTTP ${r.status}`);
+      const payload = await r.json();
+      // Accept either array or {citations:[...]}
+      allCitations = Array.isArray(payload) ? payload
+                   : (Array.isArray(payload?.citations) ? payload.citations : []);
+      renderCitations(allCitations);
+    } catch (e) {
+      console.error('Error loading citations:', e);
+      citationsContainer.innerHTML = `<p>Error loading citations.</p>
+        <pre style="white-space:pre-wrap;font-size:12px;background:#fff;border:1px solid #eee;padding:8px;">${e.message}</pre>`;
+    }
+  }
+
+  // Validate & Save (in-memory only)
+  function validateAndSave() {
+    const id = (F.id.value || '').trim();
+    const case_name = (F.case_name.value || '').trim();
+    const citation = (F.citation.value || '').trim();
+    const yearStr = (F.year.value || '').trim();
+
+    // Basic validations
+    if (!id) return alert('ID is required.');
+    if (!/^[a-z0-9-]+$/.test(id)) return alert('ID must be lowercase letters, numbers, and hyphens only.');
+    if (!case_name) return alert('Case Name is required.');
+    if (!citation) return alert('Citation is required.');
+    if (!/^\d{4}$/.test(yearStr)) return alert('Year must be a 4-digit number.');
+
+    const obj = {
+      id,
+      case_name,
+      citation,
+      year: Number(yearStr),
+      court: (F.court.value || '').trim(),
+      jurisdiction: (F.jurisdiction.value || '').trim(),
+      legal_principle: (F.legal_principle.value || '').trim(),
+      summary: (F.summary.value || '').trim(),
+      holding: (F.holding.value || '').trim(),
+      compliance_flags: commaToArray(F.compliance_flags.value),
+      key_points: commaToArray(F.key_points.value),
+      tags: commaToArray(F.tags.value),
+      observed_conduct: (F.observed_conduct.value || '').trim(),
+      anomaly_detected: (F.anomaly_detected.value || '').trim(),
+      breached_law_or_rule: commaToArray(F.breached_law_or_rule.value),
+      authority_basis: commaToArray(F.authority_basis.value),
+      canonical_breach_tag: (F.canonical_breach_tag.value || '').trim(),
+      case_link: (F.case_link.value || '').trim() || null,
+      full_case_text: (F.full_case_text.value || ''),
+      printable: !!F.printable.checked
+    };
+
+    // Upsert in memory
+    const idx = allCitations.findIndex(c => c.id === id);
+    if (idx >= 0) allCitations[idx] = obj;
+    else allCitations.push(obj);
+
+    // Re-apply filters & re-render
+    applyFilters();
+
+    alert('Saved to memory (no file write).');
+    closeDrawer();
+    clearForm();
+  }
+
+  validateAndSaveBtn.addEventListener('click', validateAndSave);
+
+  // Init
+  loadBreaches();
+  loadCitations();
 });
