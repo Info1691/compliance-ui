@@ -1,16 +1,12 @@
 /* ===============================
    Citations Viewer (Forensic Mode)
-   ===============================
+   =============================== */
 
-   Paths are centralized here. Adjust if necessary.
-   Keep canonical data sources untouched unless authorized.
-*/
-
-// ---- Configurable Paths (single source of truth) ----
+// ---- Configurable Paths ----
 const PATHS = {
   CITATIONS_JSON: '/data/citations/citations.json', // adjust if needed
   BREACHES_JSON:  '/data/breaches/breaches.json',   // adjust if needed
-  LOGO_SRC:       'assets/logo-white-bg.png'        // used in index.html
+  LOGO_SRC:       'assets/logo-white-bg.png'
 };
 
 // ---- State ----
@@ -62,23 +58,13 @@ const els = {
 // ---- Utilities ----
 function toArrayFromDelim(str) {
   if (!str) return [];
-  return str
-    .split(';')
-    .map(s => s.trim())
-    .filter(Boolean);
+  return str.split(';').map(s => s.trim()).filter(Boolean);
 }
-
 function toDelimited(arr) {
   return (Array.isArray(arr) ? arr : []).join('; ');
 }
-
-function safeHTML(s) {
-  return (s ?? '').toString();
-}
-
-function clone(obj) {
-  return JSON.parse(JSON.stringify(obj));
-}
+function safeHTML(s) { return (s ?? '').toString(); }
+function clone(obj) { return JSON.parse(JSON.stringify(obj)); }
 
 function buildIndex() {
   indexById.clear();
@@ -110,14 +96,11 @@ function renderCurrent() {
 
     <div class="chips">
       ${Array.isArray(c.compliance_flags) && c.compliance_flags.length
-        ? `<div><strong>Compliance Flags:</strong> ${c.compliance_flags.map(s => `<span class="chip">${safeHTML(s)}</span>`).join(' ')}</div>`
-        : ''}
+        ? `<div><strong>Compliance Flags:</strong> ${c.compliance_flags.map(s => `<span class="chip">${safeHTML(s)}</span>`).join(' ')}</div>` : ''}
       ${Array.isArray(c.key_points) && c.key_points.length
-        ? `<div><strong>Key Points:</strong> ${c.key_points.map(s => `<span class="chip">${safeHTML(s)}</span>`).join(' ')}</div>`
-        : ''}
+        ? `<div><strong>Key Points:</strong> ${c.key_points.map(s => `<span class="chip">${safeHTML(s)}</span>`).join(' ')}</div>` : ''}
       ${Array.isArray(c.tags) && c.tags.length
-        ? `<div><strong>Tags:</strong> ${c.tags.map(s => `<span class="chip">${safeHTML(s)}</span>`).join(' ')}</div>`
-        : ''}
+        ? `<div><strong>Tags:</strong> ${c.tags.map(s => `<span class="chip">${safeHTML(s)}</span>`).join(' ')}</div>` : ''}
     </div>
 
     <div class="links">
@@ -152,10 +135,7 @@ function openDrawer(modeTitle = 'Edit Citation') {
   els.drawerTitle.textContent = modeTitle;
   els.drawer.classList.add('open');
 }
-
-function closeDrawer() {
-  els.drawer.classList.remove('open');
-}
+function closeDrawer() { els.drawer.classList.remove('open'); }
 
 function populateFormFromCitation(c) {
   els.f.id.value = c.id || '';
@@ -173,7 +153,6 @@ function populateFormFromCitation(c) {
   els.f.case_link.value = c.case_link || '';
   els.f.full_case_text.value = c.full_case_text || '';
   els.f.printable.checked = !!c.printable;
-
   els.f.breached_law_or_rule.value = toDelimited(c.breached_law_or_rule);
   els.f.observed_conduct.value = c.observed_conduct || '';
   els.f.anomaly_detected.value = c.anomaly_detected || '';
@@ -182,7 +161,7 @@ function populateFormFromCitation(c) {
 }
 
 function formToCitation() {
-  // Basic validation: required + pattern
+  // Required validation
   if (!els.f.id.checkValidity() || !els.f.case_name.checkValidity() || !els.f.citation.checkValidity() || !els.f.year.checkValidity()) {
     els.form.reportValidity();
     return null;
@@ -195,4 +174,131 @@ function formToCitation() {
     year: Number(els.f.year.value),
     court: els.f.court.value.trim() || '',
     jurisdiction: els.f.jurisdiction.value.trim() || '',
-    summary: els.f.summary.value
+    summary: els.f.summary.value.trim() || '',
+    legal_principle: els.f.legal_principle.value.trim() || '',
+    holding: els.f.holding.value.trim() || '',
+    compliance_flags: toArrayFromDelim(els.f.compliance_flags.value),
+    key_points: toArrayFromDelim(els.f.key_points.value),
+    tags: toArrayFromDelim(els.f.tags.value),
+    case_link: els.f.case_link.value.trim() || null,
+    full_case_text: els.f.full_case_text.value,
+    printable: !!els.f.printable.checked,
+    breached_law_or_rule: toArrayFromDelim(els.f_breached_law_or_rule.value),
+    observed_conduct: els.f_observed_conduct.value.trim() || '',
+    anomaly_detected: els.f_anomaly_detected.value.trim() || '',
+    authority_basis: toArrayFromDelim(els.f_authority_basis.value),
+    canonical_breach_tag: els.f_canonical_breach_tag.value.trim() || ''
+  };
+
+  // ID collision check (allow if it's the current record)
+  if (obj.id && indexById.has(obj.id) && indexById.get(obj.id) !== currentIndex) {
+    alert(`ID "${obj.id}" is already used by another citation.`);
+    return null;
+  }
+  return obj;
+}
+
+function loadIntoForm(index) {
+  const c = citationsData.citations[index];
+  populateFormFromCitation(c);
+  openDrawer('Edit Citation');
+}
+
+function updateSuggestions() {
+  els.datalist.innerHTML = '';
+  breachSuggestions.forEach(tag => {
+    const opt = document.createElement('option');
+    opt.value = tag;
+    els.datalist.appendChild(opt);
+  });
+}
+
+function exportCurrentCitation() {
+  if (!citationsData.citations.length) return;
+  const c = clone(citationsData.citations[currentIndex]);
+  const blob = new Blob([JSON.stringify(c, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${c.id || 'citation'}.json`;
+  document.body.appendChild(a);
+  a.click();
+  URL.revokeObjectURL(url);
+  a.remove();
+}
+
+// ---- Events ----
+document.getElementById('prevBtn').addEventListener('click', () => {
+  if (!citationsData.citations.length) return;
+  currentIndex = (currentIndex - 1 + citationsData.citations.length) % citationsData.citations.length;
+  renderCurrent();
+});
+document.getElementById('nextBtn').addEventListener('click', () => {
+  if (!citationsData.citations.length) return;
+  currentIndex = (currentIndex + 1) % citationsData.citations.length;
+  renderCurrent();
+});
+document.getElementById('editBtn').addEventListener('click', () => {
+  if (!citationsData.citations.length) return;
+  loadIntoForm(currentIndex);
+});
+document.getElementById('printBtn').addEventListener('click', () => window.print());
+document.getElementById('exportBtn').addEventListener('click', exportCurrentCitation);
+document.getElementById('drawerCloseBtn').addEventListener('click', closeDrawer);
+document.getElementById('resetFormBtn').addEventListener('click', () => {
+  if (!citationsData.citations.length) return;
+  populateFormFromCitation(citationsData.citations[currentIndex]);
+});
+
+// Validate & Save (staging only)
+document.getElementById('citationForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const updated = formToCitation();
+  if (!updated) return;
+
+  const oldId = citationsData.citations[currentIndex].id;
+  citationsData.citations[currentIndex] = updated;
+  if (oldId !== updated.id) buildIndex();
+
+  renderCurrent();
+  alert('Saved to staging (in-memory). No file was written.');
+  closeDrawer();
+});
+
+// ---- Init ----
+async function fetchJSON(path) {
+  const res = await fetch(path, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`Failed to fetch ${path}: ${res.status} ${res.statusText}`);
+  return await res.json();
+}
+
+async function init() {
+  try {
+    const payload = await fetchJSON(PATHS.CITATIONS_JSON);
+    if (!payload || !Array.isArray(payload.citations)) {
+      throw new Error('citations.json missing top-level "citations" array.');
+    }
+    citationsData = payload;
+    buildIndex();
+
+    // breach suggestions (optional)
+    try {
+      const breaches = await fetchJSON(PATHS.BREACHES_JSON);
+      breachSuggestions = Array.isArray(breaches?.breaches)
+        ? breaches.breaches.map(b => b.tag).filter(Boolean)
+        : [];
+      updateSuggestions();
+    } catch (e) {
+      console.warn('breaches.json not loaded; proceeding without suggestions.', e);
+    }
+
+    currentIndex = 0;
+    renderCurrent();
+    console.log('Citations Viewer loaded. Records:', citationsData.citations.length);
+  } catch (err) {
+    console.error(err);
+    els.card.innerHTML = `<p class="error">Error loading citations: ${err.message}</p>`;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);
