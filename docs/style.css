@@ -50,7 +50,7 @@ header h1 {
 }
 .controls button:hover { background: #004680; }
 
-/* Added: link-style button */
+/* Added: link-style button (for “Open Bulk Uploader”) */
 .link-btn {
   display: inline-block;
   text-decoration: none;
@@ -79,7 +79,10 @@ header h1 {
   font-size: 1.1rem;
   color: #005a9c;
 }
-.citation-card p { margin: 6px 0; line-height: 1.4; }
+.citation-card p {
+  margin: 6px 0;
+  line-height: 1.4;
+}
 .citation-card p a {
   color: #005a9c;
   text-decoration: none;
@@ -87,12 +90,13 @@ header h1 {
 }
 .citation-card p a:hover { text-decoration: underline; }
 
-/* Drawer */
+/* Drawer (WIDER on tablets/desktops) */
 .drawer {
   position: fixed;
   top: 0;
-  left: -520px;              /* hidden by default */
-  width: 520px;              /* wider drawer */
+  left: -760px;            /* hidden by default: match width below */
+  width: 760px;            /* was 520px — gives room for internal panels */
+  max-width: 92vw;         /* never exceed viewport width */
   height: 100%;
   background: #fff;
   border-right: 1px solid #ddd;
@@ -149,6 +153,11 @@ header h1 {
   cursor: pointer;
 }
 .primary:hover { background: #004680; }
+
+/* Tablet tweaks: keep 2 columns if space allows */
+@media (max-width: 900px) {
+  .drawer { width: 680px; left: -680px; }
+}
 
 /* Mobile */
 @media (max-width: 640px) {
