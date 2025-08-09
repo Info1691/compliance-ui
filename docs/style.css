@@ -21,7 +21,7 @@ body { font-family: -apple-system, system-ui, Segoe UI, Roboto, Arial, sans-seri
 .app-main { display: grid; grid-template-columns: 380px 1fr; gap: 16px; padding: 16px; }
 @media (max-width: 1024px) {
   .app-main { grid-template-columns: 1fr; }
-  .drawer { position: relative; width: 100%; transform: none !important; }
+  .drawer { position: relative; width: 100%; }
 }
 
 /* Drawer */
@@ -34,8 +34,9 @@ body { font-family: -apple-system, system-ui, Segoe UI, Roboto, Arial, sans-seri
   max-height: calc(100vh - 80px);
   overflow: auto;
   width: 360px;
+  display: none;            /* CLOSED by default */
 }
-.drawer:not(.open) { display: none; }
+.drawer.open { display: block; } /* OPEN when toggled */
 
 .drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .drawer-form label { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
