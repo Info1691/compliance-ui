@@ -1,13 +1,11 @@
-/* ======================================
-   Bulk Uploader (Forensic, No File Writes)
-   ====================================== */
+/* Bulk Uploader — branded, no writes */
 
-// ---- Configurable Paths (RELATIVE to /bulk/) ----
 const PATHS = {
+  // existing DB to merge into (bulk is in /bulk/, go up one level)
   CITATIONS_JSON: '../data/citations/citations.json'
 };
 
-// ---- DOM ----
+// DOM
 const dom = {
   fileInput: document.getElementById('fileInput'),
   pasteInput: document.getElementById('pasteInput'),
@@ -24,13 +22,13 @@ const dom = {
   conflictsPanel: document.getElementById('conflictsPanel')
 };
 
-// ---- State ----
+// State
 let existing = { timestamp: '', citations: [] };
 let incoming = [];
 let parseErrors = [];
 let conflicts = [];
 
-// ---- Utils ----
+// Utils
 const safeJSON = s => { try { return JSON.parse(s); } catch { return null; } };
 const toArrayFromDelim = str => !str ? [] : String(str).split(';').map(s => s.trim()).filter(Boolean);
 const isBooleanish = v => (typeof v === 'boolean') || v === 'true' || v === 'false';
@@ -61,16 +59,14 @@ function normalizeEntry(o) {
   n.canonical_breach_tag = (n.canonical_breach_tag || '').toString().trim();
   return n;
 }
-
 function validateEntry(n) {
   const errs = [];
-  if (!/^[a-z0-9-]+$/.test(n.id)) errs.push('id must be URL-safe (lowercase letters, numbers, hyphens).');
+  if (!/^[a-z0-9-]+$/.test(n.id)) errs.push('id must be lowercase letters, numbers, hyphens.');
   if (!n.case_name) errs.push('case_name required.');
   if (!n.citation) errs.push('citation required.');
   if (!Number.isInteger(n.year) || n.year < 1000 || n.year > 9999) errs.push('year must be a 4-digit integer.');
   return errs;
 }
-
 function renderPreviewTable(items) {
   if (!items.length) { dom.previewWrap.innerHTML = ''; return; }
   const headers = ['id','case_name','citation','year','court','jurisdiction','printable'];
@@ -95,7 +91,6 @@ function renderPreviewTable(items) {
     </div>
   `;
 }
-
 function showValidationReport() {
   if (!parseErrors.length) {
     dom.validationSummary.innerHTML = `<div class="ok">Parsed ${incoming.length} item(s). No validation errors.</div>`;
@@ -104,7 +99,6 @@ function showValidationReport() {
   const list = parseErrors.map(e => `<li><strong>#${e.index}</strong>: ${e.message}</li>`).join('');
   dom.validationSummary.innerHTML = `<div class="err"><p>Validation errors:</p><ul>${list}</ul></div>`;
 }
-
 function showConflicts() {
   if (!conflicts.length) { dom.conflictsPanel.innerHTML = ''; return; }
   const list = conflicts.map(c => `
@@ -119,7 +113,7 @@ function showConflicts() {
   dom.conflictsPanel.innerHTML = `<div class="warn"><p>Conflicts: ${conflicts.length}</p><ul>${list}</ul></div>`;
 }
 
-// ---- Parsing ----
+// Parsing
 function parseCSV(text) {
   const lines = text.replace(/\r/g, '').split('\n').filter(Boolean);
   if (!lines.length) return [];
@@ -140,7 +134,6 @@ function parseCSV(text) {
   }
   return out;
 }
-
 function parseInputString(str) {
   const asJSON = safeJSON(str);
   if (Array.isArray(asJSON)) return asJSON;
@@ -148,16 +141,17 @@ function parseInputString(str) {
   return null;
 }
 
-// ---- Load existing DB ----
+// Load existing DB
 async function loadExisting() {
   const res = await fetch(PATHS.CITATIONS_JSON, { cache: 'no-store' });
   if (!res.ok) throw new Error(`Failed to fetch ${PATHS.CITATIONS_JSON}: ${res.status} ${res.statusText}`);
   const data = await res.json();
-  if (!data || !Array.isArray(data.citations)) throw new Error('citations.json missing top-level "citations" array.');
-  existing = data;
+  const citations = Array.isArray(data) ? data : (Array.isArray(data?.citations) ? data.citations : null);
+  if (!citations) throw new Error('citations.json must be an array or { citations: [...] }');
+  existing = { timestamp: data.timestamp || '', citations };
 }
 
-// ---- Merge ----
+// Merge
 function generateMerged(overwrite = false, sortBy = 'case_name') {
   const index = new Map(existing.citations.map((e, i) => [e.id, i]));
   conflicts = [];
@@ -181,7 +175,7 @@ function generateMerged(overwrite = false, sortBy = 'case_name') {
   return merged;
 }
 
-// ---- Events ----
+// Events
 dom.clearBtn.addEventListener('click', () => {
   dom.fileInput.value = '';
   dom.pasteInput.value = '';
