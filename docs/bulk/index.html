@@ -2,61 +2,78 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Bulk Import — Compliance Citations</title>
-  <link rel="stylesheet" href="./style.css?v=2025-08-09"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Citations Bulk Uploader</title>
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-  <header class="masthead">
-    <div class="logo-tile">
-      <img src="../logo.png" alt="BB"/>
-    </div>
-    <h1>Bulk Import — Compliance Citations</h1>
-    <a class="btn to-viewer" href="../">Back to Viewer</a>
+  <header class="app-header">
+    <img class="app-logo" src="assets/logo-white-bg.png" alt="Blue Chip Consultancy Services Logo"/>
+    <h1 class="app-title">Citations Bulk Uploader</h1>
   </header>
 
-  <main class="bulk">
+  <main class="bulk-main">
+    <!-- Controls -->
     <section class="panel">
-      <h2>1) Load current dataset</h2>
-      <p>This reads the live file you serve at <code>../data/citations/citations.json</code>.</p>
-      <button id="btnLoad" class="btn primary">Load current citations.json</button>
-    </section>
-
-    <section class="panel">
-      <h2>2) Add new data (JSON preferred)</h2>
-      <div class="row">
-        <button id="btnPasteJSON" class="btn">Paste JSON</button>
-        <label class="file">
-          <input id="csvFile" type="file" accept=".csv" />
-          <span class="btn">Choose CSV</span>
-        </label>
-        <button id="btnParseCSV" class="btn">Parse CSV</button>
+      <h2>Source Input</h2>
+      <div class="inputs">
+        <div class="input-block">
+          <label for="fileInput"><strong>Upload File</strong> (JSON or CSV)</label>
+          <input id="fileInput" type="file" accept=".json,.csv,text/csv" />
+        </div>
+        <div class="input-block">
+          <label for="pasteInput"><strong>Paste Data</strong> (JSON array or CSV)</label>
+          <textarea id="pasteInput" rows="10" placeholder='[ { "id": "...", "case_name": "...", ... }, ... ] or CSV with headers'></textarea>
+        </div>
+        <div class="input-block">
+          <button id="parseBtn" class="btn btn-primary">Parse & Validate</button>
+          <button id="clearBtn" class="btn btn-secondary" type="button">Clear</button>
+        </div>
       </div>
-      <p class="hint">CSV must include headers at least:
-        <code>id, case_name, citation, year, court, jurisdiction, summary</code>.
-        Use pipe <code>|</code> to separate items for arrays (e.g., <code>compliance_flags, tags, key_points, sources</code>).
-      </p>
-      <textarea id="jsonPaste" placeholder="(optional) Paste JSON here…"></textarea>
+      <p class="form-note">This tool never writes files. It validates and prepares a merged JSON preview for manual commit via GitHub.</p>
     </section>
 
+    <!-- Validation & Preview -->
     <section class="panel">
-      <h2>3) Validate</h2>
-      <label class="inline">
-        <input id="allowUpdates" type="checkbox" />
-        Allow updates for matching IDs (otherwise duplicates are rejected)
-      </label>
-      <button id="btnValidate" class="btn">Run Validation</button>
-      <pre id="log" class="log hidden"><code id="logText"></code></pre>
+      <h2>Validation Results</h2>
+      <div id="validationSummary" class="validation"></div>
+      <div id="previewTableWrap" class="table-wrap" aria-live="polite"></div>
     </section>
 
+    <!-- Merge -->
     <section class="panel">
-      <h2>4) Merge & Download</h2>
-      <button id="btnMerge" class="btn primary">Merge into Current (in-memory)</button>
-      <button id="btnDownload" class="btn" disabled>Download merged citations.json</button>
-      <pre id="log2" class="log hidden"><code id="log2Text"></code></pre>
+      <h2>Merge with Existing Citations</h2>
+      <div class="merge-controls">
+        <label class="checkbox">
+          <input id="overwriteConflicts" type="checkbox"/>
+          <span>Overwrite existing entries on ID conflict (default: keep existing, append conflicts list)</span>
+        </label>
+        <label>
+          <span>Sort by</span>
+          <select id="sortBy">
+            <option value="case_name">Case Name</option>
+            <option value="year">Year</option>
+            <option value="id">ID</option>
+          </select>
+        </label>
+        <button id="mergeBtn" class="btn btn-primary">Generate Merged JSON</button>
+      </div>
+      <div>
+        <h3>Merged Output</h3>
+        <textarea id="mergedOutput" rows="16" readonly placeholder="Merged JSON will appear here"></textarea>
+        <div class="merge-actions">
+          <button id="downloadMergedBtn" class="btn">Download merged.json</button>
+          <button id="copyMergedBtn" class="btn">Copy to Clipboard</button>
+        </div>
+      </div>
+      <div id="conflictsPanel" class="conflicts"></div>
     </section>
   </main>
 
-  <script defer src="./main.js?v=2025-08-09"></script>
+  <footer class="app-footer">
+    <small>Paths and behaviour configurable in main.js. No writes are performed.</small>
+  </footer>
+
+  <script src="main.js"></script>
 </body>
 </html>
