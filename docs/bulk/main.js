@@ -1,150 +1,154 @@
 <script>
-/* Bulk Importer — robust, complete, null-safe */
 document.addEventListener('DOMContentLoaded', () => {
-  // Elements (may be absent in other pages; guard everything)
-  const btnLoad     = document.getElementById('btnLoadCurrent');
-  const btnPaste    = document.getElementById('btnPasteJSON');
-  const fileCsv     = document.getElementById('fileCsv');
-  const btnParseCsv = document.getElementById('btnParseCsv');
-  const allowUpd    = document.getElementById('allowUpdates');
-  const btnValidate = document.getElementById('btnValidate');
-  const btnMerge    = document.getElementById('btnMerge');
-  const btnDownload = document.getElementById('btnDownload');
-  const pasteArea   = document.getElementById('pasteArea');
-  const statusBar   = document.getElementById('statusBar');
+  // Elements (guarded)
+  const backBtn       = document.getElementById('backToViewer');
+  const loadBtn       = document.getElementById('loadCurrent');
+  const pasteBtn      = document.getElementById('pasteJsonBtn');
+  const parseCsvBtn   = document.getElementById('parseCsvBtn');
+  const csvInput      = document.getElementById('csvFile');
+  const allowUpdates  = document.getElementById('allowUpdates');
+  const runValBtn     = document.getElementById('runValidation');
+  const mergeBtn      = document.getElementById('mergeBtn');
+  const downloadBtn   = document.getElementById('downloadBtn');
+  const pasteArea     = document.getElementById('pasteJsonArea');
+  const logNode       = document.getElementById('log');
 
-  const bust = `?v=${Date.now()}`;
-  const DATA_URL = `../data/citations/citations.json${bust}`;
+  // State
+  let current = []; // citations.json loaded
+  let incoming = []; // new items (JSON paste or CSV)
 
-  let currentData = [];
-  let incomingData = [];
-  let merged = null;
+  const bust = () => `?v=${Date.now()}`;
+  const CITATIONS_URL = `../data/citations/citations.json${bust()}`;
 
-  function setStatus(msg) {
-    if (!statusBar) return;
-    statusBar.textContent = (typeof msg === 'string') ? msg : JSON.stringify(msg, null, 2);
+  function log(msg) {
+    if (!logNode) return;
+    const line = document.createElement('div');
+    line.textContent = (typeof msg === 'string') ? msg : JSON.stringify(msg);
+    logNode.appendChild(line);
   }
+  function clearLog(){ if (logNode) logNode.innerHTML = ''; }
+
+  function normalizeArray(v){
+    if (!v) return [];
+    if (Array.isArray(v)) return v.map(s => String(s).trim()).filter(Boolean);
+    return String(v).split('|').map(s => s.trim()).filter(Boolean);
+  }
+
+  // Navigation
+  if (backBtn) backBtn.addEventListener('click', () => {
+    window.location.href = '../';
+  });
 
   // Load current dataset
-  if (btnLoad) {
-    btnLoad.addEventListener('click', async () => {
-      try {
-        setStatus('Loading current dataset…');
-        const res = await fetch(DATA_URL, {cache: 'no-store'});
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        currentData = await res.json();
-        setStatus(`Loaded ${currentData.length} records from live citations.json`);
-      } catch (e) {
-        console.error(e);
-        setStatus(`Failed to load: ${e.message}`);
-      }
-    });
-  }
+  if (loadBtn) loadBtn.addEventListener('click', async () => {
+    clearLog();
+    try {
+      const res = await fetch(CITATIONS_URL);
+      if (!res.ok) throw new Error('Failed to fetch citations.json');
+      current = await res.json();
+      log(`Loaded ${current.length} records from citations.json`);
+    } catch (e) {
+      console.error(e); log(e.message || e);
+    }
+  });
 
-  // Paste JSON
-  if (btnPaste && pasteArea) {
-    btnPaste.addEventListener('click', () => {
-      const text = (pasteArea.value || '').trim();
-      if (!text) { setStatus('Nothing in the paste box.'); return; }
-      try {
-        const parsed = JSON.parse(text);
-        incomingData = Array.isArray(parsed) ? parsed : [parsed];
-        setStatus(`Parsed ${incomingData.length} records from pasted JSON.`);
-      } catch (e) {
-        console.error(e);
-        setStatus('Invalid JSON.');
-      }
-    });
-  }
+  // Paste JSON -> incoming
+  if (pasteBtn) pasteBtn.addEventListener('click', () => {
+    clearLog();
+    try {
+      const raw = pasteArea?.value?.trim();
+      if (!raw) return log('Nothing pasted.');
+      const data = JSON.parse(raw);
+      if (!Array.isArray(data)) throw new Error('Pasted JSON must be an array of objects.');
+      incoming = data;
+      log(`Pasted ${incoming.length} records (JSON).`);
+    } catch (e) {
+      console.error(e); log(e.message || e);
+    }
+  });
 
-  // Parse CSV
-  if (btnParseCsv && fileCsv) {
-    btnParseCsv.addEventListener('click', () => {
-      const file = fileCsv.files && fileCsv.files[0];
-      if (!file) { setStatus('Choose a CSV first.'); return; }
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          const rows = reader.result.split(/\r?\n/).filter(Boolean);
-          if (!rows.length) throw new Error('CSV appears empty');
-          const headers = rows[0].split(',').map(h => h.trim());
-          const need = ['id','case_name','citation','year','court','jurisdiction','summary'];
-          const missing = need.filter(h => !headers.includes(h));
-          if (missing.length) {
-            throw new Error('Missing required headers: ' + missing.join(', '));
-          }
-          const data = rows.slice(1).map(line => {
-            const cells = line.split(',').map(s => s.trim());
-            const obj = {};
-            headers.forEach((h,i) => obj[h] = cells[i] ?? '');
-            // pipe-delimited arrays
-            ['compliance_flags','tags','key_points','sources'].forEach(k => {
-              if (obj[k]) obj[k] = String(obj[k]).split('|').map(s => s.trim()).filter(Boolean);
-            });
-            return obj;
-          });
-          incomingData = data;
-          setStatus(`Parsed ${incomingData.length} records from CSV.`);
-        } catch (e) {
-          console.error(e);
-          setStatus('CSV parse failed: ' + e.message);
+  // CSV -> incoming
+  if (parseCsvBtn) parseCsvBtn.addEventListener('click', async () => {
+    clearLog();
+    try {
+      if (!csvInput?.files?.length) return log('No CSV selected.');
+      const text = await csvInput.files[0].text();
+      const rows = text.split(/\r?\n/).filter(Boolean);
+      if (!rows.length) return log('Empty CSV.');
+
+      const headers = rows[0].split(',').map(h => h.trim());
+      const req = ['id','case_name','citation','year','court','jurisdiction','summary'];
+      const missing = req.filter(h => !headers.includes(h));
+      if (missing.length) return log(`CSV missing required headers: ${missing.join(', ')}`);
+
+      const out = [];
+      for (let i=1;i<rows.length;i++){
+        const cols = rows[i].split(','); // simple CSV (no quoted commas)
+        const obj = {};
+        headers.forEach((h,idx)=> obj[h] = cols[idx] ?? '');
+        // normalize array-ish fields
+        ['compliance_flags','tags','key_points','sources'].forEach(k => obj[k] = normalizeArray(obj[k]));
+        out.push(obj);
+      }
+      incoming = out;
+      log(`Parsed ${incoming.length} records from CSV.`);
+    } catch (e) {
+      console.error(e); log(e.message || e);
+    }
+  });
+
+  // Validate
+  if (runValBtn) runValBtn.addEventListener('click', () => {
+    clearLog();
+    const seen = new Set(current.map(c => c.id));
+    let ok = true;
+    for (const r of incoming) {
+      if (!r.id) { ok = false; log('Record missing id'); }
+      if (!r.case_name) { ok = false; log(`Missing case_name for ${r.id}`); }
+      if (!r.citation) { ok = false; log(`Missing citation for ${r.id}`); }
+      if (!r.year) { ok = false; log(`Missing year for ${r.id}`); }
+      if (!r.court) { ok = false; log(`Missing court for ${r.id}`); }
+      if (!r.jurisdiction) { ok = false; log(`Missing jurisdiction for ${r.id}`); }
+      if (!r.summary) { ok = false; log(`Missing summary for ${r.id}`); }
+
+      if (!allowUpdates?.checked && seen.has(r.id)) {
+        ok = false; log(`Duplicate id not allowed: ${r.id}`);
+      }
+    }
+    log(ok ? 'Validation OK.' : 'Validation failed. See messages above.');
+  });
+
+  // Merge
+  if (mergeBtn) mergeBtn.addEventListener('click', () => {
+    clearLog();
+    if (!incoming.length) return log('Nothing to merge.');
+    const byId = new Map(current.map(c => [c.id, c]));
+    for (const r of incoming) {
+      if (byId.has(r.id)) {
+        if (allowUpdates?.checked) {
+          byId.set(r.id, {...byId.get(r.id), ...r});
+        } else {
+          // skip duplicates
         }
-      };
-      reader.readAsText(file);
-    });
-  }
+      } else {
+        byId.set(r.id, r);
+      }
+    }
+    const merged = Array.from(byId.values());
+    log(`Merged. New total: ${merged.length}. Use "Download merged citations.json".`);
+    // stash in window for download button
+    window.__mergedCitations = merged;
+  });
 
-  // Validate (schema-ish)
-  if (btnValidate) {
-    btnValidate.addEventListener('click', () => {
-      if (!incomingData.length) { setStatus('No incoming data to validate.'); return; }
-      const need = ['id','case_name','citation','year','court','jurisdiction','summary'];
-      const errors = [];
-      const seen = new Set();
-      incomingData.forEach((r, idx) => {
-        const miss = need.filter(k => r[k] === undefined || r[k] === null || String(r[k]).trim() === '');
-        if (miss.length) errors.push(`Row ${idx+1} missing: ${miss.join(', ')}`);
-        if (seen.has(r.id)) errors.push(`Duplicate ID in incoming: ${r.id}`);
-        seen.add(r.id);
-      });
-      setStatus(errors.length ? errors.join('\n') : 'Validation OK.');
-    });
-  }
-
-  // Merge in-memory
-  if (btnMerge) {
-    btnMerge.addEventListener('click', () => {
-      if (!currentData.length) { setStatus('Load current dataset first.'); return; }
-      if (!incomingData.length) { setStatus('Nothing to merge.'); return; }
-      const byId = new Map(currentData.map(r => [r.id, r]));
-      const updatesAllowed = !!(allowUpd && allowUpd.checked);
-      let adds = 0, upds = 0, rejects = 0;
-      incomingData.forEach(r => {
-        if (byId.has(r.id)) {
-          if (updatesAllowed) { byId.set(r.id, {...byId.get(r.id), ...r}); upds++; }
-          else { rejects++; }
-        } else { byId.set(r.id, r); adds++; }
-      });
-      merged = [...byId.values()];
-      setStatus(`Merge complete. Adds: ${adds}, Updates: ${upds}, Rejected dupes: ${rejects}. Total: ${merged.length}`);
-    });
-  }
-
-  // Download merged file
-  if (btnDownload) {
-    btnDownload.addEventListener('click', () => {
-      if (!merged || !merged.length) { setStatus('Nothing merged yet.'); return; }
-      const blob = new Blob([JSON.stringify(merged, null, 2)], {type: 'application/json'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'citations.json';
-      document.body.appendChild(a);
-      a.click();
-      URL.revokeObjectURL(url);
-      a.remove();
-      setStatus('Downloaded merged citations.json — commit it to /docs/data/citations/citations.json');
-    });
-  }
+  // Download merged
+  if (downloadBtn) downloadBtn.addEventListener('click', () => {
+    const data = window.__mergedCitations || [];
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'citations.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
 });
 </script>
