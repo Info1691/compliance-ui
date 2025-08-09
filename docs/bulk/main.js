@@ -2,9 +2,9 @@
    Bulk Uploader (Forensic, No File Writes)
    ====================================== */
 
-// ---- Configurable Paths ----
+// ---- Configurable Paths (RELATIVE to /bulk/) ----
 const PATHS = {
-  CITATIONS_JSON: '/data/citations/citations.json' // existing database to merge into
+  CITATIONS_JSON: '../data/citations/citations.json'
 };
 
 // ---- DOM ----
@@ -26,29 +26,17 @@ const dom = {
 
 // ---- State ----
 let existing = { timestamp: '', citations: [] };
-let incoming = [];      // parsed new entries (validated)
-let parseErrors = [];   // parsing + validation errors
-let conflicts = [];     // [{ id, existing, incoming }]
+let incoming = [];
+let parseErrors = [];
+let conflicts = [];
 
 // ---- Utils ----
-function safeJSON(str) { try { return JSON.parse(str); } catch { return null; } }
-function toArrayFromDelim(str) {
-  if (!str) return [];
-  return String(str).split(';').map(s => s.trim()).filter(Boolean);
-}
-function isBooleanish(v) {
-  if (typeof v === 'boolean') return true;
-  if (v === 'true' || v === 'false') return true;
-  return false;
-}
-function toBool(v) {
-  if (typeof v === 'boolean') return v;
-  if (v === 'true') return true;
-  if (v === 'false') return false;
-  return false;
-}
+const safeJSON = s => { try { return JSON.parse(s); } catch { return null; } };
+const toArrayFromDelim = str => !str ? [] : String(str).split(';').map(s => s.trim()).filter(Boolean);
+const isBooleanish = v => (typeof v === 'boolean') || v === 'true' || v === 'false';
+const toBool = v => (typeof v === 'boolean') ? v : v === 'true';
+
 function normalizeEntry(o) {
-  // force shapes and types where possible
   const n = { ...o };
   n.id = (n.id || '').toString().trim();
   n.case_name = (n.case_name || '').toString().trim();
@@ -73,6 +61,7 @@ function normalizeEntry(o) {
   n.canonical_breach_tag = (n.canonical_breach_tag || '').toString().trim();
   return n;
 }
+
 function validateEntry(n) {
   const errs = [];
   if (!/^[a-z0-9-]+$/.test(n.id)) errs.push('id must be URL-safe (lowercase letters, numbers, hyphens).');
@@ -81,6 +70,7 @@ function validateEntry(n) {
   if (!Number.isInteger(n.year) || n.year < 1000 || n.year > 9999) errs.push('year must be a 4-digit integer.');
   return errs;
 }
+
 function renderPreviewTable(items) {
   if (!items.length) { dom.previewWrap.innerHTML = ''; return; }
   const headers = ['id','case_name','citation','year','court','jurisdiction','printable'];
@@ -105,14 +95,16 @@ function renderPreviewTable(items) {
     </div>
   `;
 }
+
 function showValidationReport() {
   if (!parseErrors.length) {
     dom.validationSummary.innerHTML = `<div class="ok">Parsed ${incoming.length} item(s). No validation errors.</div>`;
     return;
   }
-  const list = parseErrors.map((e, i) => `<li><strong>#${e.index}</strong>: ${e.message}</li>`).join('');
+  const list = parseErrors.map(e => `<li><strong>#${e.index}</strong>: ${e.message}</li>`).join('');
   dom.validationSummary.innerHTML = `<div class="err"><p>Validation errors:</p><ul>${list}</ul></div>`;
 }
+
 function showConflicts() {
   if (!conflicts.length) { dom.conflictsPanel.innerHTML = ''; return; }
   const list = conflicts.map(c => `
@@ -124,49 +116,35 @@ function showConflicts() {
       </details>
     </li>
   `).join('');
-  dom.conflictsPanel.innerHTML = `
-    <div class="warn">
-      <p>Conflicts detected on ${conflicts.length} ID(s):</p>
-      <ul>${list}</ul>
-    </div>
-  `;
+  dom.conflictsPanel.innerHTML = `<div class="warn"><p>Conflicts: ${conflicts.length}</p><ul>${list}</ul></div>`;
 }
 
 // ---- Parsing ----
 function parseCSV(text) {
-  // Simple CSV parser assuming first row headers, commas as delimiter, quotes optional
   const lines = text.replace(/\r/g, '').split('\n').filter(Boolean);
   if (!lines.length) return [];
   const headers = lines[0].split(',').map(h => h.trim());
   const out = [];
   for (let i = 1; i < lines.length; i++) {
-    const cells = [];
-    // naive split respecting quotes
-    let cur = '', inQuotes = false;
-    for (const ch of lines[i]) {
-      if (ch === '"' ) { inQuotes = !inQuotes; continue; }
-      if (ch === ',' && !inQuotes) { cells.push(cur); cur=''; continue; }
+    const row = lines[i];
+    let cur = '', inQ = false; const cells = [];
+    for (const ch of row) {
+      if (ch === '"') { inQ = !inQ; continue; }
+      if (ch === ',' && !inQ) { cells.push(cur); cur=''; continue; }
       cur += ch;
     }
     cells.push(cur);
     const obj = {};
-    headers.forEach((h, idx) => obj[h] = (cells[idx] ?? '').trim());
+    headers.forEach((h, k) => obj[h] = (cells[k] ?? '').trim());
     out.push(obj);
   }
   return out;
 }
 
 function parseInputString(str) {
-  // Try JSON array first
   const asJSON = safeJSON(str);
   if (Array.isArray(asJSON)) return asJSON;
-
-  // Try CSV
-  if (str.includes(',') && str.toLowerCase().includes('id')) {
-    return parseCSV(str);
-  }
-
-  // If neither, return null (we can add custom text parsers later once you define format)
+  if (str.includes(',') && str.toLowerCase().includes('id')) return parseCSV(str);
   return null;
 }
 
@@ -183,28 +161,22 @@ async function loadExisting() {
 function generateMerged(overwrite = false, sortBy = 'case_name') {
   const index = new Map(existing.citations.map((e, i) => [e.id, i]));
   conflicts = [];
-  const merged = JSON.parse(JSON.stringify(existing)); // deep clone
+  const merged = JSON.parse(JSON.stringify(existing));
   incoming.forEach(n => {
     if (index.has(n.id)) {
       const i = index.get(n.id);
-      if (overwrite) {
-        merged.citations[i] = n;
-      } else {
-        conflicts.push({ id: n.id, existing: merged.citations[i], incoming: n });
-      }
+      if (overwrite) merged.citations[i] = n;
+      else conflicts.push({ id: n.id, existing: merged.citations[i], incoming: n });
     } else {
       merged.citations.push(n);
       index.set(n.id, merged.citations.length - 1);
     }
   });
-
-  // sort
   merged.citations.sort((a,b) => {
     if (sortBy === 'year') return (a.year||0) - (b.year||0) || a.case_name.localeCompare(b.case_name);
     if (sortBy === 'id') return a.id.localeCompare(b.id);
     return a.case_name.localeCompare(b.case_name);
   });
-
   merged.timestamp = new Date().toISOString();
   return merged;
 }
@@ -217,60 +189,36 @@ dom.clearBtn.addEventListener('click', () => {
   dom.previewWrap.innerHTML = '';
   dom.mergedOutput.value = '';
   dom.conflictsPanel.innerHTML = '';
-  incoming = [];
-  parseErrors = [];
-  conflicts = [];
+  incoming = []; parseErrors = []; conflicts = [];
 });
 
 dom.parseBtn.addEventListener('click', async () => {
-  parseErrors = [];
-  conflicts = [];
-  dom.conflictsPanel.innerHTML = '';
+  parseErrors = []; conflicts = [];
   dom.validationSummary.innerHTML = 'Parsing...';
-
-  try {
-    await loadExisting();
-  } catch (e) {
-    dom.validationSummary.innerHTML = `<div class="err">Failed loading existing citations: ${e.message}</div>`;
-    return;
-  }
+  try { await loadExisting(); }
+  catch (e) { dom.validationSummary.innerHTML = `<div class="err">Failed loading existing citations: ${e.message}</div>`; return; }
 
   let rawItems = [];
-
-  // File input takes precedence if provided
   const file = dom.fileInput.files?.[0];
   if (file) {
     const text = await file.text();
     const parsed = parseInputString(text);
-    if (!parsed) {
-      dom.validationSummary.innerHTML = `<div class="err">Unsupported file content. Provide JSON array or CSV.</div>`;
-      return;
-    }
+    if (!parsed) { dom.validationSummary.innerHTML = `<div class="err">Unsupported file content. Provide JSON array or CSV.</div>`; return; }
     rawItems = parsed;
   } else {
     const pasted = dom.pasteInput.value.trim();
-    if (!pasted) {
-      dom.validationSummary.innerHTML = `<div class="err">No input provided. Upload a file or paste data.</div>`;
-      return;
-    }
+    if (!pasted) { dom.validationSummary.innerHTML = `<div class="err">No input provided. Upload a file or paste data.</div>`; return; }
     const parsed = parseInputString(pasted);
-    if (!parsed) {
-      dom.validationSummary.innerHTML = `<div class="err">Unsupported pasted content. Provide JSON array or CSV.</div>`;
-      return;
-    }
+    if (!parsed) { dom.validationSummary.innerHTML = `<div class="err">Unsupported pasted content. Provide JSON array or CSV.</div>`; return; }
     rawItems = parsed;
   }
 
-  // Normalize + validate
   incoming = [];
   rawItems.forEach((o, idx) => {
     const n = normalizeEntry(o);
     const errs = validateEntry(n);
-    if (errs.length) {
-      parseErrors.push({ index: idx + 1, message: errs.join(' ') });
-    } else {
-      incoming.push(n);
-    }
+    if (errs.length) parseErrors.push({ index: idx + 1, message: errs.join(' ') });
+    else incoming.push(n);
   });
 
   renderPreviewTable(incoming);
@@ -278,14 +226,9 @@ dom.parseBtn.addEventListener('click', async () => {
 });
 
 dom.mergeBtn.addEventListener('click', () => {
-  if (!incoming.length) {
-    dom.mergedOutput.value = '';
-    dom.validationSummary.innerHTML = `<div class="err">Nothing to merge. Parse inputs first.</div>`;
-    return;
-  }
+  if (!incoming.length) { dom.mergedOutput.value = ''; dom.validationSummary.innerHTML = `<div class="err">Nothing to merge. Parse inputs first.</div>`; return; }
   const overwrite = !!dom.overwriteConflicts.checked;
   const sortBy = dom.sortBy.value;
-
   const merged = generateMerged(overwrite, sortBy);
   showConflicts();
   dom.mergedOutput.value = JSON.stringify(merged, null, 2);
@@ -296,25 +239,13 @@ dom.downloadMergedBtn.addEventListener('click', () => {
   if (!text) return;
   const blob = new Blob([text], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'citations.merged.json';
-  document.body.appendChild(a);
-  a.click();
-  URL.revokeObjectURL(url);
-  a.remove();
+  const a = Object.assign(document.createElement('a'), { href: url, download: 'citations.merged.json' });
+  document.body.appendChild(a); a.click(); URL.revokeObjectURL(url); a.remove();
 });
 
 dom.copyMergedBtn.addEventListener('click', async () => {
   const text = dom.mergedOutput.value.trim();
   if (!text) return;
-  try {
-    await navigator.clipboard.writeText(text);
-    alert('Merged JSON copied to clipboard.');
-  } catch {
-    // Fallback
-    dom.mergedOutput.select();
-    document.execCommand('copy');
-    alert('Merged JSON copied.');
-  }
+  try { await navigator.clipboard.writeText(text); alert('Merged JSON copied to clipboard.'); }
+  catch { dom.mergedOutput.select(); document.execCommand('copy'); alert('Merged JSON copied.'); }
 });
