@@ -55,4 +55,34 @@ input[type="text"], select {
 .card {
   background: #fff;
   border: 1px solid #e4e8f1;
-  border-left: 
+  border-left: 6px solid #2d6cdf;
+  border-radius: 8px;
+  padding: 14px;
+  margin: 14px 0;
+}
+.case-name { margin: 0 0 8px; font-size: 20px; }
+
+/* Drawer */
+.drawer {
+  position: fixed;
+  top: 0; left: 0;
+  height: 100vh;
+  width: 480px;               /* requested */
+  max-width: 100vw;
+  background: #ffffff;
+  border-right: 1px solid #e2e8f0;
+  box-shadow: 2px 0 12px rgba(0,0,0,0.08);
+  transform: translateX(-100%);
+  transition: transform 220ms ease;
+  z-index: 2000;
+  padding: 16px;
+}
+.drawer.open { transform: translateX(0); }
+.drawer .close-btn {
+  background: transparent; color: #1f4d86; border: none; font-size: 18px; cursor: pointer;
+}
+
+/* Misc */
+main { padding: 12px; }
+.muted { color: #6b7280; }
+.error { color: #a30000; }
