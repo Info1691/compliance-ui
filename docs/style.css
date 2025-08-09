@@ -50,6 +50,18 @@ header h1 {
 }
 .controls button:hover { background: #004680; }
 
+/* Added: link-style button */
+.link-btn {
+  display: inline-block;
+  text-decoration: none;
+  background: #005a9c;
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+.link-btn:hover { background: #004680; }
+
 /* Citations */
 #citationsContainer {
   padding: 16px;
@@ -67,14 +79,11 @@ header h1 {
   font-size: 1.1rem;
   color: #005a9c;
 }
-.citation-card p {
-  margin: 6px 0;
-  line-height: 1.4;
-}
+.citation-card p { margin: 6px 0; line-height: 1.4; }
 .citation-card p a {
   color: #005a9c;
   text-decoration: none;
-  word-break: break-word;
+  word-break: break-word; /* wrap long URLs */
 }
 .citation-card p a:hover { text-decoration: underline; }
 
