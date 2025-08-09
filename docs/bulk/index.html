@@ -8,13 +8,13 @@
 </head>
 <body>
   <header class="app-header">
-    <a href="../" class="btn btn-back" aria-label="Back to Viewer">Back to Viewer</a>
-    <img class="app-logo" src="../assets/logo-white-bg.png" alt="Blue Chip Consultancy Services Logo"/>
+    <a href="../" class="back-link">Back to Viewer</a>
+    <img class="app-logo" src="../logo.png" alt="Logo"/>
     <h1 class="app-title">Citations Bulk Uploader</h1>
   </header>
 
   <main class="bulk-main">
-    <!-- Controls -->
+    <!-- Source Input -->
     <section class="panel">
       <h2>Source Input</h2>
       <div class="inputs">
@@ -27,11 +27,11 @@
           <textarea id="pasteInput" rows="10" placeholder='[ { "id": "...", "case_name": "...", ... }, ... ] or CSV with headers'></textarea>
         </div>
         <div class="input-block">
-          <button id="parseBtn" class="btn btn-primary">Parse & Validate</button>
-          <button id="clearBtn" class="btn btn-secondary" type="button">Clear</button>
+          <button id="parseBtn" class="btn primary">Parse &amp; Validate</button>
+          <button id="clearBtn" class="btn" type="button">Clear</button>
         </div>
       </div>
-      <p class="form-note">This tool never writes files. It validates and prepares a merged JSON preview for manual commit via GitHub.</p>
+      <p class="note">This tool never writes files. It validates and prepares a merged JSON preview for manual commit via GitHub.</p>
     </section>
 
     <!-- Validation & Preview -->
@@ -47,7 +47,7 @@
       <div class="merge-controls">
         <label class="checkbox">
           <input id="overwriteConflicts" type="checkbox"/>
-          <span>Overwrite existing entries on ID conflict (default: keep existing, append conflicts list)</span>
+          <span>Overwrite existing entries on ID conflict (default: keep existing, list conflicts)</span>
         </label>
         <label>
           <span>Sort by</span>
@@ -57,7 +57,7 @@
             <option value="id">ID</option>
           </select>
         </label>
-        <button id="mergeBtn" class="btn btn-primary">Generate Merged JSON</button>
+        <button id="mergeBtn" class="btn primary">Generate Merged JSON</button>
       </div>
       <div>
         <h3>Merged Output</h3>
@@ -72,7 +72,7 @@
   </main>
 
   <footer class="app-footer">
-    <small>Paths and behaviour configurable in main.js. No writes are performed.</small>
+    <small>&copy; Compliance Tools — Bulk Uploader (no file writes).</small>
   </footer>
 
   <script src="main.js"></script>
