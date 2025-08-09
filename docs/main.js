@@ -16,6 +16,7 @@ let breachSuggestions = [];
 
 // ---- DOM ----
 const els = {
+  logo: document.getElementById('appLogo'),
   card: document.getElementById('citationCard'),
   prev: document.getElementById('prevBtn'),
   next: document.getElementById('nextBtn'),
@@ -211,7 +212,10 @@ els.next.addEventListener('click', () => {
   currentIndex = (currentIndex + 1) % citationsData.citations.length;
   renderCurrent();
 });
-els.edit.addEventListener('click', () => { if (citationsData.citations.length) loadIntoForm(currentIndex); });
+els.edit.addEventListener('click', () => { 
+  if (!citationsData.citations.length) { alert('No citations loaded.'); return; }
+  loadIntoForm(currentIndex); 
+});
 els.print.addEventListener('click', () => window.print());
 els.exportBtn.addEventListener('click', exportCurrentCitation);
 els.drawerClose.addEventListener('click', closeDrawer);
@@ -229,6 +233,14 @@ els.form.addEventListener('submit', (e) => {
   closeDrawer();
 });
 
+// ---- Robust payload handling ----
+function normalizePayload(payload) {
+  // Accept EITHER { citations: [...] } OR a raw array [...]
+  if (Array.isArray(payload)) return { timestamp: '', citations: payload };
+  if (payload && Array.isArray(payload.citations)) return { timestamp: payload.timestamp || '', citations: payload.citations };
+  throw new Error('citations.json missing top-level "citations" array or is not an array itself.');
+}
+
 // ---- Init ----
 async function fetchJSON(path) {
   const res = await fetch(path, { cache: 'no-store' });
@@ -237,11 +249,30 @@ async function fetchJSON(path) {
 }
 
 async function init(){
+  // Ensure drawer CLOSED on load
+  closeDrawer();
+
+  // Logo fallback (keeps white background logo) if filename differs
+  if (els.logo) {
+    let tried = 0;
+    const candidates = [
+      './assets/logo-white-bg.png',
+      './assets/logo.png',
+      'assets/logo-white-bg.png',
+      'assets/logo.png',
+      '../assets/logo-white-bg.png',
+      '../assets/logo.png'
+    ];
+    els.logo.addEventListener('error', () => {
+      tried += 1;
+      if (tried < candidates.length) els.logo.src = candidates[tried];
+    }, { once: false });
+  }
+
   try {
-    // Load citations (relative path)
-    const payload = await fetchJSON(PATHS.CITATIONS_JSON);
-    if (!payload || !Array.isArray(payload.citations)) throw new Error('citations.json missing top-level "citations" array.');
-    citationsData = payload;
+    // Load citations (support both shapes)
+    const raw = await fetchJSON(PATHS.CITATIONS_JSON);
+    citationsData = normalizePayload(raw);
     buildIndex();
 
     // Optional breach suggestions
