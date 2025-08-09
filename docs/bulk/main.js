@@ -1,147 +1,320 @@
-(() => {
-  const cacheBust = `v=${Date.now()}`;
-  const $ = (s,r=document)=>r.querySelector(s);
+/* ======================================
+   Bulk Uploader (Forensic, No File Writes)
+   ====================================== */
 
-  let current = [];   // loaded citations.json
-  let incoming = [];  // parsed/pasted items
-  let merged = [];    // result after merge
+// ---- Configurable Paths ----
+const PATHS = {
+  CITATIONS_JSON: '/data/citations/citations.json' // existing database to merge into
+};
 
-  function log(el, text, obj){
-    el.classList.remove('hidden');
-    const t = typeof obj==='undefined' ? text : `${text}\n${JSON.stringify(obj,null,2)}`;
-    el.querySelector('code').textContent = t;
+// ---- DOM ----
+const dom = {
+  fileInput: document.getElementById('fileInput'),
+  pasteInput: document.getElementById('pasteInput'),
+  parseBtn: document.getElementById('parseBtn'),
+  clearBtn: document.getElementById('clearBtn'),
+  validationSummary: document.getElementById('validationSummary'),
+  previewWrap: document.getElementById('previewTableWrap'),
+  overwriteConflicts: document.getElementById('overwriteConflicts'),
+  sortBy: document.getElementById('sortBy'),
+  mergeBtn: document.getElementById('mergeBtn'),
+  mergedOutput: document.getElementById('mergedOutput'),
+  downloadMergedBtn: document.getElementById('downloadMergedBtn'),
+  copyMergedBtn: document.getElementById('copyMergedBtn'),
+  conflictsPanel: document.getElementById('conflictsPanel')
+};
+
+// ---- State ----
+let existing = { timestamp: '', citations: [] };
+let incoming = [];      // parsed new entries (validated)
+let parseErrors = [];   // parsing + validation errors
+let conflicts = [];     // [{ id, existing, incoming }]
+
+// ---- Utils ----
+function safeJSON(str) { try { return JSON.parse(str); } catch { return null; } }
+function toArrayFromDelim(str) {
+  if (!str) return [];
+  return String(str).split(';').map(s => s.trim()).filter(Boolean);
+}
+function isBooleanish(v) {
+  if (typeof v === 'boolean') return true;
+  if (v === 'true' || v === 'false') return true;
+  return false;
+}
+function toBool(v) {
+  if (typeof v === 'boolean') return v;
+  if (v === 'true') return true;
+  if (v === 'false') return false;
+  return false;
+}
+function normalizeEntry(o) {
+  // force shapes and types where possible
+  const n = { ...o };
+  n.id = (n.id || '').toString().trim();
+  n.case_name = (n.case_name || '').toString().trim();
+  n.citation = (n.citation || '').toString().trim();
+  n.year = Number(n.year);
+  n.court = (n.court || '').toString().trim();
+  n.jurisdiction = (n.jurisdiction || '').toString().trim();
+  n.summary = (n.summary || '').toString().trim();
+  n.legal_principle = (n.legal_principle || '').toString().trim();
+  n.holding = (n.holding || '').toString().trim();
+  n.compliance_flags = Array.isArray(n.compliance_flags) ? n.compliance_flags : toArrayFromDelim(n.compliance_flags);
+  n.key_points = Array.isArray(n.key_points) ? n.key_points : toArrayFromDelim(n.key_points);
+  n.tags = Array.isArray(n.tags) ? n.tags : toArrayFromDelim(n.tags);
+  n.case_link = (n.case_link && String(n.case_link).trim()) ? String(n.case_link).trim() : null;
+  n.full_case_text = (n.full_case_text ?? '').toString();
+  if (!isBooleanish(n.printable)) n.printable = false;
+  n.printable = toBool(n.printable);
+  n.breached_law_or_rule = Array.isArray(n.breached_law_or_rule) ? n.breached_law_or_rule : toArrayFromDelim(n.breached_law_or_rule);
+  n.observed_conduct = (n.observed_conduct || '').toString().trim();
+  n.anomaly_detected = (n.anomaly_detected || '').toString().trim();
+  n.authority_basis = Array.isArray(n.authority_basis) ? n.authority_basis : toArrayFromDelim(n.authority_basis);
+  n.canonical_breach_tag = (n.canonical_breach_tag || '').toString().trim();
+  return n;
+}
+function validateEntry(n) {
+  const errs = [];
+  if (!/^[a-z0-9-]+$/.test(n.id)) errs.push('id must be URL-safe (lowercase letters, numbers, hyphens).');
+  if (!n.case_name) errs.push('case_name required.');
+  if (!n.citation) errs.push('citation required.');
+  if (!Number.isInteger(n.year) || n.year < 1000 || n.year > 9999) errs.push('year must be a 4-digit integer.');
+  return errs;
+}
+function renderPreviewTable(items) {
+  if (!items.length) { dom.previewWrap.innerHTML = ''; return; }
+  const headers = ['id','case_name','citation','year','court','jurisdiction','printable'];
+  const th = headers.map(h => `<th>${h}</th>`).join('');
+  const rows = items.map(n => `
+    <tr>
+      <td>${n.id}</td>
+      <td>${n.case_name}</td>
+      <td>${n.citation}</td>
+      <td>${n.year}</td>
+      <td>${n.court}</td>
+      <td>${n.jurisdiction}</td>
+      <td>${n.printable ? 'true' : 'false'}</td>
+    </tr>
+  `).join('');
+  dom.previewWrap.innerHTML = `
+    <div class="table-scroll">
+      <table class="table">
+        <thead><tr>${th}</tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+function showValidationReport() {
+  if (!parseErrors.length) {
+    dom.validationSummary.innerHTML = `<div class="ok">Parsed ${incoming.length} item(s). No validation errors.</div>`;
+    return;
   }
-  function clearLog(el){ el.classList.add('hidden'); el.querySelector('code').textContent=''; }
+  const list = parseErrors.map((e, i) => `<li><strong>#${e.index}</strong>: ${e.message}</li>`).join('');
+  dom.validationSummary.innerHTML = `<div class="err"><p>Validation errors:</p><ul>${list}</ul></div>`;
+}
+function showConflicts() {
+  if (!conflicts.length) { dom.conflictsPanel.innerHTML = ''; return; }
+  const list = conflicts.map(c => `
+    <li>
+      <strong>${c.id}</strong> already exists.
+      <details>
+        <summary>Compare</summary>
+        <pre>${JSON.stringify({existing: c.existing, incoming: c.incoming}, null, 2)}</pre>
+      </details>
+    </li>
+  `).join('');
+  dom.conflictsPanel.innerHTML = `
+    <div class="warn">
+      <p>Conflicts detected on ${conflicts.length} ID(s):</p>
+      <ul>${list}</ul>
+    </div>
+  `;
+}
 
-  function parseCSV(text){
-    // very small CSV parser (no quotes in content expected)
-    const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
-    if(!lines.length) return [];
-    const headers = lines[0].split(',').map(h=>h.trim());
-    return lines.slice(1).map(line=>{
-      const cols = line.split(',').map(c=>c.trim());
-      const row = {};
-      headers.forEach((h,i)=> row[h]=cols[i] ?? '');
-      // normalize arrays if pipe-separated
-      ['compliance_flags','tags','key_points','sources'].forEach(k=>{
-        if(row[k]) row[k] = String(row[k]).split('|').map(s=>s.trim()).filter(Boolean);
-      });
-      return row;
-    });
+// ---- Parsing ----
+function parseCSV(text) {
+  // Simple CSV parser assuming first row headers, commas as delimiter, quotes optional
+  const lines = text.replace(/\r/g, '').split('\n').filter(Boolean);
+  if (!lines.length) return [];
+  const headers = lines[0].split(',').map(h => h.trim());
+  const out = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cells = [];
+    // naive split respecting quotes
+    let cur = '', inQuotes = false;
+    for (const ch of lines[i]) {
+      if (ch === '"' ) { inQuotes = !inQuotes; continue; }
+      if (ch === ',' && !inQuotes) { cells.push(cur); cur=''; continue; }
+      cur += ch;
+    }
+    cells.push(cur);
+    const obj = {};
+    headers.forEach((h, idx) => obj[h] = (cells[idx] ?? '').trim());
+    out.push(obj);
+  }
+  return out;
+}
+
+function parseInputString(str) {
+  // Try JSON array first
+  const asJSON = safeJSON(str);
+  if (Array.isArray(asJSON)) return asJSON;
+
+  // Try CSV
+  if (str.includes(',') && str.toLowerCase().includes('id')) {
+    return parseCSV(str);
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    const btnLoad = $('#btnLoad');
-    const btnPasteJSON = $('#btnPasteJSON');
-    const btnParseCSV = $('#btnParseCSV');
-    const csvFile = $('#csvFile');
-    const jsonPaste = $('#jsonPaste');
-    const allowUpdates = $('#allowUpdates');
-    const btnValidate = $('#btnValidate');
-    const btnMerge = $('#btnMerge');
-    const btnDownload = $('#btnDownload');
-    const log1 = $('#log');
-    const log2 = $('#log2');
+  // If neither, return null (we can add custom text parsers later once you define format)
+  return null;
+}
 
-    // Load current citations.json
-    btnLoad.addEventListener('click', async () => {
-      clearLog(log1);
-      try{
-        const res = await fetch(`../data/citations/citations.json?${cacheBust}`);
-        if(!res.ok) throw new Error(`HTTP ${res.status}`);
-        current = await res.json();
-        log(log1, 'Loaded current dataset:', { count: current.length });
-      }catch(err){
-        log(log1, 'Failed to load current dataset:', { error: String(err) });
+// ---- Load existing DB ----
+async function loadExisting() {
+  const res = await fetch(PATHS.CITATIONS_JSON, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`Failed to fetch ${PATHS.CITATIONS_JSON}: ${res.status} ${res.statusText}`);
+  const data = await res.json();
+  if (!data || !Array.isArray(data.citations)) throw new Error('citations.json missing top-level "citations" array.');
+  existing = data;
+}
+
+// ---- Merge ----
+function generateMerged(overwrite = false, sortBy = 'case_name') {
+  const index = new Map(existing.citations.map((e, i) => [e.id, i]));
+  conflicts = [];
+  const merged = JSON.parse(JSON.stringify(existing)); // deep clone
+  incoming.forEach(n => {
+    if (index.has(n.id)) {
+      const i = index.get(n.id);
+      if (overwrite) {
+        merged.citations[i] = n;
+      } else {
+        conflicts.push({ id: n.id, existing: merged.citations[i], incoming: n });
       }
-    });
-
-    // Paste JSON
-    btnPasteJSON.addEventListener('click', () => {
-      try{
-        const arr = JSON.parse(jsonPaste.value || '[]');
-        if(!Array.isArray(arr)) throw new Error('JSON must be an array');
-        incoming = arr;
-        log(log1, 'Accepted pasted JSON items:', { count: incoming.length });
-      }catch(err){
-        log(log1, 'Invalid JSON:', { error: String(err) });
-      }
-    });
-
-    // Parse CSV
-    btnParseCSV.addEventListener('click', async () => {
-      clearLog(log1);
-      try{
-        let text = '';
-        if(csvFile.files && csvFile.files[0]){
-          text = await csvFile.files[0].text();
-        }else if(jsonPaste.value.trim()){
-          text = jsonPaste.value.trim();
-        }else{
-          throw new Error('Choose a CSV file or paste CSV into the box.');
-        }
-        incoming = parseCSV(text);
-        log(log1, 'Parsed CSV rows:', { count: incoming.length });
-      }catch(err){
-        log(log1, 'CSV parse error:', { error: String(err) });
-      }
-    });
-
-    // Validate
-    btnValidate.addEventListener('click', () => {
-      clearLog(log1);
-      const required = ['id','case_name','citation','year','court','jurisdiction','summary'];
-      const bad = [];
-      (incoming||[]).forEach((r,idx)=>{
-        const miss = required.filter(k => r[k]===undefined || String(r[k]).trim()==='');
-        if(miss.length) bad.push({ index: idx, missing: miss });
-      });
-      if(bad.length){
-        log(log1, 'Validation failed. Missing fields listed below.', { failures: bad.length, detail: bad.slice(0,100) });
-      }else{
-        log(log1, 'Validation passed.', { items: incoming.length });
-      }
-    });
-
-    // Merge (in-memory)
-    btnMerge.addEventListener('click', () => {
-      clearLog(log2);
-      if(!current.length){ log(log2,'Load current dataset first.'); return; }
-      if(!incoming.length){ log(log2,'Add/parse some items first.'); return; }
-
-      const byId = new Map(current.map(x=>[String(x.id), x]));
-      let updates=0, inserts=0;
-
-      incoming.forEach(it=>{
-        const id = String(it.id);
-        if(byId.has(id)){
-          if(allowUpdates.checked){
-            byId.set(id, Object.assign({}, byId.get(id), it));
-            updates++;
-          }
-        }else{
-          byId.set(id, it);
-          inserts++;
-        }
-      });
-
-      merged = Array.from(byId.values());
-      btnDownload.disabled = false;
-      log(log2, 'Merge completed.', { inserts, updates, total: merged.length });
-    });
-
-    // Download merged
-    btnDownload.addEventListener('click', () => {
-      if(!merged.length){ return; }
-      const blob = new Blob([JSON.stringify(merged, null, 2)], {type:'application/json'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'citations.json';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    });
+    } else {
+      merged.citations.push(n);
+      index.set(n.id, merged.citations.length - 1);
+    }
   });
-})();
+
+  // sort
+  merged.citations.sort((a,b) => {
+    if (sortBy === 'year') return (a.year||0) - (b.year||0) || a.case_name.localeCompare(b.case_name);
+    if (sortBy === 'id') return a.id.localeCompare(b.id);
+    return a.case_name.localeCompare(b.case_name);
+  });
+
+  merged.timestamp = new Date().toISOString();
+  return merged;
+}
+
+// ---- Events ----
+dom.clearBtn.addEventListener('click', () => {
+  dom.fileInput.value = '';
+  dom.pasteInput.value = '';
+  dom.validationSummary.innerHTML = '';
+  dom.previewWrap.innerHTML = '';
+  dom.mergedOutput.value = '';
+  dom.conflictsPanel.innerHTML = '';
+  incoming = [];
+  parseErrors = [];
+  conflicts = [];
+});
+
+dom.parseBtn.addEventListener('click', async () => {
+  parseErrors = [];
+  conflicts = [];
+  dom.conflictsPanel.innerHTML = '';
+  dom.validationSummary.innerHTML = 'Parsing...';
+
+  try {
+    await loadExisting();
+  } catch (e) {
+    dom.validationSummary.innerHTML = `<div class="err">Failed loading existing citations: ${e.message}</div>`;
+    return;
+  }
+
+  let rawItems = [];
+
+  // File input takes precedence if provided
+  const file = dom.fileInput.files?.[0];
+  if (file) {
+    const text = await file.text();
+    const parsed = parseInputString(text);
+    if (!parsed) {
+      dom.validationSummary.innerHTML = `<div class="err">Unsupported file content. Provide JSON array or CSV.</div>`;
+      return;
+    }
+    rawItems = parsed;
+  } else {
+    const pasted = dom.pasteInput.value.trim();
+    if (!pasted) {
+      dom.validationSummary.innerHTML = `<div class="err">No input provided. Upload a file or paste data.</div>`;
+      return;
+    }
+    const parsed = parseInputString(pasted);
+    if (!parsed) {
+      dom.validationSummary.innerHTML = `<div class="err">Unsupported pasted content. Provide JSON array or CSV.</div>`;
+      return;
+    }
+    rawItems = parsed;
+  }
+
+  // Normalize + validate
+  incoming = [];
+  rawItems.forEach((o, idx) => {
+    const n = normalizeEntry(o);
+    const errs = validateEntry(n);
+    if (errs.length) {
+      parseErrors.push({ index: idx + 1, message: errs.join(' ') });
+    } else {
+      incoming.push(n);
+    }
+  });
+
+  renderPreviewTable(incoming);
+  showValidationReport();
+});
+
+dom.mergeBtn.addEventListener('click', () => {
+  if (!incoming.length) {
+    dom.mergedOutput.value = '';
+    dom.validationSummary.innerHTML = `<div class="err">Nothing to merge. Parse inputs first.</div>`;
+    return;
+  }
+  const overwrite = !!dom.overwriteConflicts.checked;
+  const sortBy = dom.sortBy.value;
+
+  const merged = generateMerged(overwrite, sortBy);
+  showConflicts();
+  dom.mergedOutput.value = JSON.stringify(merged, null, 2);
+});
+
+dom.downloadMergedBtn.addEventListener('click', () => {
+  const text = dom.mergedOutput.value.trim();
+  if (!text) return;
+  const blob = new Blob([text], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'citations.merged.json';
+  document.body.appendChild(a);
+  a.click();
+  URL.revokeObjectURL(url);
+  a.remove();
+});
+
+dom.copyMergedBtn.addEventListener('click', async () => {
+  const text = dom.mergedOutput.value.trim();
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    alert('Merged JSON copied to clipboard.');
+  } catch {
+    // Fallback
+    dom.mergedOutput.select();
+    document.execCommand('copy');
+    alert('Merged JSON copied.');
+  }
+});
