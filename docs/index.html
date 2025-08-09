@@ -9,7 +9,7 @@
 <body>
   <!-- Header -->
   <header class="app-header">
-    <!-- Keep white-background logo intact; do not alter asset -->
+    <!-- Keep white-background logo intact -->
     <img id="appLogo" class="app-logo" src="assets/logo-white-bg.png" alt="Blue Chip Consultancy Services Logo" />
     <h1 class="app-title">Citations Viewer</h1>
   </header>
@@ -67,7 +67,7 @@
         <!-- Arrays (semicolon-delimited → arrays) -->
         <label>
           <span>Compliance Flags (use ; to separate)</span>
-          <input id="f_compliance_flags" name="compliance_flags" type="text" placeholder="e.g. investment failure; conflict of interest" />
+          <input id="f_compliance_flags" name="compliance_flags" type="text" />
         </label>
         <label>
           <span>Key Points (use ; to separate)</span>
@@ -85,7 +85,7 @@
         </label>
         <label>
           <span>Full Case Text</span>
-          <textarea id="f_full_case_text" name="full_case_text" rows="6" placeholder=""></textarea>
+          <textarea id="f_full_case_text" name="full_case_text" rows="6"></textarea>
         </label>
 
         <!-- Printability -->
@@ -136,7 +136,7 @@
       </div>
 
       <article id="citationCard" class="card">
-        <!-- Content populated by main.js -->
+        <!-- Populated by main.js -->
       </article>
     </section>
   </main>
