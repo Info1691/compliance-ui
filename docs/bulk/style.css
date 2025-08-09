@@ -1,52 +1,29 @@
-/* Header bar */
-.header {
-  background: #1f4d86;
-  color: #fff;
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+@import url("../style.css?v=2025-08-09");
+
+/* add masthead button placement for bulk */
+.masthead{
+  justify-content:space-between;
 }
-.header .brand { display: flex; align-items: center; gap: 12px; }
-.header .brand img { height: 40px; }
-.header .title { font-size: 20px; font-weight: 700; margin: 0; }
-.header .back { background:#fff; color:#1f4d86; border:1px solid #fff; border-radius:6px; padding:6px 10px; text-decoration:none; }
-
-main { padding: 16px; }
-
-.section {
-  background: #fff;
-  border: 1px solid #e5eaf2;
-  border-radius: 8px;
-  padding: 14px;
-  margin: 14px 0;
+.masthead .to-viewer{
+  background:#fff;
+  color:var(--blue-600);
+  border:1px solid var(--blue-600);
 }
 
-button {
-  background: #2458a6;
-  color: #fff;
-  border: none;
-  padding: 6px 10px;
-  border-radius: 6px;
-  cursor: pointer;
+/* page layout */
+.bulk{ padding:16px }
+.panel{
+  background:#fff; border:1px solid var(--border); border-radius:10px;
+  padding:14px 16px; margin:12px 0;
 }
-button:hover { filter: brightness(0.95); }
-
-.btn-secondary {
-  background: #fff;
-  color: #1f4d86;
-  border: 1px solid #1f4d86;
-  border-radius: 6px;
-  padding: 6px 10px;
+.panel h2{ margin:4px 0 10px; font-size:18px }
+.row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
+.hint{ color:var(--muted); margin:6px 0 10px }
+textarea#jsonPaste{
+  width:100%; min-height:120px; padding:10px;
+  border:1px solid var(--border); border-radius:6px; font:inherit;
 }
 
-textarea {
-  width: 100%;
-  min-height: 110px;
-  padding: 8px;
-  border: 1px solid #c9d4e5;
-  border-radius: 6px;
-  background: #fff;
-}
-
-#log { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; }
+.file input[type=file]{ display:none }
+.log{ margin-top:10px; background:#0d1117; color:#c9d1d9; padding:8px 10px; border-radius:8px; overflow:auto }
+.hidden{ display:none }
