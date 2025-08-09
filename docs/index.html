@@ -1,93 +1,98 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Compliance Citation Viewer</title>
-  <link rel="stylesheet" href="./style.css" />
+  <link rel="stylesheet" href="./style.css?v=2025-08-09" />
 </head>
 <body>
-  <header>
-    <div class="bar">
-      <img src="./logo.png" alt="Logo" class="logo" />
-      <h1>Compliance Citation Viewer</h1>
+  <header class="masthead">
+    <div class="logo-tile">
+      <img src="./logo.png" alt="BB" />
     </div>
+    <h1>Compliance Citation Viewer</h1>
   </header>
 
   <div class="controls">
     <label for="breachFilter">Filter by Breach Type:</label>
     <select id="breachFilter"><option>Loading…</option></select>
 
-    <input id="keywordSearch" type="text" placeholder="Search by keyword…" />
+    <input id="keywordSearch" type="search" placeholder="Search by keyword…" />
 
-    <!-- Keep Add/Edit button blue; Bulk Import uses white variant for contrast -->
-    <button id="openDrawerBtn" class="bb-btn" type="button">Add/Edit Citation</button>
-    <a class="bb-btn-white" href="./bulk/">Go to Bulk Import</a>
+    <button id="openDrawerBtn" class="btn">Add/Edit Citation</button>
+
+    <!-- blue on white (controls bar has white bg) -->
+    <a class="btn link-to-bulk" href="./bulk/">Go to Bulk Import</a>
   </div>
 
   <main id="citationsContainer">
     <p>Loading citations…</p>
   </main>
 
-  <!-- Drawer (left slide-out) -->
+  <!-- Drawer -->
   <aside id="drawer" class="drawer" aria-hidden="true">
     <div class="drawer-header">
       <h2>Add Citations</h2>
-      <button id="closeDrawerBtn" type="button" class="close-btn" aria-label="Close">×</button>
+      <button id="closeDrawerBtn" class="close-btn" aria-label="Close">×</button>
     </div>
 
     <form id="citationForm" class="drawer-form" onsubmit="return false;">
-      <div class="grid-two">
+      <div class="grid-2">
         <input id="f-id" placeholder="ID (unique)" />
         <input id="f-case_name" placeholder="Case Name" />
+      </div>
+      <div class="grid-2">
         <input id="f-citation" placeholder="Neutral Citation" />
         <input id="f-year" placeholder="Year" inputmode="numeric" />
+      </div>
+      <div class="grid-2">
         <input id="f-court" placeholder="Court" />
         <input id="f-jurisdiction" placeholder="Jurisdiction" />
       </div>
 
-      <div class="row">
-        <textarea id="f-summary" placeholder="Summary"></textarea>
-      </div>
+      <textarea id="f-summary" placeholder="Summary"></textarea>
 
-      <div class="grid-two">
+      <div class="grid-2">
         <input id="f-legal_principle" placeholder="Legal Principle" />
         <input id="f-holding" placeholder="Holding" />
       </div>
 
-      <div class="grid-two">
+      <div class="grid-2">
         <input id="f-key_points" placeholder="Key Points (comma-separated)" />
+        <input id="f-compliance_flags" placeholder="Compliance Flags (comma-separated)" />
+      </div>
+
+      <div class="grid-2">
         <input id="f-tags" placeholder="Tags (comma-separated)" />
-      </div>
-
-      <div class="grid-two">
         <input id="f-observed_conduct" placeholder="Observed Conduct" />
+      </div>
+
+      <div class="grid-2">
         <input id="f-anomaly_detected" placeholder="Anomaly Detected" />
-      </div>
-
-      <div class="grid-two">
         <input id="f-breached_law_or_rule" placeholder="Breached Law or Rule" />
+      </div>
+
+      <div class="grid-2">
         <input id="f-authority_basis" placeholder="Authority Basis" />
-      </div>
-
-      <div class="grid-two">
         <input id="f-canonical_breach_tag" placeholder="Canonical Breach Tag" />
+      </div>
+
+      <div class="grid-2">
         <input id="f-case_link" placeholder="Case Link (optional)" />
+        <input id="f-sources" placeholder="Sources (comma-separated)" />
       </div>
 
-      <div class="row">
-        <textarea id="f-full_case_text" placeholder="Full Case Text (optional)"></textarea>
-      </div>
+      <textarea id="f-full_case_text" placeholder="Full Case Text (optional)"></textarea>
 
-      <div class="actions">
-        <label><input id="f-printable" type="checkbox" /> Printable</label>
-        <button id="validateSave" class="bb-btn" type="button">Validate &amp; Save</button>
-      </div>
+      <label class="inline">
+        <input type="checkbox" id="f-printable" /> Printable
+      </label>
 
-      <div id="formStatus" class="status" style="display:none;"></div>
+      <button id="btnValidate" class="btn primary">Validate & Save</button>
     </form>
   </aside>
 
-  <script src="./main.js"></script>
+  <script defer src="./main.js?v=2025-08-09"></script>
 </body>
 </html>
