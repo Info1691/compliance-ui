@@ -168,13 +168,13 @@ function formToCitation() {
     key_points: toArrayFromDelim(els.f.key_points.value),
     tags: toArrayFromDelim(els.f.tags.value),
     case_link: els.f.case_link.value.trim() || null,
-    full_case_text: els.f.full_case_text.value,
+    full_case_text: els.f_full_case_text.value,
     printable: !!els.f.printable.checked,
-    breached_law_or_rule: toArrayFromDelim(els.f.breached_law_or_rule.value),
-    observed_conduct: els.f.observed_conduct.value.trim() || '',
-    anomaly_detected: els.f.anomaly_detected.value.trim() || '',
-    authority_basis: toArrayFromDelim(els.f.authority_basis.value),
-    canonical_breach_tag: els.f.canonical_breach_tag.value.trim() || ''
+    breached_law_or_rule: toArrayFromDelim(els.f_breached_law_or_rule.value),
+    observed_conduct: els.f_observed_conduct.value.trim() || '',
+    anomaly_detected: els.f_anomaly_detected.value.trim() || '',
+    authority_basis: toArrayFromDelim(els.f_authority_basis.value),
+    canonical_breach_tag: els.f_canonical_breach_tag.value.trim() || ''
   };
   if (obj.id && indexById.has(obj.id) && indexById.get(obj.id) !== currentIndex) {
     alert(`ID "${obj.id}" is already used by another citation.`);
@@ -201,41 +201,9 @@ function exportCurrentCitation(){
   document.body.appendChild(a); a.click(); URL.revokeObjectURL(url); a.remove();
 }
 
-// ---- Events ----
-els.prev.addEventListener('click', () => {
-  if (!citationsData.citations.length) return;
-  currentIndex = (currentIndex - 1 + citationsData.citations.length) % citationsData.citations.length;
-  renderCurrent();
-});
-els.next.addEventListener('click', () => {
-  if (!citationsData.citations.length) return;
-  currentIndex = (currentIndex + 1) % citationsData.citations.length;
-  renderCurrent();
-});
-els.edit.addEventListener('click', () => { 
-  if (!citationsData.citations.length) { alert('No citations loaded.'); return; }
-  loadIntoForm(currentIndex); 
-});
-els.print.addEventListener('click', () => window.print());
-els.exportBtn.addEventListener('click', exportCurrentCitation);
-els.drawerClose.addEventListener('click', closeDrawer);
-els.resetFormBtn.addEventListener('click', () => { if (citationsData.citations.length) populateFormFromCitation(citationsData.citations[currentIndex]); });
-
-els.form.addEventListener('submit', (e) => {
-  e.preventDefault();
-  const updated = formToCitation();
-  if (!updated) return;
-  const oldId = citationsData.citations[currentIndex].id;
-  citationsData.citations[currentIndex] = updated;
-  if (oldId !== updated.id) buildIndex();
-  renderCurrent();
-  alert('Saved to staging (in-memory). No file was written.');
-  closeDrawer();
-});
-
 // ---- Robust payload handling ----
 function normalizePayload(payload) {
-  // Accept EITHER { citations: [...] } OR a raw array [...]
+  // Accept either a raw array [...] or { citations: [...] }
   if (Array.isArray(payload)) return { timestamp: '', citations: payload };
   if (payload && Array.isArray(payload.citations)) return { timestamp: payload.timestamp || '', citations: payload.citations };
   throw new Error('citations.json missing top-level "citations" array or is not an array itself.');
@@ -249,33 +217,31 @@ async function fetchJSON(path) {
 }
 
 async function init(){
-  // Ensure drawer CLOSED on load
+  // Keep drawer CLOSED on load
   closeDrawer();
 
-  // Logo fallback (keeps white background logo) if filename differs
+  // Optional logo fallback if filename/path differs (does not change branding)
   if (els.logo) {
     let tried = 0;
     const candidates = [
-      './assets/logo-white-bg.png',
-      './assets/logo.png',
       'assets/logo-white-bg.png',
       'assets/logo.png',
+      './assets/logo-white-bg.png',
+      './assets/logo.png',
       '../assets/logo-white-bg.png',
       '../assets/logo.png'
     ];
     els.logo.addEventListener('error', () => {
       tried += 1;
       if (tried < candidates.length) els.logo.src = candidates[tried];
-    }, { once: false });
+    });
   }
 
   try {
-    // Load citations (support both shapes)
     const raw = await fetchJSON(PATHS.CITATIONS_JSON);
     citationsData = normalizePayload(raw);
     buildIndex();
 
-    // Optional breach suggestions
     try {
       const breaches = await fetchJSON(PATHS.BREACHES_JSON);
       breachSuggestions = Array.isArray(breaches?.breaches) ? breaches.breaches.map(b => b.tag).filter(Boolean) : [];
@@ -293,3 +259,37 @@ async function init(){
   }
 }
 document.addEventListener('DOMContentLoaded', init);
+
+// ---- Events ----
+els.prev.addEventListener('click', () => {
+  if (!citationsData.citations.length) return;
+  currentIndex = (currentIndex - 1 + citationsData.citations.length) % citationsData.citations.length;
+  renderCurrent();
+});
+els.next.addEventListener('click', () => {
+  if (!citationsData.citations.length) return;
+  currentIndex = (currentIndex + 1) % citationsData.citations.length;
+  renderCurrent();
+});
+els.edit.addEventListener('click', () => {
+  if (!citationsData.citations.length) { alert('No citations loaded.'); return; }
+  loadIntoForm(currentIndex);
+});
+els.print.addEventListener('click', () => window.print());
+els.exportBtn.addEventListener('click', exportCurrentCitation);
+els.drawerClose.addEventListener('click', closeDrawer);
+els.resetFormBtn.addEventListener('click', () => {
+  if (!citationsData.citations.length) return;
+  populateFormFromCitation(citationsData.citations[currentIndex]);
+});
+els.form.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const updated = formToCitation();
+  if (!updated) return;
+  const oldId = citationsData.citations[currentIndex].id;
+  citationsData.citations[currentIndex] = updated;
+  if (oldId !== updated.id) buildIndex();
+  renderCurrent();
+  alert('Saved to staging (in-memory). No file was written.');
+  closeDrawer();
+});
