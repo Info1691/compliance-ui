@@ -173,15 +173,12 @@ document.addEventListener('DOMContentLoaded', () => {
       breaches = await r.json();
 
       breachFilter.innerHTML = '<option value="all">All</option>';
-      breaches
-        .slice()
-        .sort((a,b)=> (a.tag||'').localeCompare(b.tag||''))
-        .forEach(b => {
-          const opt = document.createElement('option');
-          opt.value = b.tag || '';
-          opt.textContent = b.tag || '';
-          breachFilter.appendChild(opt);
-        });
+      breaches.slice().sort((a,b)=> (a.tag||'').localeCompare(b.tag||'')).forEach(b => {
+        const opt = document.createElement('option');
+        opt.value = b.tag || '';
+        opt.textContent = b.tag || '';
+        breachFilter.appendChild(opt);
+      });
 
       breachFilter.addEventListener('change', applyFilters);
       keywordSearch.addEventListener('input', applyFilters);
