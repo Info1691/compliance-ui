@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   const validateAndSaveBtn = document.getElementById('validateAndSaveBtn');
 
-  // Drawer open/close (guarded)
+  // Drawer open/close
   function openDrawer() {
     drawer.classList.add('open');
     drawer.setAttribute('aria-hidden', 'false');
@@ -42,10 +42,10 @@ document.addEventListener('DOMContentLoaded', () => {
     drawer.classList.remove('open');
     drawer.setAttribute('aria-hidden', 'true');
   }
-  if (openDrawerBtn && drawer) openDrawerBtn.addEventListener('click', openDrawer);
-  if (closeDrawerBtn && drawer) closeDrawerBtn.addEventListener('click', closeDrawer);
+  if (openDrawerBtn) openDrawerBtn.addEventListener('click', openDrawer);
+  if (closeDrawerBtn) closeDrawerBtn.addEventListener('click', closeDrawer);
 
-  // Data paths (relative under /compliance-ui/)
+  // Data paths
   const CITATIONS_URL = 'data/citations/citations.json';
   const BREACHES_URL  = 'data/breaches/breaches.json';
 
@@ -106,7 +106,6 @@ document.addEventListener('DOMContentLoaded', () => {
       card.className = 'citation-card';
       card.dataset.id = c.id || '';
 
-      // Sources: prefer c.sources[]; else extract from authority_basis
       let srcs = Array.isArray(c.sources) ? c.sources : [];
       if (!srcs.length) srcs = extractUrls(c.authority_basis);
 
@@ -133,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Click a card to edit it (fills the drawer)
+  // Click to edit
   citationsContainer.addEventListener('click', (e) => {
     const card = e.target.closest('.citation-card');
     if (!card) return;
@@ -173,7 +172,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!r.ok) throw new Error(`breaches fetch: HTTP ${r.status}`);
       breaches = await r.json();
 
-      // Populate dropdown
       breachFilter.innerHTML = '<option value="all">All</option>';
       breaches
         .slice()
@@ -187,8 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       breachFilter.addEventListener('change', applyFilters);
       keywordSearch.addEventListener('input', applyFilters);
-    } catch (e) {
-      console.warn('Breaches unavailable:', e.message);
+    } catch {
       breachFilter.innerHTML = '<option value="all">All</option>';
       breachFilter.addEventListener('change', applyFilters);
       keywordSearch.addEventListener('input', applyFilters);
@@ -201,12 +198,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const r = await fetch(CITATIONS_URL, { cache: 'no-store' });
       if (!r.ok) throw new Error(`citations fetch: HTTP ${r.status}`);
       const payload = await r.json();
-      // Accept either array or {citations:[...]}
       allCitations = Array.isArray(payload) ? payload
                    : (Array.isArray(payload?.citations) ? payload.citations : []);
       renderCitations(allCitations);
     } catch (e) {
-      console.error('Error loading citations:', e);
       citationsContainer.innerHTML = `<p>Error loading citations.</p>
         <pre style="white-space:pre-wrap;font-size:12px;background:#fff;border:1px solid #eee;padding:8px;">${e.message}</pre>`;
     }
@@ -226,10 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!/^\d{4}$/.test(yearStr)) return alert('Year must be a 4-digit number.');
 
     const obj = {
-      id,
-      case_name,
-      citation,
-      year: Number(yearStr),
+      id, case_name, citation, year: Number(yearStr),
       court: (F.court.value || '').trim(),
       jurisdiction: (F.jurisdiction.value || '').trim(),
       legal_principle: (F.legal_principle.value || '').trim(),
@@ -252,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (idx >= 0) allCitations[idx] = obj;
     else allCitations.push(obj);
 
-    applyFilters();         // re-render with filters applied
+    applyFilters();
     alert('Saved to memory (no file write).');
     closeDrawer();
     clearForm();
