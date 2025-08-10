@@ -62,10 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return [...new Set(out)];
   };
   const host = (u) => { try { return new URL(u).hostname; } catch { return u; } };
-  const commaToArray = v => (v || '')
-    .split(',')
-    .map(s => s.trim())
-    .filter(Boolean);
+  const commaToArray = v => (v || '').split(',').map(s => s.trim()).filter(Boolean);
 
   function clearForm() {
     Object.values(F).forEach(el => {
@@ -222,7 +219,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const citation = (F.citation.value || '').trim();
     const yearStr = (F.year.value || '').trim();
 
-    // Basic validations
     if (!id) return alert('ID is required.');
     if (!/^[a-z0-9-]+$/.test(id)) return alert('ID must be lowercase letters, numbers, and hyphens only.');
     if (!case_name) return alert('Case Name is required.');
@@ -252,14 +248,11 @@ document.addEventListener('DOMContentLoaded', () => {
       printable: !!F.printable.checked
     };
 
-    // Upsert in memory
     const idx = allCitations.findIndex(c => c.id === id);
     if (idx >= 0) allCitations[idx] = obj;
     else allCitations.push(obj);
 
-    // Re-apply filters & re-render
-    applyFilters();
-
+    applyFilters();         // re-render with filters applied
     alert('Saved to memory (no file write).');
     closeDrawer();
     clearForm();
