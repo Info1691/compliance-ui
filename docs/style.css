@@ -22,21 +22,23 @@ header h1 { font-size: 1.25rem; margin: 0; }
 .citation-card p a { color: #005a9c; text-decoration: none; word-break: break-word; }
 .citation-card p a:hover { text-decoration: underline; }
 
-/* Drawer — 80% of screen width */
+/* Drawer — robust transform-based slide, 80% width */
 .drawer {
   position: fixed;
   top: 0;
-  left: -80vw;      /* hide by moving its full width offscreen */
-  width: 80vw;      /* ~another 3/4 inch wider than 75vw on iPad */
+  left: 0;
+  width: 80vw;         /* desired width */
+  max-width: 100%;     /* safety */
   height: 100%;
   background: #fff;
   border-right: 1px solid #ddd;
   box-shadow: 2px 0 8px rgba(0,0,0,0.2);
   overflow-y: auto;
-  transition: left 0.3s ease;
+  transform: translateX(-100%);   /* start fully offscreen */
+  transition: transform 0.3s ease;
   z-index: 1000;
 }
-.drawer.open { left: 0; }
+.drawer.open { transform: translateX(0); }
 .drawer-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid #eee; }
 .close-btn { background: none; border: none; font-size: 22px; cursor: pointer; }
 .drawer-form { padding: 12px 14px 24px; display: flex; flex-direction: column; gap: 10px; }
@@ -47,14 +49,8 @@ header h1 { font-size: 1.25rem; margin: 0; }
 .primary { background: #005a9c; color: #fff; border: none; border-radius: 6px; padding: 10px 12px; cursor: pointer; }
 .primary:hover { background: #004680; }
 
-/* Tablet safeguard: still use 2 cols where possible */
-@media (max-width: 900px) {
-  .grid-two { grid-template-columns: 1fr 1fr; }
-}
-
-/* Mobile: drawer fills screen */
+/* Mobile: full screen */
 @media (max-width: 640px) {
-  .drawer { width: 100vw; left: -100vw; }
-  .drawer.open { left: 0; }
+  .drawer { width: 100vw; }
   .grid-two { grid-template-columns: 1fr; }
 }
