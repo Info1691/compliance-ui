@@ -20,15 +20,14 @@ header h1 { font-size: 1.25rem; margin: 0; }
 .citation-card h2 { margin: 0 0 6px; font-size: 1.1rem; color: #005a9c; }
 .citation-card p { margin: 6px 0; line-height: 1.4; }
 .citation-card p a { color: #005a9c; text-decoration: none; word-break: break-word; }
-.citation-card p a:hover { text-decoration: underline; }
-
-/* Drawer — widened */
+.citation-card p a:hover { text-decoration: 
+                          
+                          /* Drawer — 3/4 screen width */
 .drawer {
   position: fixed;
   top: 0;
-  left: -860px;        /* match width below so it’s fully hidden */
-  width: 860px;        /* widened */
-  max-width: 95vw;     /* keep within viewport on small screens */
+  left: -75vw;         /* hide by moving exactly its width offscreen */
+  width: 75vw;         /* three-quarters of the viewport width */
   height: 100%;
   background: #fff;
   border-right: 1px solid #ddd;
@@ -37,6 +36,9 @@ header h1 { font-size: 1.25rem; margin: 0; }
   transition: left 0.3s ease;
   z-index: 1000;
 }
+                          
+.drawer.open { left: 0; }
+                          
 .drawer.open { left: 0; }
 .drawer-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid #eee; }
 .close-btn { background: none; border: none; font-size: 22px; cursor: pointer; }
