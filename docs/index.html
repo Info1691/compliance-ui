@@ -4,8 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Compliance Citation Viewer</title>
-  <!-- cache-bust so the wider drawer CSS applies immediately -->
-  <link rel="stylesheet" href="style.css?v=3"/>
+  <link rel="stylesheet" href="style.css?v=4"/>
 </head>
 <body>
   <header>
@@ -25,8 +24,8 @@
     <p>Loading citations…</p>
   </main>
 
-  <!-- Drawer (left slide-out) -->
-  <aside id="drawer" class="drawer" aria-hidden="true">
+  <!-- Drawer -->
+  <aside id="drawer" class="drawer" aria-hidden="true" aria-label="Citation Entry Panel">
     <div class="drawer-header">
       <h2>Citation Entry</h2>
       <button id="closeDrawerBtn" class="close-btn" type="button" aria-label="Close">×</button>
@@ -62,6 +61,6 @@
     </form>
   </aside>
 
-  <script src="main.js?v=3"></script>
+  <script src="main.js?v=4"></script>
 </body>
 </html>
