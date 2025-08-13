@@ -1,26 +1,23 @@
 (function () {
-  // ---------- DOM ----------
   const $ = (id) => document.getElementById(id);
   const els = {
     fileInput: $('fileInput'), fileName: $('fileName'),
     parseBtn: $('parseBtn'), clearBtn: $('clearBtn'),
-    autoFromTxt: $('autoFromTxt'),
-    pasteBox: $('pasteBox'), previewBox: $('previewBox'),
-    acceptedList: $('acceptedList'), acceptedCount: $('acceptedCount'),
-    validationLine: $('validationLine'),
+    autoFromTxt: $('autoFromTxt'), pasteBox: $('pasteBox'),
+    previewBox: $('previewBox'), acceptedList: $('acceptedList'),
+    acceptedCount: $('acceptedCount'), validationLine: $('validationLine'),
     overwriteChk: $('overwriteChk'), sortBy: $('sortBy'),
-    genBtn: $('genBtn'), copyBtn: $('copyBtn'), dlBtn: $('dlBtn'),
+    genBtn: $('genBtn'), copyBtn: $('copyBtn'), dlBtn: $('dlBtn')
   };
 
-  // ---------- State ----------
   let rawFileText = '';
   let accepted = [];
 
-  // ---------- Helpers ----------
   const escapeHtml = (s='') => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const slug = (s) => s.toLowerCase()
-    .normalize('NFKD').replace(/[\u0300-\u036f]/g,'')
+  const slug = (s) => s.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'')
     .replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+  const setValidation = (m) => els.validationLine.textContent = m;
+  const showPreview = (arr) => { els.previewBox.value = JSON.stringify(arr, null, 2); };
 
   function toCSVrows(text) {
     const lines = text.replace(/\r/g,'').split('\n').filter(Boolean);
@@ -36,27 +33,20 @@
 
   function setAccepted(list) {
     accepted = list;
-    els.acceptedCount.textContent = String(accepted.length);
-    // show at most two items visually (two-line panel)
-    const items = accepted.slice(0,2)
-      .map(e => `<li>${escapeHtml(e.case_name || e.id || '(no name)')} — <code>${escapeHtml(e.citation||'')}</code></li>`)
-      .join('');
+    els.acceptedCount.textContent = String(list.length);
+    const items = list.slice(0,2).map(e =>
+      `<li>${escapeHtml(e.case_name || e.id || '(no name)')} — <code>${escapeHtml(e.citation||'')}</code></li>`
+    ).join('');
     els.acceptedList.innerHTML = items || '';
   }
 
-  function showPreview(objs) { els.previewBox.value = JSON.stringify(objs, null, 2); }
-  function setValidation(msg) { els.validationLine.textContent = msg; }
-
-  // infer fields from TXT filename; leave placeholders intact
   function inferFromTxtName(fileName) {
     const base = fileName.replace(/\.[^.]+$/, '');
     const yearMatch = base.match(/\[(\d{4})\]/);
     const year = yearMatch ? +yearMatch[1] : '';
-    let citation = '';
     const cit = base.match(/\[\d{4}\]\s*[A-Za-z]+[A-Za-z0-9-]*\s*\d+[A-Za-z0-9-]*/);
-    if (cit) citation = cit[0].replace(/\s+/g,' ').trim();
-    else { const idx = base.indexOf('['); if (idx>=0) citation = base.slice(idx).trim(); }
-    let case_name = base.replace(/\s*\[\d{4}\].*$/,'').replace(/[_\-]+/g,' ').replace(/\s{2,}/g,' ').trim();
+    const citation = cit ? cit[0].replace(/\s+/g,' ').trim() : (base.match(/\[.*$/)?.[0] || '').trim();
+    const case_name = base.replace(/\s*\[\d{4}\].*$/,'').replace(/[_\-]+/g,' ').replace(/\s{2,}/g,' ').trim();
 
     let summary = '';
     if (rawFileText) {
@@ -73,7 +63,7 @@
       observed_conduct: '', anomaly_detected: '',
       breached_law_or_rule: '', authority_basis: '',
       canonical_breach_tag: '', case_link: '',
-      full_text: '' // empty by design
+      full_text: ''
     };
   }
 
@@ -96,7 +86,6 @@
     if (!e.citation || !/\[\d{4}\]/.test(e.citation)) errs.push('citation must contain [YYYY]');
     if (String(e.year||'').length && !/^\d{4}$/.test(String(e.year))) errs.push('year must be 4-digit');
     return errs;
-    // other placeholders intentionally optional
   }
 
   async function readSelectedFile() {
@@ -116,13 +105,11 @@
     const pasted = els.pasteBox.value.trim();
 
     if (pasted) {
-      try {
-        const arr = JSON.parse(pasted);
-        if (Array.isArray(arr)) items = arr;
-      } catch { items = toCSVrows(pasted); }
+      try { const arr = JSON.parse(pasted); if (Array.isArray(arr)) items = arr; }
+      catch { items = toCSVrows(pasted); }
     } else if (rawFileText) {
       const name = els.fileInput.files?.[0]?.name || '';
-      const ext = name.split('.').pop().toLowerCase();
+      const ext = (name.split('.').pop() || '').toLowerCase();
       if (ext === 'json') {
         try { const arr = JSON.parse(rawFileText); if (Array.isArray(arr)) items = arr; } catch {}
       } else if (ext === 'csv') items = toCSVrows(rawFileText);
@@ -135,13 +122,11 @@
     const ok = [], bad = [];
     items.forEach(it => {
       const n = normalise(it);
-      const errs = validateEntry(n);
-      (errs.length ? bad : ok).push(n);
+      (validateEntry(n).length ? bad : ok).push(n);
     });
 
     setAccepted(ok);
     showPreview(ok);
-
     if (ok.length && !bad.length) setValidation(`All ${ok.length} entries are valid.`);
     else if (!ok.length && !bad.length) setValidation('No entries detected. Provide JSON/CSV or enable TXT filename inference.');
     else setValidation(`Accepted ${ok.length}. Rejected ${bad.length}.`);
@@ -157,27 +142,48 @@
       return A<B?-1:A>B?1:0;
     });
     showPreview(list);
-  }
-  function copyPreview(){ navigator.clipboard.writeText(els.previewBox.value||'[]'); }
-  function downloadPreview(){
-    const blob = new Blob([els.previewBox.value||'[]'],{type:'application/json;charset=utf-8'});
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='citations-merged.json'; a.click(); URL.revokeObjectURL(a.href);
+    els.previewBox.scrollIntoView({behavior:'smooth', block:'start'});
   }
 
-  // Events
-  els.fileInput.addEventListener('change', async ()=>{ rawFileText = await readSelectedFile(); });
-  els.parseBtn.addEventListener('click', ()=>{ try{ parseContent(); }catch{ setValidation('Error parsing input.'); }});
-  els.clearBtn.addEventListener('click', ()=>{
-    els.fileInput.value=''; els.fileName.textContent='No file selected'; els.pasteBox.value='';
-    rawFileText=''; setAccepted([]); showPreview([]); setValidation('Validation: cleared.');
+  // events
+  els.fileInput.addEventListener('change', async ()=>{
+    rawFileText = await readSelectedFile();
+    setValidation('File loaded. Click “Parse & Validate” or “Generate Merged JSON”.');
   });
-  els.genBtn.addEventListener('click', generateMergedJson);
-  els.copyBtn.addEventListener('click', copyPreview);
-  els.dlBtn.addEventListener('click', downloadPreview);
 
-  // remember preference
-  try{
-    const saved=localStorage.getItem('bulk:autoFromTxt'); if(saved!==null) els.autoFromTxt.checked = saved==='1';
+  els.parseBtn.addEventListener('click', async ()=>{
+    if (els.fileInput.files?.length && !rawFileText) {
+      try { rawFileText = await readSelectedFile(); } catch {}
+    }
+    parseContent();
+  });
+
+  els.genBtn.addEventListener('click', async ()=>{
+    if (!accepted.length) {
+      if (els.fileInput.files?.length && !rawFileText) {
+        try { rawFileText = await readSelectedFile(); } catch {}
+      }
+      parseContent();
+    }
+    if (!accepted.length) { setValidation('Nothing to merge yet — provide data or parse first.'); return; }
+    generateMergedJson();
+  });
+
+  els.copyBtn.addEventListener('click', ()=> navigator.clipboard.writeText(els.previewBox.value||'[]'));
+  els.dlBtn.addEventListener('click', ()=>{
+    const blob = new Blob([els.previewBox.value||'[]'],{type:'application/json;charset=utf-8'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='citations-merged.json';
+    a.click(); URL.revokeObjectURL(a.href);
+  });
+
+  els.clearBtn.addEventListener('click', ()=>{
+    els.fileInput.value=''; els.fileName.textContent='No file selected';
+    els.pasteBox.value=''; rawFileText=''; setAccepted([]); showPreview([]); setValidation('Validation: cleared.');
+  });
+
+  try {
+    const saved=localStorage.getItem('bulk:autoFromTxt');
+    if(saved!==null) els.autoFromTxt.checked = saved==='1';
     els.autoFromTxt.addEventListener('change',()=>localStorage.setItem('bulk:autoFromTxt', els.autoFromTxt.checked?'1':'0'));
-  }catch{}
+  } catch {}
 })();
