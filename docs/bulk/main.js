@@ -1,222 +1,327 @@
+/* Bulk Uploader – JSON/CSV/TXT
+ * - Accepts .json, .csv, .txt
+ * - .txt is wrapped into the citation schema using filename heuristics
+ * - Validates & merges with existing registry (no file writes)
+ */
+
 (function () {
-  // ---------- schema ----------
-  const REQUIRED = ["id", "case_name", "citation", "year"];
-  const LIST_FIELDS = new Set(["sources","compliance_flags","key_points","tags"]);
-  const VALID_ID = /^[a-z0-9-]+$/;
-  const VALID_YEAR = /^[0-9]{4}$/;
+  // ---------- CONFIG ----------
+  const EXISTING_JSON_URL = 'data/citations.json'; // change if your path differs
 
-  // ---------- dom ----------
+  // ---------- DOM ----------
   const els = {
-    file: $("#fileInput"),
-    paste: $("#pasteBox"),
-    parseBtn: $("#parseBtn"),
-    clearBtn: $("#clearBtn"),
-    results: $("#results"),
-    existingBox: $("#existingBox"),
-    overwrite: $("#overwrite"),
-    sortBy: $("#sortBy"),
-    mergeBtn: $("#mergeBtn"),
-    merged: $("#mergedOut"),
-    downloadBtn: $("#downloadBtn"),
+    file: document.getElementById('file'),
+    paste: document.getElementById('paste'),
+    parseBtn: document.getElementById('parseBtn'),
+    clearBtn: document.getElementById('clearBtn'),
+    validation: document.getElementById('validation'),
+    overwrite: document.getElementById('overwrite'),
+    sortBy: document.getElementById('sortBy'),
+    mergeBtn: document.getElementById('mergeBtn'),
+    merged: document.getElementById('merged'),
+    registryPath: document.getElementById('registryPath'),
   };
-
-  let parsedRows = []; // from upload/paste
+  els.registryPath.textContent = EXISTING_JSON_URL;
 
   // ---------- helpers ----------
-  function $(sel){return document.querySelector(sel);}
-  const toArray = (v) => Array.isArray(v) ? v : (v==null || v==="") ? [] : String(v).split(",").map(s=>s.trim()).filter(Boolean);
+  const text = (v) => (typeof v === 'string' ? v : JSON.stringify(v, null, 2));
 
-  function csvToObjects(csv) {
-    // simple CSV (handles quoted cells)
-    const lines = csv.replace(/\r\n?/g,"\n").split("\n").filter(l=>l.trim().length>0);
-    if (!lines.length) return [];
-    const headers = splitCSVLine(lines[0]).map(h=>h.trim());
+  const slugify = (s) =>
+    s
+      .toLowerCase()
+      .normalize('NFKD')
+      .replace(/[^\w\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, '-');
+
+  const detectFromFilename = (filename) => {
+    // Example: "State House Trust v Friend [2025] JRC 158.txt"
+    const base = filename.replace(/\.[^.]+$/, '');
+    const m = base.match(/\[(\d{4})\]\s*(JRC|JCA)\s*([A-Za-z]*\s*\d+)?/i);
+
+    let year = null,
+      courtCode = null,
+      citation = null;
+    if (m) {
+      year = parseInt(m[1], 10);
+      courtCode = m[2].toUpperCase();
+      // Normalize citation to "[YYYY] JRC 158" or "[YYYY] JCA 012"
+      const tail = base.slice(m.index).match(/\[(\d{4})\]\s*[A-Za-z]+\s*.*$/);
+      citation = tail ? tail[0].trim() : `[${year}] ${courtCode}`;
+    }
+
+    // Case name = everything before the first ' ['
+    const caseName = base.split(' [')[0].replace(/[_-]+/g, ' ').trim();
+
+    const id = slugify(caseName + (year ? ` ${year}` : ''));
+
+    let court = null;
+    if (courtCode === 'JRC') court = 'Royal Court';
+    if (courtCode === 'JCA') court = 'Court of Appeal';
+
+    return {
+      id,
+      case_name: caseName || base,
+      citation: citation || '',
+      year: year || '',
+      court: court || '',
+      jurisdiction: 'Jersey',
+    };
+  };
+
+  const validateEntry = (e) => {
+    const errs = [];
+    if (!e.id) errs.push('id required');
+    if (e.id && !/^[a-z0-9-]+$/.test(e.id))
+      errs.push('id must be lowercase letters, numbers, hyphens');
+    if (!e.case_name) errs.push('case_name required');
+    if (!e.citation) errs.push('citation required');
+    if (!String(e.year).match(/^\d{4}$/)) errs.push('year must be a 4-digit integer');
+    return errs;
+  };
+
+  const csvToObjects = (csvText) => {
+    // light CSV parser (supports quotes and commas inside quotes)
     const rows = [];
-    for (let i=1;i<lines.length;i++){
-      const cells = splitCSVLine(lines[i]);
-      const obj = {};
-      headers.forEach((h,idx)=>{ obj[h] = cells[idx] ?? ""; });
-      rows.push(obj);
-    }
-    return rows;
-  }
-  function splitCSVLine(line){
-    const out=[]; let cur=""; let q=false;
-    for (let i=0;i<line.length;i++){
-      const c=line[i];
-      if (c === '"' ){ if (q && line[i+1]==='"'){cur+='"';i++;} else {q=!q;} }
-      else if (c === "," && !q){ out.push(cur); cur=""; }
-      else { cur += c; }
-    }
-    out.push(cur);
-    return out;
-  }
+    let row = [];
+    let cur = '';
+    let inQuotes = false;
 
-  function normalizeRow(r){
-    // trim keys/values, coerce lists, coerce year
-    const o = {};
-    for (const k in r){
-      const key = k.trim();
-      let v = r[k];
-      if (typeof v === "string") v = v.trim();
-      if (LIST_FIELDS.has(key)) v = toArray(v);
-      if (key === "year") v = String(v).match(/[0-9]{4}/)?.[0] ?? "";
-      o[key] = v;
-    }
-    return o;
-  }
+    const pushCell = () => {
+      row.push(cur);
+      cur = '';
+    };
+    const pushRow = () => {
+      rows.push(row);
+      row = [];
+    };
 
-  function validate(rows){
-    const seen = new Set();
-    const errors = [];
-    const clean = [];
-
-    rows.forEach((raw, idx)=>{
-      const row = normalizeRow(raw);
-      const n = idx+1;
-      const missing = REQUIRED.filter(k=>!row[k] && row[k] !== 0);
-      if (missing.length){
-        errors.push(`#${n}: missing required: ${missing.join(", ")}`);
-      }
-      if (row.id && !VALID_ID.test(row.id)){
-        errors.push(`#${n}: id "${row.id}" must be lowercase letters, numbers, hyphens only`);
-      }
-      if (row.year && !VALID_YEAR.test(String(row.year))){
-        errors.push(`#${n}: year "${row.year}" must be a 4-digit integer`);
-      }
-      if (row.id){
-        if (seen.has(row.id)) errors.push(`#${n}: duplicate id "${row.id}" in upload`);
-        seen.add(row.id);
-      }
-      clean.push(row);
-    });
-
-    return {errors, clean};
-  }
-
-  function sortByKey(arr, key){
-    const k = key || "case_name";
-    return [...arr].sort((a,b)=>{
-      const av = (a[k] ?? "").toString().toLowerCase();
-      const bv = (b[k] ?? "").toString().toLowerCase();
-      if (k === "year") return Number(av||0) - Number(bv||0);
-      return av.localeCompare(bv);
-    });
-  }
-
-  function merge(existing, incoming, overwrite=false){
-    const byId = new Map((existing||[]).map(x=>[x.id, x]));
-    const conflicts = [];
-    for (const row of incoming){
-      if (!row.id){ continue; }
-      if (byId.has(row.id)){
-        conflicts.push(row.id);
-        if (overwrite) byId.set(row.id, row);
+    for (let i = 0; i < csvText.length; i++) {
+      const c = csvText[i];
+      const next = csvText[i + 1];
+      if (inQuotes) {
+        if (c === '"' && next === '"') {
+          cur += '"';
+          i++; // skip escaped quote
+        } else if (c === '"') {
+          inQuotes = false;
+        } else {
+          cur += c;
+        }
       } else {
-        byId.set(row.id, row);
+        if (c === '"') {
+          inQuotes = true;
+        } else if (c === ',') {
+          pushCell();
+        } else if (c === '\n') {
+          pushCell();
+          pushRow();
+        } else if (c === '\r') {
+          // ignore CR
+        } else {
+          cur += c;
+        }
       }
     }
-    return {merged: Array.from(byId.values()), conflicts};
-  }
-
-  function showResults(lines){
-    els.results.textContent = lines.join("\n") || "No issues detected.";
-  }
-
-  function download(filename, text){
-    const blob = new Blob([text], {type:"application/json;charset=utf-8"});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = filename;
-    document.body.appendChild(a); a.click();
-    setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 0);
-  }
-
-  // ---------- events ----------
-  els.file.addEventListener("change", async (e)=>{
-    if (!e.target.files?.length) return;
-    const file = e.target.files[0];
-    const text = await file.text();
-    handleParse(text);
-  });
-
-  els.parseBtn.addEventListener("click", ()=>{
-    handleParse(els.paste.value);
-  });
-
-  els.clearBtn.addEventListener("click", ()=>{
-    els.paste.value = "";
-    els.results.textContent = "Cleared. Paste or upload new data.";
-    parsedRows = [];
-  });
-
-  els.mergeBtn.addEventListener("click", ()=>{
-    const msgs = [];
-    if (!parsedRows.length){
-      showResults(["Nothing to merge. Parse some data first."]);
-      return;
+    // last cell/row
+    if (cur.length > 0 || row.length > 0) {
+      pushCell();
+      pushRow();
     }
-    let existing = [];
-    if (els.existingBox.value.trim()){
-      try {
-        existing = JSON.parse(els.existingBox.value);
-        if (!Array.isArray(existing)) throw new Error("existing JSON must be an array");
-      } catch (err){
-        showResults([`Existing JSON parse error: ${err.message}`]);
-        return;
-      }
-    }
-    const overwrite = els.overwrite.checked;
-    const {merged, conflicts} = merge(existing, parsedRows, overwrite);
-    const sorted = sortByKey(merged, els.sortBy.value);
-    els.merged.value = JSON.stringify(sorted, null, 2);
-    msgs.push(`Merged ${parsedRows.length} item(s) into ${existing.length} existing → ${sorted.length} total.`);
-    if (conflicts.length){
-      msgs.push(`${overwrite ? "Overwrote" : "Kept existing for"} ${conflicts.length} conflicting id(s): ${conflicts.slice(0,10).join(", ")}${conflicts.length>10?"…":""}`);
-    }
-    showResults(msgs);
-  });
+    const headers = rows.shift().map((h) => h.trim());
+    return rows
+      .filter((r) => r.length && r.some((c) => c.trim().length))
+      .map((r) => {
+        const obj = {};
+        headers.forEach((h, i) => (obj[h] = (r[i] ?? '').trim()));
+        return obj;
+      });
+  };
 
-  els.downloadBtn.addEventListener("click", ()=>{
-    if (!els.merged.value.trim()){
-      showResults(["Nothing to download. Click “Generate Merged JSON” first."]);
-      return;
-    }
-    download("merged.json", els.merged.value);
-  });
-
-  // ---------- parsing core ----------
-  function handleParse(raw){
-    if (!raw || !raw.trim()){
-      showResults(["No input detected. Upload a file or paste JSON/CSV."]);
-      return;
-    }
-    let rows = [];
-    let notes = [];
-    // Try JSON first
+  const parseJSONMaybe = (txt) => {
     try {
-      const j = JSON.parse(raw);
-      if (!Array.isArray(j)) throw new Error("JSON must be an array of objects");
-      rows = j;
-      notes.push(`Parsed JSON array with ${rows.length} item(s).`);
+      const data = JSON.parse(txt);
+      return Array.isArray(data) ? data : [data];
     } catch {
-      // Fallback CSV
-      try {
-        rows = csvToObjects(raw);
-        notes.push(`Parsed CSV with ${rows.length} row(s).`);
-      } catch (errCsv) {
-        showResults([`Parse error: ${errCsv.message}`]);
-        return;
+      return null;
+    }
+  };
+
+  // ---------- core parsers ----------
+  const parseFiles = async (files) => {
+    const out = [];
+    for (const f of files) {
+      const content = await f.text();
+      const ext = (f.name.split('.').pop() || '').toLowerCase();
+      if (ext === 'json') {
+        const arr = parseJSONMaybe(content);
+        if (!arr) throw new Error(`${f.name}: invalid JSON`);
+        out.push(...arr);
+      } else if (ext === 'csv') {
+        const arr = csvToObjects(content);
+        out.push(...arr);
+      } else if (ext === 'txt') {
+        // wrap TXT as single citation entry using filename heuristics
+        const meta = detectFromFilename(f.name);
+        out.push({
+          ...meta,
+          summary: '',
+          full_case_text: content,
+          source: '',
+          compliance_flags: '',
+          key_points: '',
+          tags: '',
+        });
+      } else {
+        throw new Error(`${f.name}: unsupported file type`);
       }
     }
+    return out;
+  };
 
-    const {errors, clean} = validate(rows);
-    parsedRows = clean;
-    const summary = [
-      ...notes,
-      errors.length ? `Validation errors (${errors.length}):` : "No validation errors.",
-      ...errors
-    ];
-    showResults(summary);
-  }
+  const parsePasted = (txt) => {
+    const trimmed = txt.trim();
+    if (!trimmed) return [];
+    // try JSON
+    const j = parseJSONMaybe(trimmed);
+    if (j) return j;
+    // else treat as CSV
+    return csvToObjects(trimmed);
+  };
+
+  // ---------- merging/sorting ----------
+  const sorters = {
+    id: (a, b) => a.id.localeCompare(b.id),
+    case_name: (a, b) => a.case_name.localeCompare(b.case_name),
+    year: (a, b) => (Number(a.year) || 0) - (Number(b.year) || 0),
+  };
+
+  const mergeById = (base, incoming, overwrite = false) => {
+    const byId = new Map(base.map((x) => [x.id, x]));
+    const conflicts = [];
+    for (const it of incoming) {
+      if (byId.has(it.id)) {
+        conflicts.push(it.id);
+        if (overwrite) byId.set(it.id, it);
+      } else {
+        byId.set(it.id, it);
+      }
+    }
+    return { merged: [...byId.values()], conflicts };
+  };
+
+  // ---------- state ----------
+  let loadedRegistry = [];
+  let staged = [];
+
+  const loadExisting = async () => {
+    els.validation.textContent = 'Loading existing registry…';
+    try {
+      const r = await fetch(EXISTING_JSON_URL, { cache: 'no-store' });
+      if (!r.ok) throw new Error(`${EXISTING_JSON_URL} → ${r.status}`);
+      const data = await r.json();
+      loadedRegistry = Array.isArray(data) ? data : [];
+      els.validation.textContent = `Loaded ${loadedRegistry.length} existing entries.`;
+    } catch (e) {
+      loadedRegistry = [];
+      els.validation.textContent = `Could not load existing registry (${EXISTING_JSON_URL}). Starting with empty base.\n${e}`;
+    }
+  };
+
+  // ---------- actions ----------
+  const runParse = async () => {
+    els.validation.textContent = 'Parsing input…';
+    staged = [];
+
+    try {
+      const fileList = Array.from(els.file.files || []);
+      if (fileList.length) {
+        const parsed = await parseFiles(fileList);
+        staged.push(...parsed);
+      }
+      // pasted
+      const pasted = parsePasted(els.paste.value);
+      if (pasted.length) staged.push(...pasted);
+
+      if (!staged.length) {
+        els.validation.innerHTML = 'No input provided.';
+        return;
+      }
+
+      // normalize keys and types
+      staged = staged.map((e) => ({
+        id: e.id ? String(e.id).trim() : '',
+        case_name: e.case_name ? String(e.case_name).trim() : '',
+        citation: e.citation ? String(e.citation).trim() : '',
+        year: e.year ? parseInt(e.year, 10) : '',
+        court: e.court ? String(e.court).trim() : '',
+        jurisdiction: e.jurisdiction ? String(e.jurisdiction).trim() : '',
+        summary: e.summary ? String(e.summary) : '',
+        holding: e.holding ? String(e.holding) : '',
+        source: e.source ? String(e.source).trim() : '',
+        compliance_flags: e.compliance_flags ?? '',
+        key_points: e.key_points ?? '',
+        tags: e.tags ?? '',
+        observed_conduct: e.observed_conduct ?? '',
+        anomaly_detected: e.anomaly_detected ?? '',
+        breached_law_or_rule: e.breached_law_or_rule ?? '',
+        authority_basis: e.authority_basis ?? '',
+        canonical_breach_tag: e.canonical_breach_tag ?? '',
+        case_link: e.case_link ?? '',
+        full_case_text: e.full_case_text ?? '',
+      }));
+
+      // validate
+      const errors = [];
+      staged.forEach((e, i) => {
+        const errs = validateEntry(e);
+        if (errs.length) errors.push(`#${i + 1}: ${errs.join('; ')}`);
+      });
+
+      if (errors.length) {
+        els.validation.innerHTML =
+          `<div class="err"><strong>Validation errors (${errors.length}):</strong></div>\n- ` +
+          errors.join('\n- ');
+      } else {
+        els.validation.innerHTML =
+          `<div class="ok"><strong>All ${staged.length} entries are valid.</strong></div>`;
+      }
+    } catch (e) {
+      els.validation.textContent = `Parse error: ${e.message || e}`;
+      staged = [];
+    }
+  };
+
+  const runMerge = () => {
+    if (!staged.length) {
+      els.merged.textContent = 'Nothing to merge. Parse something first.';
+      return;
+    }
+    const { merged, conflicts } = mergeById(loadedRegistry, staged, els.overwrite.checked);
+    const sorter = sorters[els.sortBy.value] || sorters.case_name;
+    merged.sort(sorter);
+    els.merged.textContent = JSON.stringify(merged, null, 2);
+
+    const note =
+      conflicts.length && !els.overwrite.checked
+        ? `\n\nNote: ${conflicts.length} ID conflict(s) kept existing. Tick “Overwrite” to replace.`
+        : conflicts.length && els.overwrite.checked
+        ? `\n\nNote: ${conflicts.length} ID conflict(s) overwritten.`
+        : '';
+    els.validation.textContent += note;
+  };
+
+  const runClear = () => {
+    els.file.value = '';
+    els.paste.value = '';
+    els.validation.textContent = 'Cleared.';
+    els.merged.textContent = 'Merged JSON will appear here…';
+    staged = [];
+  };
+
+  // ---------- wire ----------
+  els.parseBtn.addEventListener('click', runParse);
+  els.mergeBtn.addEventListener('click', runMerge);
+  els.clearBtn.addEventListener('click', runClear);
+  window.addEventListener('load', loadExisting);
 })();
