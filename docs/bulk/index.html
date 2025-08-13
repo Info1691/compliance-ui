@@ -4,7 +4,7 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Citations Bulk Uploader</title>
-  <link rel="stylesheet" href="style.css?v=1"/>
+  <link rel="stylesheet" href="style.css?v=2"/>
 </head>
 <body>
   <header class="app-header">
@@ -15,7 +15,7 @@
 
   <!-- SOURCE INPUT -->
   <section class="card">
-    <h3>Upload File (.json, .csv, or .txt)</h3>
+    <h3>Source Input</h3>
     <div class="input-row">
       <input id="fileInput" type="file" accept=".json,.csv,.txt" hidden>
       <label for="fileInput" class="btn btn-primary" id="chooseBtn">Choose File</label>
@@ -23,6 +23,10 @@
 
       <button id="parseBtn" class="btn btn-primary">Parse & Validate</button>
       <button id="clearBtn" class="btn">Clear</button>
+
+      <label class="chk" title="When a .txt is uploaded, attempt to extract and populate fields like summary, holding, etc.">
+        <input id="autoFill" type="checkbox" checked> Auto-fill from TXT
+      </label>
     </div>
 
     <div class="grid-2">
@@ -31,13 +35,13 @@
         <textarea id="pasteBox" placeholder='[{"id":"...","case_name":"...","citation":"[2025] JRC 1",...}]  OR CSV with headers'></textarea>
       </div>
       <div>
-        <label class="lbl">Validation Results</label>
-        <pre id="results" class="panel" aria-live="polite">Waiting…</pre>
+        <label class="lbl">Merged JSON (preview)</label>
+        <pre id="mergedOutput" class="panel" aria-live="polite">Tip: click “Generate Merged JSON” below to preview.</pre>
       </div>
     </div>
   </section>
 
-  <!-- ACCEPTED + MERGE -->
+  <!-- ACCEPTED / VALIDATION + MERGE -->
   <section class="grid-2 gap16">
     <div class="card">
       <div class="row-between">
@@ -45,11 +49,15 @@
         <span id="acceptedCount" class="pill">0</span>
       </div>
       <ul id="acceptedList" class="list"></ul>
+
+      <div class="val-wrap">
+        <strong>Validation:</strong>
+        <span id="valLine" class="val-line">Waiting…</span>
+      </div>
     </div>
 
     <div class="card">
       <h3>Merge with Existing Citations</h3>
-
       <div class="merge-row">
         <label class="chk">
           <input id="overwrite" type="checkbox"> Overwrite existing entries on ID conflict
@@ -65,11 +73,11 @@
         </label>
 
         <button id="generateBtn" class="btn btn-primary">Generate Merged JSON</button>
-        <button id="copyBtn" class="btn" title="Copy merged JSON to clipboard">Copy</button>
+        <button id="copyBtn" class="btn" title="Copy merged JSON">Copy</button>
         <a id="downloadBtn" class="btn" download="citations-merged.json">Download</a>
       </div>
 
-      <pre id="mergedOutput" class="panel" aria-live="polite">Tip: copy this JSON and commit it to <span id="targetPath">data/citations.json</span> in your repo.</pre>
+      <p class="muted small">Target file: <span id="targetPath">data/citations.json</span> (manual commit)</p>
     </div>
   </section>
 
@@ -79,6 +87,6 @@
     </small>
   </footer>
 
-  <script src="main.js?v=1"></script>
+  <script src="main.js?v=2"></script>
 </body>
 </html>
