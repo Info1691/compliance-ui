@@ -4,7 +4,7 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Citations – Bulk Uploader</title>
-  <link rel="stylesheet" href="style.css?v=10"/>
+  <link rel="stylesheet" href="style.css?v=11"/>
 </head>
 <body>
   <header class="app-header">
@@ -14,14 +14,14 @@
 
   <main class="wrap">
     <section class="grid">
-
-      <!-- LEFT: source input -->
-      <div class="card col">
+      <!-- TOP-LEFT: Source input -->
+      <div class="card area-source">
         <h2 class="card-title">Source input</h2>
 
         <div class="toolbar">
-          <label class="btn file">
-            <input id="fileInput" type="file" accept=".json,.csv,.txt" />
+          <!-- blue like other action buttons -->
+          <label class="btn action file">
+            <input id="fileInput" type="file" accept=".json,.csv,.txt"/>
             <span>Choose File</span>
           </label>
 
@@ -36,59 +36,50 @@
           </label>
         </div>
 
-        <div class="two-col">
-          <div class="stack">
-            <label class="lbl">Paste Data (JSON array or CSV)</label>
-            <textarea id="pasteBox" placeholder='[{"id":"...","case_name":"...","citation":"[2025] JRC 1",...}]  OR CSV with headers'></textarea>
-          </div>
-
-          <div class="stack">
-            <label class="lbl">Merged JSON (preview)</label>
-            <textarea id="previewBox" aria-label="Merged JSON preview" readonly>[]</textarea>
-          </div>
-        </div>
+        <label class="lbl">Paste Data (JSON array or CSV)</label>
+        <textarea id="pasteBox" placeholder='[{"id":"...","case_name":"...","citation":"[2025] JRC 1",...}]  OR CSV with headers'></textarea>
       </div>
 
-      <!-- LEFT BOTTOM: accepted + validation -->
-      <div class="card col">
-        <h2 class="card-title">Accepted</h2>
-        <div class="accepted-head">
+      <!-- TOP-RIGHT: preview takes the whole right column -->
+      <div class="card area-preview">
+        <h2 class="card-title">Merged JSON (preview)</h2>
+        <textarea id="previewBox" aria-label="Merged JSON preview" readonly>[]</textarea>
+      </div>
+
+      <!-- BOTTOM-LEFT: compact Accepted (two-line) -->
+      <div class="card area-accepted">
+        <div class="row between">
+          <h2 class="card-title">Accepted</h2>
           <span class="pill" id="acceptedCount">0</span>
         </div>
-        <ul id="acceptedList" class="list"></ul>
-
+        <ul id="acceptedList" class="list two-line"></ul>
         <div id="validationLine" class="validation-line">Validation: waiting…</div>
       </div>
 
-      <!-- RIGHT BOTTOM: merge/export -->
-      <div class="card col">
+      <!-- BOTTOM-RIGHT: merge/export controls -->
+      <div class="card area-merge">
         <h2 class="card-title">Merge with Existing Citations</h2>
 
-        <div class="stack">
-          <label class="chk">
-            <input id="overwriteChk" type="checkbox" />
-            <span>Overwrite existing entries on ID conflict (default: keep existing)</span>
-          </label>
+        <label class="chk">
+          <input id="overwriteChk" type="checkbox"/>
+          <span>Overwrite existing entries on ID conflict (default: keep existing)</span>
+        </label>
 
-          <div class="row">
-            <label for="sortBy" class="lbl sm">Sort by</label>
-            <select id="sortBy" class="select">
-              <option value="case_name">Case Name</option>
-              <option value="id">ID</option>
-              <option value="year">Year</option>
-            </select>
+        <div class="row">
+          <label for="sortBy" class="lbl sm">Sort by</label>
+          <select id="sortBy" class="select">
+            <option value="case_name">Case Name</option>
+            <option value="id">ID</option>
+            <option value="year">Year</option>
+          </select>
 
-            <button id="genBtn" class="btn action">Generate Merged JSON</button>
-            <button id="copyBtn" class="btn ghost">Copy</button>
-            <button id="dlBtn" class="btn ghost">Download</button>
-          </div>
-
-          <div class="hint">
-            Target file: <code>data/citations.json</code> (manual commit)
-          </div>
+          <button id="genBtn" class="btn action">Generate Merged JSON</button>
+          <button id="copyBtn" class="btn ghost">Copy</button>
+          <button id="dlBtn" class="btn ghost">Download</button>
         </div>
-      </div>
 
+        <div class="hint">Target file: <code>data/citations.json</code> (manual commit)</div>
+      </div>
     </section>
   </main>
 
@@ -96,6 +87,6 @@
     <small>This tool never writes files. It validates and prepares a merged JSON preview for manual commit via GitHub.</small>
   </footer>
 
-  <script src="main.js?v=10"></script>
+  <script src="main.js?v=11"></script>
 </body>
 </html>
