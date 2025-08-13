@@ -1,53 +1,30 @@
-/* Base */
-* { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; }
-body { font-family: Arial, Helvetica, sans-serif; color: #222; background: #f7f7f7; }
-
-/* Header branding (match viewer) */
-.app-header {
-  display: flex; align-items: center; gap: 12px;
-  padding: 12px 16px; background: #005a9c; color: #fff;
+:root{
+  --bg:#f7f8fb; --card:#fff; --ink:#243042; --muted:#5a6b7b; --accent:#1f6feb;
+  --border:#e5e8ef; --ok:#12a150; --bad:#b3261e; --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
-.app-logo { height: 40px; background: #fff; padding: 4px; border-radius: 4px; }
-.app-title { margin: 0; font-size: 1.25rem; }
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.45 system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+.wrap{max-width:1100px;margin:24px auto;padding:0 16px}
+.app-header{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);background:#0b2e57;color:#fff}
+.logo{width:36px;height:36px}
+.title{margin:0;font-size:20px;font-weight:700}
 
-/* Controls bar (matches viewer) */
-.controls {
-  display: flex; flex-wrap: wrap; gap: 8px;
-  padding: 12px 16px; background: #e9ecef; border-bottom: 1px solid #d6d8db;
-}
-.link-btn {
-  display: inline-block; text-decoration: none;
-  background: #005a9c; color: #fff; padding: 8px 10px; border-radius: 4px; font-size: 14px;
-}
-.link-btn:hover { background: #004680; }
-
-/* Layout */
-.bulk-main { padding: 16px; display: grid; gap: 16px; }
-.panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; }
-.inputs { display: grid; grid-template-columns: repeat(auto-fit,minmax(280px,1fr)); gap: 12px; }
-.input-block { display: grid; gap: 6px; }
-textarea { width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; font-size: 14px; }
-.note { color: #555; font-size: 13px; }
-
-/* Buttons */
-.btn { padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: #f8fafc; cursor: pointer; }
-.btn:hover { filter: brightness(0.98); }
-.primary { background: #005a9c; border-color: #005a9c; color: #fff; }
-
-/* Validation & Preview table */
-.validation .ok { padding: 8px; background: #ecfdf5; border: 1px solid #10b981; border-radius: 6px; }
-.validation .err { padding: 8px; background: #fef2f2; border: 1px solid #ef4444; border-radius: 6px; }
-.warn { padding: 8px; background: #fff7ed; border: 1px solid #f59e0b; border-radius: 6px; }
-
-.table-wrap { margin-top: 8px; }
-.table-scroll { overflow: auto; max-height: 45vh; border: 1px solid #e5e7eb; border-radius: 6px; }
-.table { width: 100%; border-collapse: collapse; font-size: 14px; }
-.table th, .table td { padding: 6px 8px; border-bottom: 1px solid #f1f5f9; }
-.table th { text-align: left; background: #f8fafc; position: sticky; top: 0; }
-
-/* Merge output */
-#mergedOutput { width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; background: #f9fafb; }
-.merge-actions { margin-top: 8px; display: flex; gap: 8px; }
-
-.app-footer { padding: 10px 16px; color: #4b5563; font-size: 12px; }
+.panel{background:var(--card);border:1px solid var(--border);border-radius:8px;margin:18px 0;padding:16px}
+.panel h2{margin:0 0 12px 0;font-size:16px}
+.panel-sub{margin-top:10px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.lbl{display:block;font-weight:600;margin-bottom:6px}
+.lbl-inline{font-weight:600;margin-left:10px}
+textarea{width:100%;min-height:140px;border:1px solid var(--border);border-radius:6px;padding:10px;resize:vertical}
+textarea.mono,.text{font-family:var(--mono);font-size:13px}
+.text{min-height:120px;background:#fcfdff;border:1px dashed var(--border);border-radius:6px;padding:10px;white-space:pre-wrap}
+.btn{appearance:none;border:1px solid var(--border);background:#fff;border-radius:6px;padding:8px 12px;cursor:pointer}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btns-vertical{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.hint{color:var(--muted);font-size:12px;margin-top:6px}
+.checkbox{display:flex;align-items:center;gap:8px}
+.merge-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:10px}
+.row{display:flex;align-items:center;gap:12px;margin-top:8px}
+code{background:#f0f3fa;padding:2px 4px;border-radius:4px}
+.footer{padding:16px;color:var(--muted);text-align:center}
+@media (max-width:900px){.grid{grid-template-columns:1fr}}
