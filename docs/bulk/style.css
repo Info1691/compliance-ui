@@ -1,30 +1,67 @@
 :root{
-  --bg:#f7f8fb; --card:#fff; --ink:#243042; --muted:#5a6b7b; --accent:#1f6feb;
-  --border:#e5e8ef; --ok:#12a150; --bad:#b3261e; --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --bg:#f6f8fa; --panel:#fff; --line:#d0d7de; --ink:#111; --muted:#6a737d;
+  --brand:#1f6feb; --brand-2:#1b5fd1; --brand-3:#1a64d8;
 }
-*{box-sizing:border-box}
-body{margin:0;font:15px/1.45 system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
-.wrap{max-width:1100px;margin:24px auto;padding:0 16px}
-.app-header{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);background:#0b2e57;color:#fff}
-.logo{width:36px;height:36px}
-.title{margin:0;font-size:20px;font-weight:700}
 
-.panel{background:var(--card);border:1px solid var(--border);border-radius:8px;margin:18px 0;padding:16px}
-.panel h2{margin:0 0 12px 0;font-size:16px}
-.panel-sub{margin-top:10px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.lbl{display:block;font-weight:600;margin-bottom:6px}
-.lbl-inline{font-weight:600;margin-left:10px}
-textarea{width:100%;min-height:140px;border:1px solid var(--border);border-radius:6px;padding:10px;resize:vertical}
-textarea.mono,.text{font-family:var(--mono);font-size:13px}
-.text{min-height:120px;background:#fcfdff;border:1px dashed var(--border);border-radius:6px;padding:10px;white-space:pre-wrap}
-.btn{appearance:none;border:1px solid var(--border);background:#fff;border-radius:6px;padding:8px 12px;cursor:pointer}
-.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
-.btns-vertical{display:flex;flex-direction:column;gap:8px;margin-top:8px}
-.hint{color:var(--muted);font-size:12px;margin-top:6px}
-.checkbox{display:flex;align-items:center;gap:8px}
-.merge-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:10px}
-.row{display:flex;align-items:center;gap:12px;margin-top:8px}
-code{background:#f0f3fa;padding:2px 4px;border-radius:4px}
-.footer{padding:16px;color:var(--muted);text-align:center}
-@media (max-width:900px){.grid{grid-template-columns:1fr}}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font: 14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+}
+
+.app-header{
+  display:flex; align-items:center; gap:12px;
+  padding:10px 14px; background:#0b3d73; color:#fff;
+}
+.logo{height:28px}
+.title{margin:0; font-size:18px; font-weight:700}
+.muted{color:#cfe0ff}
+
+.card{
+  background:var(--panel); border:1px solid var(--line); border-radius:8px;
+  padding:12px; margin:12px;
+}
+
+.grid-2{
+  display:grid; grid-template-columns: 1fr 1fr; gap:12px;
+}
+.gap16{gap:16px}
+.row-between{display:flex; justify-content:space-between; align-items:center}
+.lbl{display:block; margin-bottom:6px; color:var(--muted); font-weight:600}
+
+.input-row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+.btn{
+  appearance:none; border:1px solid #c7ccd1; background:#eef2f6; color:var(--ink);
+  border-radius:6px; padding:8px 12px; font-weight:600; cursor:pointer;
+}
+.btn:hover{background:#e7edf3}
+.btn-primary{background:var(--brand); border-color:var(--brand-2); color:#fff}
+.btn-primary:hover{background:var(--brand-3)}
+.btn:disabled{opacity:.55; cursor:not-allowed}
+
+textarea#pasteBox{
+  width:100%; min-height:160px; resize:vertical;
+  background:#fff; border:1px solid var(--line); border-radius:6px; padding:10px 12px;
+  font: 13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+
+pre.panel{
+  margin:0; background:#fff !important; color:var(--ink) !important;
+  border:1px solid var(--line); border-radius:6px; padding:10px 12px;
+  white-space:pre-wrap; word-break:break-word; tab-size:2;
+}
+#results{height:140px; overflow:auto}
+#mergedOutput{height:520px; overflow:auto}
+
+.list{margin:0; padding:6px 0 0 18px; max-height:220px; overflow:auto}
+.pill{
+  display:inline-block; min-width:22px; text-align:center;
+  background:#e9eef9; color:#113; border:1px solid var(--line);
+  border-radius:16px; padding:2px 8px; font-weight:700;
+}
+
+.merge-row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+.chk{display:flex; align-items:center; gap:8px}
+
+.footer{padding:24px 14px; color:var(--muted)}
