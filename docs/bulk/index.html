@@ -4,81 +4,75 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Citations Bulk Uploader</title>
-  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="style.css?v=1"/>
 </head>
 <body>
   <header class="app-header">
-    <img class="app-logo" src="../logo.png" alt="Logo"/>
-    <h1 class="app-title">Citations Bulk Uploader</h1>
+    <img src="logo.png" alt="Logo" class="logo"/>
+    <h1 class="title">Citations Bulk Uploader</h1>
   </header>
 
-  <!-- Controls bar (matches viewer placement) -->
-  <div class="controls">
-    <a href="../" class="link-btn">Back to Viewer</a>
-  </div>
-
-  <main class="bulk-main">
-    <!-- Source Input -->
+  <main class="wrap">
     <section class="panel">
       <h2>Source Input</h2>
-      <div class="inputs">
-        <div class="input-block">
-          <label for="fileInput"><strong>Upload File</strong> (JSON or CSV)</label>
-          <input id="fileInput" type="file" accept=".json,.csv,text/csv" />
+      <div class="grid">
+        <div>
+          <label class="lbl">Upload File <small>(JSON or CSV)</small></label>
+          <input id="fileInput" type="file" accept=".json,.csv,text/csv,application/json"/>
+          <div class="hint">This tool never writes files. It validates and prepares a merged JSON preview for manual commit via GitHub.</div>
         </div>
-        <div class="input-block">
-          <label for="pasteInput"><strong>Paste Data</strong> (JSON array or CSV)</label>
-          <textarea id="pasteInput" rows="10" placeholder='[ { "id": "...", "case_name": "...", ... }, ... ] or CSV with headers'></textarea>
-        </div>
-        <div class="input-block">
-          <button id="parseBtn" class="btn primary">Parse &amp; Validate</button>
-          <button id="clearBtn" class="btn" type="button">Clear</button>
+        <div>
+          <label class="lbl">Paste Data <small>(JSON array or CSV)</small></label>
+          <textarea id="pasteBox" placeholder='[{"id":"...", "case_name":"...", ...}] or CSV with headers'></textarea>
+          <div class="btns-vertical">
+            <button id="parseBtn" class="btn primary">Parse & Validate</button>
+            <button id="clearBtn" class="btn">Clear</button>
+          </div>
         </div>
       </div>
-      <p class="note">This tool never writes files. It validates and prepares a merged JSON preview for manual commit via GitHub.</p>
     </section>
 
-    <!-- Validation & Preview -->
     <section class="panel">
       <h2>Validation Results</h2>
-      <div id="validationSummary" class="validation"></div>
-      <div id="previewTableWrap" class="table-wrap" aria-live="polite"></div>
+      <pre id="results" class="text" aria-live="polite">Waiting for input…</pre>
     </section>
 
-    <!-- Merge -->
     <section class="panel">
       <h2>Merge with Existing Citations</h2>
-      <div class="merge-controls">
+      <div class="merge-row">
         <label class="checkbox">
-          <input id="overwriteConflicts" type="checkbox"/>
+          <input id="overwrite" type="checkbox"/>
           <span>Overwrite existing entries on ID conflict (default: keep existing, list conflicts)</span>
         </label>
-        <label>
-          <span>Sort by</span>
+        <label class="lbl-inline">Sort by:
           <select id="sortBy">
             <option value="case_name">Case Name</option>
             <option value="year">Year</option>
+            <option value="citation">Citation</option>
             <option value="id">ID</option>
           </select>
         </label>
-        <button id="mergeBtn" class="btn primary">Generate Merged JSON</button>
+        <button id="mergeBtn" class="btn">Generate Merged JSON</button>
       </div>
-      <div>
-        <h3>Merged Output</h3>
-        <textarea id="mergedOutput" rows="16" readonly placeholder="Merged JSON will appear here"></textarea>
-        <div class="merge-actions">
-          <button id="downloadMergedBtn" class="btn">Download merged.json</button>
-          <button id="copyMergedBtn" class="btn">Copy to Clipboard</button>
-        </div>
+
+      <details class="panel-sub">
+        <summary>Optional: Paste existing citations.json (if you want to merge)</summary>
+        <textarea id="existingBox" placeholder='Paste existing citations.json here (array)'></textarea>
+      </details>
+
+      <label class="lbl">Merged Output</label>
+      <textarea id="mergedOut" class="mono" placeholder="Merged JSON will appear here"></textarea>
+      <div class="row">
+        <button id="downloadBtn" class="btn">Download merged.json</button>
+        <span class="hint">Copy to your repo (e.g., <code>data/citations.json</code>).</span>
       </div>
-      <div id="conflictsPanel" class="conflicts"></div>
     </section>
   </main>
 
-  <footer class="app-footer">
-    <small>&copy; Compliance Tools — Bulk Uploader (no file writes).</small>
+  <footer class="footer">
+    <small>Required fields: <code>id</code>, <code>case_name</code>, <code>citation</code>, <code>year</code>. Lists are comma-separated in CSV. <code>id</code> = lowercase letters, numbers, hyphens only; <code>year</code> = 4-digit integer.</small>
   </footer>
 
-  <script src="main.js"></script>
+  <script src="main.js?v=1"></script>
 </body>
 </html>
