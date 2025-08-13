@@ -4,7 +4,7 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Citations – Bulk Uploader</title>
-  <link rel="stylesheet" href="style.css?v=11"/>
+  <link rel="stylesheet" href="style.css?v=12"/>
 </head>
 <body>
   <header class="app-header">
@@ -14,39 +14,30 @@
 
   <main class="wrap">
     <section class="grid">
-      <!-- TOP-LEFT: Source input -->
       <div class="card area-source">
         <h2 class="card-title">Source input</h2>
-
         <div class="toolbar">
-          <!-- blue like other action buttons -->
           <label class="btn action file">
             <input id="fileInput" type="file" accept=".json,.csv,.txt"/>
             <span>Choose File</span>
           </label>
-
           <span id="fileName" class="file-name">No file selected</span>
-
-          <button id="parseBtn" class="btn action">Parse &amp; Validate</button>
-          <button id="clearBtn" class="btn ghost">Clear</button>
-
+          <button id="parseBtn" class="btn action" type="button">Parse &amp; Validate</button>
+          <button id="clearBtn" class="btn ghost" type="button">Clear</button>
           <label class="chk">
             <input id="autoFromTxt" type="checkbox" checked />
             <span>Auto-fill from TXT filename</span>
           </label>
         </div>
-
         <label class="lbl">Paste Data (JSON array or CSV)</label>
         <textarea id="pasteBox" placeholder='[{"id":"...","case_name":"...","citation":"[2025] JRC 1",...}]  OR CSV with headers'></textarea>
       </div>
 
-      <!-- TOP-RIGHT: preview takes the whole right column -->
       <div class="card area-preview">
         <h2 class="card-title">Merged JSON (preview)</h2>
         <textarea id="previewBox" aria-label="Merged JSON preview" readonly>[]</textarea>
       </div>
 
-      <!-- BOTTOM-LEFT: compact Accepted (two-line) -->
       <div class="card area-accepted">
         <div class="row between">
           <h2 class="card-title">Accepted</h2>
@@ -56,15 +47,12 @@
         <div id="validationLine" class="validation-line">Validation: waiting…</div>
       </div>
 
-      <!-- BOTTOM-RIGHT: merge/export controls -->
       <div class="card area-merge">
         <h2 class="card-title">Merge with Existing Citations</h2>
-
         <label class="chk">
           <input id="overwriteChk" type="checkbox"/>
           <span>Overwrite existing entries on ID conflict (default: keep existing)</span>
         </label>
-
         <div class="row">
           <label for="sortBy" class="lbl sm">Sort by</label>
           <select id="sortBy" class="select">
@@ -72,12 +60,10 @@
             <option value="id">ID</option>
             <option value="year">Year</option>
           </select>
-
-          <button id="genBtn" class="btn action">Generate Merged JSON</button>
-          <button id="copyBtn" class="btn ghost">Copy</button>
-          <button id="dlBtn" class="btn ghost">Download</button>
+          <button id="genBtn" class="btn action" type="button">Generate Merged JSON</button>
+          <button id="copyBtn" class="btn ghost" type="button">Copy</button>
+          <button id="dlBtn" class="btn ghost" type="button">Download</button>
         </div>
-
         <div class="hint">Target file: <code>data/citations.json</code> (manual commit)</div>
       </div>
     </section>
@@ -87,6 +73,6 @@
     <small>This tool never writes files. It validates and prepares a merged JSON preview for manual commit via GitHub.</small>
   </footer>
 
-  <script src="main.js?v=11"></script>
+  <script src="main.js?v=12"></script>
 </body>
 </html>
