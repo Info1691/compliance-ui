@@ -2,91 +2,91 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Citations Bulk Uploader</title>
-  <link rel="stylesheet" href="style.css?v=2"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Citations – Bulk Uploader</title>
+  <link rel="stylesheet" href="style.css?v=10"/>
 </head>
 <body>
   <header class="app-header">
-    <img src="logo.png" alt="Logo" class="logo"/>
-    <h1 class="title">Citations Bulk Uploader</h1>
-    <span id="registryPath" class="muted"></span>
+    <img src="logo.png" class="logo" alt="Logo"/>
+    <h1>Citations – Bulk Uploader</h1>
   </header>
 
-  <!-- SOURCE INPUT -->
-  <section class="card">
-    <h3>Source Input</h3>
-    <div class="input-row">
-      <input id="fileInput" type="file" accept=".json,.csv,.txt" hidden>
-      <label for="fileInput" class="btn btn-primary" id="chooseBtn">Choose File</label>
-      <span id="fileName" class="muted"></span>
+  <main class="wrap">
+    <!-- TOP: inputs + preview -->
+    <section class="row">
+      <div class="col">
+        <h2 class="h6">Source Input</h2>
 
-      <button id="parseBtn" class="btn btn-primary">Parse & Validate</button>
-      <button id="clearBtn" class="btn">Clear</button>
+        <div class="fieldset">
+          <label for="fileInput" class="sr-only">Upload File</label>
+          <input id="fileInput" type="file" accept=".json,.csv,.txt"/>
+          <span id="fileName" class="file-name"></span>
 
-      <label class="chk" title="When a .txt is uploaded, attempt to extract and populate fields like summary, holding, etc.">
-        <input id="autoFill" type="checkbox" checked> Auto-fill from TXT
-      </label>
-    </div>
+          <button id="parseBtn" type="button" class="btn">Parse & Validate</button>
+          <button id="clearBtn" type="button" class="btn btn-light">Clear</button>
 
-    <div class="grid-2">
-      <div>
-        <label class="lbl">Paste Data (JSON array or CSV)</label>
-        <textarea id="pasteBox" placeholder='[{"id":"...","case_name":"...","citation":"[2025] JRC 1",...}]  OR CSV with headers'></textarea>
-      </div>
-      <div>
-        <label class="lbl">Merged JSON (preview)</label>
-        <pre id="mergedOutput" class="panel" aria-live="polite">Tip: click “Generate Merged JSON” below to preview.</pre>
-      </div>
-    </div>
-  </section>
+          <label class="ck">
+            <input id="autoFill" type="checkbox" checked/>
+            <span>Auto-fill from TXT filename</span>
+          </label>
+        </div>
 
-  <!-- ACCEPTED / VALIDATION + MERGE -->
-  <section class="grid-2 gap16">
-    <div class="card">
-      <div class="row-between">
-        <h3>Accepted</h3>
-        <span id="acceptedCount" class="pill">0</span>
-      </div>
-      <ul id="acceptedList" class="list"></ul>
-
-      <div class="val-wrap">
-        <strong>Validation:</strong>
-        <span id="valLine" class="val-line">Waiting…</span>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>Merge with Existing Citations</h3>
-      <div class="merge-row">
-        <label class="chk">
-          <input id="overwrite" type="checkbox"> Overwrite existing entries on ID conflict
-        </label>
-
-        <label>
-          Sort by
-          <select id="sortBy">
-            <option value="case_name">Case Name</option>
-            <option value="id">ID</option>
-            <option value="year">Year</option>
-          </select>
-        </label>
-
-        <button id="generateBtn" class="btn btn-primary">Generate Merged JSON</button>
-        <button id="copyBtn" class="btn" title="Copy merged JSON">Copy</button>
-        <a id="downloadBtn" class="btn" download="citations-merged.json">Download</a>
+        <label for="pasteBox" class="lbl">Paste Data (JSON array or CSV)</label>
+        <textarea id="pasteBox" placeholder='[{"id":"...","case_name":"...","citation":"[2025] JRC 1",...}] OR CSV with headers'></textarea>
       </div>
 
-      <p class="muted small">Target file: <span id="targetPath">data/citations.json</span> (manual commit)</p>
-    </div>
-  </section>
+      <div class="col">
+        <h2 class="h6">Merged JSON (preview)</h2>
+        <pre id="preview" class="pre"></pre>
+      </div>
+    </section>
+
+    <!-- BOTTOM: accepted + merge controls -->
+    <section class="row">
+      <div class="col">
+        <div class="card">
+          <div class="card-hd">
+            <strong>Accepted</strong>
+            <span class="badge" id="acceptedCount">0</span>
+          </div>
+          <ul id="acceptedList" class="list"></ul>
+          <div id="status" class="status" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="card">
+          <div class="card-hd"><strong>Merge with Existing Citations</strong></div>
+
+          <label class="ck">
+            <input id="overwrite" type="checkbox"/>
+            <span>Overwrite existing entries on ID conflict (default: keep existing)</span>
+          </label>
+
+          <div class="fieldset">
+            <label for="sortBy">Sort by</label>
+            <select id="sortBy">
+              <option value="case_name">Case Name</option>
+              <option value="id">ID</option>
+              <option value="year">Year</option>
+            </select>
+
+            <button id="genBtn" type="button" class="btn">Generate Merged JSON</button>
+            <button id="copyBtn" type="button" class="btn btn-light">Copy</button>
+            <button id="downloadBtn" type="button" class="btn btn-light">Download</button>
+          </div>
+
+          <small>Target file: <code id="targetPath">data/citations.json</code> (manual commit)</small>
+        </div>
+      </div>
+    </section>
+  </main>
 
   <footer class="footer">
-    <small>
-      This tool never writes files. It validates and prepares a merged JSON preview for manual commit via GitHub.
-    </small>
+    <small>This tool never writes files. It validates and prepares a merged JSON preview for manual commit in GitHub.</small>
   </footer>
 
-  <script src="main.js?v=2"></script>
+  <script src="main.js?v=10"></script>
 </body>
 </html>
