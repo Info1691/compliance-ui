@@ -1,105 +1,84 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Citations Bulk Uploader</title>
-  <link rel="icon" href="logo.png"/>
-  <link rel="stylesheet" href="style.css"/>
-  <style>
-    :root { --blue:#1e3a8a; --sky:#2563eb; --bg:#f7f7fb; --card:#fff; --muted:#6b7280; }
-    *{box-sizing:border-box} body{margin:0;background:var(--bg);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto}
-    header{display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--blue);color:#fff}
-    header .title{font-size:20px;margin:0}
-    .wrap{max-width:1100px;margin:18px auto;padding:0 14px}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-    .card{background:var(--card);border:1px solid #e5e7eb;border-radius:8px;overflow:hidden}
-    .card-header{padding:10px 12px;background:#f3f4f6;border-bottom:1px solid #e5e7eb}
-    .card-body{padding:12px}
-    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    label{font-weight:600}
-    input[type="file"]{max-width:340px}
-    textarea{width:100%;min-height:120px;font-family:ui-monospace, SFMono-Regular, Menlo, monospace}
-    pre.text{white-space:pre;overflow:auto;max-height:440px;padding:12px;background:#0f172a;color:#e5e7eb;border-radius:6px}
-    small.muted{color:var(--muted)}
-    .btn{appearance:none;border:1px solid #d1d5db;border-radius:6px;background:#fff;padding:8px 12px;cursor:pointer}
-    .btn.primary{background:var(--sky);border-color:var(--sky);color:#fff}
-    .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    ul#acceptedList{margin:0;padding-left:18px}
-    .footer-note{margin-top:8px;color:var(--muted)}
-  </style>
+  <link rel="stylesheet" href="style.css?v=1"/>
 </head>
 <body>
-  <header>
-    <img src="logo.png" alt="" style="height:28px"/>
+  <header class="app-header">
+    <img src="logo.png" alt="Logo" class="logo"/>
     <h1 class="title">Citations Bulk Uploader</h1>
+    <span id="registryPath" class="muted"></span>
   </header>
 
-  <main class="wrap">
-    <section class="grid">
-      <!-- LEFT: Source Input -->
-      <div class="card">
-        <div class="card-header"><strong>Source Input</strong></div>
-        <div class="card-body">
-          <div class="row">
-            <label>Upload File (.json, .csv, or .txt)</label>
-            <input id="fileInput" type="file" accept=".json,.csv,.txt"/>
-            <button id="parseBtn" class="btn primary">Parse &amp; Validate</button>
-            <button id="clearBtn" class="btn">Clear</button>
-          </div>
-          <p class="footer-note">This tool never writes files. It validates and prepares a merged JSON preview for manual commit via GitHub.</p>
-          <label style="display:block;margin-top:12px">Paste Data (JSON array or CSV)</label>
-          <textarea id="pasteBox" placeholder='[{"id":"...","case_name":"...","citation":"[2025] JRC 1",...}]  or CSV with headers'></textarea>
-        </div>
+  <!-- SOURCE INPUT -->
+  <section class="card">
+    <h3>Upload File (.json, .csv, or .txt)</h3>
+    <div class="input-row">
+      <input id="fileInput" type="file" accept=".json,.csv,.txt" hidden>
+      <label for="fileInput" class="btn btn-primary" id="chooseBtn">Choose File</label>
+      <span id="fileName" class="muted"></span>
+
+      <button id="parseBtn" class="btn btn-primary">Parse & Validate</button>
+      <button id="clearBtn" class="btn">Clear</button>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <label class="lbl">Paste Data (JSON array or CSV)</label>
+        <textarea id="pasteBox" placeholder='[{"id":"...","case_name":"...","citation":"[2025] JRC 1",...}]  OR CSV with headers'></textarea>
+      </div>
+      <div>
+        <label class="lbl">Validation Results</label>
+        <pre id="results" class="panel" aria-live="polite">Waiting…</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ACCEPTED + MERGE -->
+  <section class="grid-2 gap16">
+    <div class="card">
+      <div class="row-between">
+        <h3>Accepted</h3>
+        <span id="acceptedCount" class="pill">0</span>
+      </div>
+      <ul id="acceptedList" class="list"></ul>
+    </div>
+
+    <div class="card">
+      <h3>Merge with Existing Citations</h3>
+
+      <div class="merge-row">
+        <label class="chk">
+          <input id="overwrite" type="checkbox"> Overwrite existing entries on ID conflict
+        </label>
+
+        <label>
+          Sort by
+          <select id="sortBy">
+            <option value="case_name">Case Name</option>
+            <option value="id">ID</option>
+            <option value="year">Year</option>
+          </select>
+        </label>
+
+        <button id="generateBtn" class="btn btn-primary">Generate Merged JSON</button>
+        <button id="copyBtn" class="btn" title="Copy merged JSON to clipboard">Copy</button>
+        <a id="downloadBtn" class="btn" download="citations-merged.json">Download</a>
       </div>
 
-      <!-- RIGHT: Validation Results -->
-      <div class="card">
-        <div class="card-header"><strong>Validation Results</strong></div>
-        <div class="card-body">
-          <pre id="results" class="text" aria-live="polite">Waiting for input…</pre>
-        </div>
-      </div>
-    </section>
+      <pre id="mergedOutput" class="panel" aria-live="polite">Tip: copy this JSON and commit it to <span id="targetPath">data/citations.json</span> in your repo.</pre>
+    </div>
+  </section>
 
-    <section class="grid" style="margin-top:16px">
-      <!-- LEFT: Accepted marker -->
-      <div class="card" style="max-height:260px">
-        <div class="card-header">
-          <strong>Accepted</strong>
-          <span id="acceptedCount" style="float:right;color:#2563eb">0</span>
-        </div>
-        <div class="card-body" style="max-height:210px;overflow:auto">
-          <ul id="acceptedList"></ul>
-        </div>
-      </div>
+  <footer class="footer">
+    <small>
+      This tool never writes files. It validates and prepares a merged JSON preview for manual commit via GitHub.
+    </small>
+  </footer>
 
-      <!-- RIGHT: Merge controls -->
-      <div class="card">
-        <div class="card-header"><strong>Merge with Existing Citations</strong></div>
-        <div class="card-body">
-          <div class="toolbar" style="margin-bottom:8px">
-            <label><input id="overwrite" type="checkbox"/> Overwrite existing entries on ID conflict (default: keep existing)</label>
-            <span style="margin-left:auto"></span>
-            <label>Sort by
-              <select id="sortBy" class="btn">
-                <option value="case_name">Case Name</option>
-                <option value="year">Year</option>
-              </select>
-            </label>
-            <button id="generateBtn" class="btn primary">Generate Merged JSON</button>
-          </div>
-          <pre id="mergedOutput" class="text" aria-live="polite">Merged JSON will appear here</pre>
-          <p class="footer-note">
-            Tip: copy the JSON above and commit it to <code>data/citations.json</code> in your repo.
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <p class="footer-note">Loads existing registry from <code>data/citations.json</code>. Accepts JSON/CSV/TXT; TXT expected to be a full case text with a filename like <code>State House Trust v Friend [2025] JRC 158.txt</code> so we can infer metadata.</p>
-  </main>
-
-  <script src="main.js"></script>
+  <script src="main.js?v=1"></script>
 </body>
 </html>
