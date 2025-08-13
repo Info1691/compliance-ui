@@ -1,283 +1,252 @@
-/* Bulk Uploader — JSON/CSV/TXT + Accepted marker + single merged output
-   Never writes. Prepares merged JSON for copy-paste to data/citations.json
+/* Citations Bulk Uploader — single-file JS
+   - Accepts JSON array, CSV, or plain-text case (.txt)
+   - Validates minimal required fields
+   - Merges with existing registry loaded from data/citations.json (with fallbacks)
+   - NEVER writes files; shows merged JSON to copy/download
 */
 
 (function () {
-  // ---------- config ----------
-  const REGISTRY_PATHS = [
-    'data/citations.json',     // primary
-    'citations.json'           // fallback (root)
-  ];
-
-  // ---------- dom ----------
-  const $ = (s) => document.querySelector(s);
+  // ---------- DOM ----------
   const els = {
-    file: $('#fileInput'),
-    paste: $('#pasteBox'),
-    parseBtn: $('#parseBtn'),
-    clearBtn: $('#clearBtn'),
-    results: $('#results'),
-    acceptedList: $('#acceptedList'),
+    file:        $('#fileInput'),
+    fileName:    $('#fileName'),
+    parseBtn:    $('#parseBtn'),
+    clearBtn:    $('#clearBtn'),
+    paste:       $('#pasteBox'),
+    results:     $('#results'),
+
+    acceptedList:  $('#acceptedList'),
     acceptedCount: $('#acceptedCount'),
-    overwrite: $('#overwrite'),
-    sortBy: $('#sortBy'),
+
+    overwrite:   $('#overwrite'),
+    sortBy:      $('#sortBy'),
     generateBtn: $('#generateBtn'),
-    mergedOutput: $('#mergedOutput'),
+    copyBtn:     $('#copyBtn'),
+    downloadBtn: $('#downloadBtn'),
+    mergedOut:   $('#mergedOutput'),
+    registryPath:$('#registryPath'),
+    targetPath:  $('#targetPath')
   };
 
-  // ---------- state ----------
-  let existing = [];      // current registry
-  let parsed = [];        // valid entries from most recent input
-  let notes = [];         // parse notes
+  function $(sel){ return document.querySelector(sel); }
 
-  // ---------- init ----------
-  (async function init() {
-    existing = await loadRegistry();
-    renderMerged(existing);
-    setStatus('Loaded existing registry: ' + existing.length + ' entries.');
-  })();
+  // ---------- CONFIG ----------
+  const REGISTRY_PATHS = [
+    'data/citations.json',
+    'citations.json'
+  ];
+  let existing = [];
+  let accepted = [];       // validated incoming items
+  let usedPath = REGISTRY_PATHS[0];
 
-  // ---------- registry loader with fallbacks ----------
-  async function loadRegistry() {
-    for (const url of REGISTRY_PATHS) {
-      try {
-        const r = await fetch(url, { cache: 'no-store' });
-        if (r.ok) return await r.json();
-      } catch (_) {}
-    }
-    return [];
-  }
+  // ---------- Helpers ----------
+  const slug = s => (s||'')
+    .toLowerCase()
+    .replace(/&/g,'and')
+    .replace(/[^a-z0-9\- ]+/g,'')
+    .trim()
+    .replace(/\s+/g,'-');
 
-  // ---------- ui renderers ----------
-  function setStatus(msg) {
-    els.results.textContent = msg;
-  }
-
-  function renderAccepted(list) {
-    els.acceptedList.innerHTML = '';
+  function setResults(msg){ els.results.textContent = msg; }
+  function noteAccepted(list){
+    els.acceptedList.innerHTML = list.map(x => `<li>${escapeHtml(x.case_name)} — ${escapeHtml(x.citation||'')}</li>`).join('');
     els.acceptedCount.textContent = String(list.length);
-    for (const e of list) {
-      const li = document.createElement('li');
-      li.textContent = (e.case_name || e.title || e.id || '(untitled)') +
-                       (e.citation ? ` — ${e.citation}` : '');
-      els.acceptedList.appendChild(li);
-    }
   }
+  function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-  function renderMerged(list) {
-    els.mergedOutput.textContent = JSON.stringify(list, null, 2);
-  }
-
-  // ---------- validators ----------
-  const idRe = /^[a-z0-9-]+$/; // “lowercase letters, numbers, hyphens”
-  function validateEntry(e) {
+  // Basic validation: id, case_name, citation, year 4-digit
+  function validate(item){
     const errs = [];
-
-    // required
-    if (!e.id) errs.push('id required');
-    if (!e.case_name) errs.push('case_name required');
-    if (!e.citation) errs.push('citation required');
-    if (!e.year) errs.push('year required');
-
-    // formats
-    if (e.id && !idRe.test(e.id)) errs.push('id must be lowercase letters, numbers, hyphens');
-    if (e.year && !/^\d{4}$/.test(String(e.year))) errs.push('year must be a 4-digit integer');
-
-    // normalize nice-to-have fields
-    e.jurisdiction ||= 'Jersey';
-    e.court ||= 'Royal Court';
-
+    if(!item.id) errs.push('id required');
+    if(item.id && !/^[a-z0-9-]+$/.test(item.id)) errs.push('id must be lowercase letters, numbers, hyphens');
+    if(!item.case_name) errs.push('case_name required');
+    if(!item.citation) errs.push('citation required');
+    if(String(item.year||'').length!==4 || !/^\d{4}$/.test(String(item.year))) errs.push('year must be 4 digits');
     return errs;
   }
 
-  function normalizeEntry(e) {
-    // ensure known keys exist (keeps JSON shape consistent)
-    return {
-      id: e.id || '',
-      case_name: e.case_name || '',
-      citation: e.citation || '',
-      year: Number(e.year) || '',
-      court: e.court || 'Royal Court',
-      jurisdiction: e.jurisdiction || 'Jersey',
-      summary: e.summary || '',
-      holding: e.holding || '',
-      source: e.source || '',
-      compliance_flags: e.compliance_flags || '',
-      tags: e.tags || '',
-      observed_conduct: e.observed_conduct || '',
-      anomaly_detected: e.anomaly_detected || '',
-      breached_law_or_rule: e.breached_law_or_rule || '',
-      authority_basis: e.authority_basis || '',
-      canonical_breach_tag: e.canonical_breach_tag || '',
-      case_link: e.case_link || '',
-      full_text: e.full_text || ''   // TXT path puts text here (optional)
-    };
-  }
-
-  // ---------- parsers ----------
-  async function readFileAsText(file) {
-    return new Promise((res, rej) => {
-      const r = new FileReader();
-      r.onload = () => res(String(r.result));
-      r.onerror = rej;
-      r.readAsText(file);
-    });
-  }
-
-  function parseJSON(src) {
-    const out = [];
-    const arr = JSON.parse(src); // throws if not valid
-    if (!Array.isArray(arr)) throw new Error('JSON must be an array of objects');
-    for (const raw of arr) out.push(normalizeEntry(raw));
-    return out;
-  }
-
-  function parseCSV(src) {
-    // tiny CSV parser (no quoted newlines). Fine for our simple headers.
-    const lines = src.split(/\r?\n/).filter(Boolean);
-    if (!lines.length) return [];
-    const headers = lines.shift().split(',').map(h => h.trim());
-    const out = [];
-    for (const ln of lines) {
-      const cols = ln.split(',');
+  function parseCSV(text){
+    const lines = text.split(/\r?\n/).filter(Boolean);
+    if(!lines.length) return [];
+    const headers = lines[0].split(',').map(h=>h.trim());
+    return lines.slice(1).map(row=>{
+      const cols = row.split(',');
       const obj = {};
-      headers.forEach((h, i) => obj[h] = (cols[i] || '').trim());
-      out.push(normalizeEntry(obj));
-    }
-    return out;
-  }
-
-  function guessFromFilename(name = '') {
-    // e.g. "State House Trust v Friend [2025] JRC 158.txt"
-    const noExt = name.replace(/\.[^/.]+$/, '');
-    const citationMatch = noExt.match(/\[(\d{4})\]\s*JRC\s*([0-9A-Za-z]+)/i);
-    const year = citationMatch ? citationMatch[1] : '';
-    const jrcNum = citationMatch ? citationMatch[2] : '';
-    const citation = citationMatch ? `[${year}] JRC ${jrcNum}` : '';
-    const caseName = noExt.replace(/\s*\[\d{4}\].*$/,'').trim();
-    const id = (caseName + '-' + year)
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g,'-')
-      .replace(/(^-|-$)/g,'');
-
-    return { id, case_name: caseName, year, citation };
-  }
-
-  function parseTXT(src, filename) {
-    const meta = guessFromFilename(filename || '');
-    const entry = normalizeEntry({
-      ...meta,
-      // Put the whole TXT into full_text so you can view it in your viewer if desired
-      full_text: src
+      headers.forEach((h,i)=> obj[h] = (cols[i]||'').trim());
+      // coerce year
+      if (obj.year) obj.year = Number(obj.year);
+      return obj;
     });
-    return [entry];
   }
 
-  async function parseAny(file, pasted) {
-    notes = [];
-    let raw = '';
-    if (file) raw = await readFileAsText(file);
-    else raw = pasted || '';
+  // Parse a single-case .txt by filename (quick utility)
+  function parseTxtByFilename(name, rawText){
+    // Example filename: "State House Trust v Friend [2025] JRC 158.txt"
+    const base = name.replace(/\.[^.]+$/,'');
+    // Extract parts:
+    const caseName = base.replace(/\[[^\]]+\].*$/,'').trim();
+    const citationMatch = base.match(/\[[0-9]{4}\]\s*[A-Z]+.*$/);
+    const citation = citationMatch ? citationMatch[0] : '';
+    const yearMatch = citation.match(/\[([0-9]{4})\]/) || base.match(/\[([0-9]{4})\]/);
+    const year = yearMatch ? Number(yearMatch[1]) : NaN;
 
-    if (!raw.trim()) return { valid: [], errors: ['No input provided'] };
+    // Guess court + jurisdiction from citation (very rough)
+    let court = ''; let jurisdiction = '';
+    if (/\bJRC\b/.test(citation)) { court = 'Royal Court'; jurisdiction = 'Jersey'; }
+    else if (/\bJCA\b/.test(citation)) { court = 'Court of Appeal'; jurisdiction = 'Jersey'; }
 
-    try {
-      if (file && /\.json$/i.test(file.name)) {
-        return { valid: parseJSON(raw), errors: [] };
-      }
-      if (file && /\.csv$/i.test(file.name)) {
-        return { valid: parseCSV(raw), errors: [] };
-      }
-      if (file && /\.txt$/i.test(file.name)) {
-        return { valid: parseTXT(raw, file.name), errors: [] };
-      }
+    const id = slug(`${caseName}-${year||''}`);
 
-      // If no file / unknown extension: try JSON → CSV → TXT fallback
-      try { return { valid: parseJSON(raw), errors: [] }; } catch {}
-      try { return { valid: parseCSV(raw), errors: [] }; } catch {}
-      return { valid: parseTXT(raw, ''), errors: [] };
-
-    } catch (err) {
-      return { valid: [], errors: [String(err.message || err)] };
-    }
+    const obj = {
+      id, case_name: caseName, citation, year: year||'', court, jurisdiction,
+      summary:"", holding:"", source:"", compliance_flags:"", tags:"", observed_conduct:"", anomaly_detected:"",
+      breached_law_or_rule:"", authority_basis:"", canonical_breach_tag:"", case_link:"",
+      full_text: extractFirstLines(rawText, 12) // small snippet to help the editor
+    };
+    return obj;
   }
 
-  // ---------- merge generator ----------
-  function generateMerged() {
-    const overwrite = !!els.overwrite.checked;
-    const sortBy = els.sortBy.value || 'case_name';
+  function extractFirstLines(text, n){
+    return (text||'').split(/\r?\n/).slice(0,n).join('\n');
+  }
 
-    // index by id
-    const map = new Map(existing.map(e => [e.id, e]));
-
-    for (const n of parsed) {
-      if (!n.id) continue; // should not happen after validation
-      if (map.has(n.id)) {
-        if (overwrite) map.set(n.id, n); // replace
-        // else keep existing
-      } else {
-        map.set(n.id, n);
-      }
+  // ---------- Existing registry loader ----------
+  async function loadExisting(){
+    let lastErr = '';
+    for (const p of REGISTRY_PATHS){
+      try{
+        const res = await fetch(p, {cache:'no-store'});
+        if(!res.ok) throw new Error(String(res.status));
+        const json = await res.json();
+        if (!Array.isArray(json)) throw new Error('registry must be an array');
+        existing = json;
+        usedPath = p;
+        els.registryPath.textContent = 'Existing registry: ' + p;
+        els.targetPath.textContent = p;
+        return;
+      }catch(e){ lastErr = e.message; }
     }
+    els.registryPath.textContent = 'Existing registry: (not found)';
+    console.warn('Could not load registry:', lastErr);
+    existing = [];
+  }
 
-    // back to array + sort
-    const out = Array.from(map.values());
-    out.sort((a, b) => {
-      const av = (a[sortBy] ?? '').toString().toLowerCase();
-      const bv = (b[sortBy] ?? '').toString().toLowerCase();
-      if (sortBy === 'year') return (Number(a.year)||0) - (Number(b.year)||0) || av.localeCompare(bv);
-      return av.localeCompare(bv);
+  // ---------- Merging ----------
+  function mergeEntries(base, incoming, overwrite){
+    const map = new Map(base.map(x => [x.id, x]));
+    for (const it of incoming){
+      if (map.has(it.id) && !overwrite) continue;
+      map.set(it.id, it);
+    }
+    return Array.from(map.values());
+  }
+
+  function sortEntries(arr, by){
+    const k = by || 'case_name';
+    return arr.slice().sort((a,b)=>{
+      const A = (a[k] ?? '').toString().toLowerCase();
+      const B = (b[k] ?? '').toString().toLowerCase();
+      if (A<B) return -1; if (A>B) return 1; return 0;
     });
-
-    renderMerged(out);
   }
 
-  // ---------- events ----------
-  els.parseBtn.addEventListener('click', async () => {
-    const file = els.file.files && els.file.files[0];
-    const pasted = els.paste.value;
-
-    setStatus('Parsing…');
-    const { valid, errors } = await parseAny(file, pasted);
-
-    if (errors.length) {
-      setStatus('Validation errors:\n\n• ' + errors.join('\n• '));
-      renderAccepted([]);
-      parsed = [];
-      return;
-    }
-
-    // validate each entry
-    const ok = [];
-    const errLines = [];
-    valid.forEach((v, i) => {
-      const errs = validateEntry(v);
-      if (errs.length) {
-        errLines.push(`#${i+1}: ` + errs.join('. ') + '.');
-      } else {
-        ok.push(v);
-      }
-    });
-
-    parsed = ok;
-    if (errLines.length) {
-      setStatus('Validation errors:\n\n' + errLines.join('\n'));
-    } else {
-      setStatus(`All ${ok.length} entries are valid.`);
-    }
-    renderAccepted(ok);
-  });
-
-  els.generateBtn.addEventListener('click', () => {
-    generateMerged();
+  // ---------- Events ----------
+  els.file.addEventListener('change', () => {
+    els.fileName.textContent = els.file.files && els.file.files[0] ? els.file.files[0].name : '';
   });
 
   els.clearBtn.addEventListener('click', () => {
     els.file.value = '';
+    els.fileName.textContent = '';
     els.paste.value = '';
-    parsed = [];
-    renderAccepted([]);
-    setStatus('Cleared.');
-    renderMerged(existing);
+    accepted = [];
+    setResults('Cleared.');
+    noteAccepted(accepted);
+    els.mergedOut.textContent = 'Tip: copy this JSON and commit it to ' + usedPath + ' in your repo.';
   });
+
+  els.parseBtn.addEventListener('click', async () => {
+    try{
+      accepted = [];
+      setResults('Parsing…');
+
+      // 1) From paste box?
+      const pasted = els.paste.value.trim();
+      if (pasted){
+        let items = [];
+        if (pasted.startsWith('[')){  // JSON array
+          items = JSON.parse(pasted);
+        } else if (pasted.includes(',')){ // CSV text
+          items = parseCSV(pasted);
+        }
+        const {val, bad} = validateMany(items);
+        accepted = val;
+        setResults(bad.length ? prettyIssues(bad) : `All ${accepted.length} entries are valid.`);
+        noteAccepted(accepted);
+        return;
+      }
+
+      // 2) From file
+      const f = els.file.files && els.file.files[0];
+      if (!f){ setResults('No input. Choose a file or paste data.'); return; }
+      const text = await f.text();
+
+      let items = [];
+      if (f.name.toLowerCase().endsWith('.json')){
+        items = JSON.parse(text);
+      } else if (f.name.toLowerCase().endsWith('.csv')){
+        items = parseCSV(text);
+      } else { // .txt — single case, infer from filename
+        items = [ parseTxtByFilename(f.name, text) ];
+      }
+
+      const {val, bad} = validateMany(items);
+      accepted = val;
+      setResults(bad.length ? prettyIssues(bad) : `All ${accepted.length} entries are valid.`);
+      noteAccepted(accepted);
+
+    }catch(err){
+      console.error(err);
+      setResults('Parse error: ' + err.message);
+    }
+  });
+
+  function validateMany(items){
+    const val=[], bad=[];
+    (items||[]).forEach((it,i)=>{
+      const errs = validate(it);
+      if (errs.length) bad.push(`#${i+1}: `+errs.join('; '));
+      else val.push(it);
+    });
+    return {val, bad};
+  }
+  function prettyIssues(arr){
+    return 'Validation errors:\n\n' + arr.map(s=>'• '+s).join('\n');
+  }
+
+  els.generateBtn.addEventListener('click', () => {
+    try{
+      const overwrite = !!els.overwrite.checked;
+      const sortBy = els.sortBy.value || 'case_name';
+      const merged = sortEntries( mergeEntries(existing, accepted, overwrite), sortBy );
+      const json = JSON.stringify(merged, null, 2);
+      els.mergedOut.textContent = json;
+      // prep download
+      const blob = new Blob([json], {type:'application/json'});
+      els.downloadBtn.href = URL.createObjectURL(blob);
+    }catch(err){
+      els.mergedOut.textContent = 'Error: ' + err.message;
+    }
+  });
+
+  els.copyBtn.addEventListener('click', async () => {
+    try{
+      await navigator.clipboard.writeText(els.mergedOut.textContent || '');
+      els.copyBtn.textContent = 'Copied!';
+      setTimeout(()=> els.copyBtn.textContent='Copy', 900);
+    }catch(e){ console.warn(e); }
+  });
+
+  // ---------- Kickoff ----------
+  loadExisting();
 })();
