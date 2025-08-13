@@ -2,77 +2,98 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Citations Bulk Uploader</title>
-  <link rel="stylesheet" href="style.css?v=1"/>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f6f7fb;margin:0}
+    header{background:#0b5fb3;color:#fff;padding:14px 16px;display:flex;align-items:center;gap:12px}
+    header img{height:28px}
+    header h1{font-size:18px;margin:0}
+    main{max-width:1100px;margin:18px auto;padding:0 16px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .card{background:#fff;border:1px solid #e6e8ee;border-radius:8px;padding:14px}
+    h2{font-size:16px;margin:0 0 10px}
+    textarea, pre{width:100%;height:220px;border:1px solid #dfe3eb;border-radius:6px;padding:10px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;background:#fbfcff}
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+    .btn{background:#0b5fb3;border:none;color:#fff;border-radius:6px;padding:8px 12px;font-weight:600;cursor:pointer}
+    .btn.ghost{background:#eef3fb;color:#0b5fb3}
+    .muted{color:#6b7280;font-size:12px}
+    .ok{color:#087443}
+    .err{color:#b80639}
+    ul{margin:6px 0 0 18px}
+    .row{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+    label{font-weight:600}
+    input[type="file"]{display:block}
+    code.badge{background:#111827;color:#fff;border-radius:4px;padding:2px 6px;font-family:ui-monospace}
+  </style>
 </head>
 <body>
-  <header class="app-header">
-    <img src="logo.png" alt="Logo" class="logo"/>
-    <h1 class="title">Citations Bulk Uploader</h1>
+  <header>
+    <img src="logo.png" alt=""/>
+    <h1>Citations Bulk Uploader</h1>
   </header>
 
-  <main class="wrap">
-    <section class="panel">
-      <h2>Source Input</h2>
-      <div class="grid">
-        <div>
-          <label class="lbl">Upload File <small>(JSON or CSV)</small></label>
-          <input id="fileInput" type="file" accept=".json,.csv,text/csv,application/json"/>
-          <div class="hint">This tool never writes files. It validates and prepares a merged JSON preview for manual commit via GitHub.</div>
-        </div>
-        <div>
-          <label class="lbl">Paste Data <small>(JSON array or CSV)</small></label>
-          <textarea id="pasteBox" placeholder='[{"id":"...", "case_name":"...", ...}] or CSV with headers'></textarea>
-          <div class="btns-vertical">
-            <button id="parseBtn" class="btn primary">Parse & Validate</button>
-            <button id="clearBtn" class="btn">Clear</button>
+  <main>
+    <div class="card">
+      <div class="row">
+        <div><strong>Existing registry:</strong> <code class="badge" id="registryPath">data/citations.json</code></div>
+        <div class="muted">This tool validates input and prepares a merged JSON preview for manual commit in GitHub. It never writes files.</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Source Input</h2>
+        <div class="row">
+          <div>
+            <label for="file">Upload File (<code>.json</code>, <code>.csv</code>, or <code>.txt</code>)</label>
+            <input id="file" type="file" accept=".json,.csv,.txt" multiple/>
           </div>
         </div>
-      </div>
-    </section>
 
-    <section class="panel">
-      <h2>Validation Results</h2>
-      <pre id="results" class="text" aria-live="polite">Waiting for input…</pre>
-    </section>
+        <div class="toolbar">
+          <button id="parseBtn" class="btn">Parse &amp; Validate</button>
+          <button id="clearBtn" class="btn ghost">Clear</button>
+        </div>
 
-    <section class="panel">
+        <label for="paste">Paste Data (JSON array or CSV)</label>
+        <textarea id="paste" placeholder='[{"id":"...","case_name":"...","citation":"[2025] JRC 1",...}] OR CSV with headers'></textarea>
+      </section>
+
+      <section class="card">
+        <h2>Validation Results</h2>
+        <pre id="validation">Waiting for input…</pre>
+      </section>
+    </div>
+
+    <section class="card" style="margin-top:14px">
       <h2>Merge with Existing Citations</h2>
-      <div class="merge-row">
-        <label class="checkbox">
-          <input id="overwrite" type="checkbox"/>
-          <span>Overwrite existing entries on ID conflict (default: keep existing, list conflicts)</span>
-        </label>
-        <label class="lbl-inline">Sort by:
+      <div class="row">
+        <label><input id="overwrite" type="checkbox"/> Overwrite existing entries on ID conflict</label>
+        <label> Sort by
           <select id="sortBy">
             <option value="case_name">Case Name</option>
             <option value="year">Year</option>
-            <option value="citation">Citation</option>
             <option value="id">ID</option>
           </select>
         </label>
         <button id="mergeBtn" class="btn">Generate Merged JSON</button>
       </div>
+      <pre id="merged">Merged JSON will appear here…</pre>
+      <div class="muted">Tip: copy the above JSON and commit it to <code>data/citations.json</code> in your repo.</div>
+    </section>
 
-      <details class="panel-sub">
-        <summary>Optional: Paste existing citations.json (if you want to merge)</summary>
-        <textarea id="existingBox" placeholder='Paste existing citations.json here (array)'></textarea>
-      </details>
-
-      <label class="lbl">Merged Output</label>
-      <textarea id="mergedOut" class="mono" placeholder="Merged JSON will appear here"></textarea>
-      <div class="row">
-        <button id="downloadBtn" class="btn">Download merged.json</button>
-        <span class="hint">Copy to your repo (e.g., <code>data/citations.json</code>).</span>
-      </div>
+    <section class="card" style="margin-top:14px">
+      <h2>Notes</h2>
+      <ul class="muted">
+        <li><strong>.txt handling:</strong> case metadata is inferred from the <em>filename</em>. Example: <code>State House Trust v Friend [2025] JRC 158.txt</code> → id, case_name, citation, year, court, jurisdiction.</li>
+        <li>Court inference: <code>JRC</code> → Royal Court, <code>JCA</code> → Court of Appeal. Jurisdiction defaults to “Jersey”. Edit later if needed.</li>
+        <li>Required fields: <code>id</code>, <code>case_name</code>, <code>citation</code>, <code>year</code> (4-digit), plus anything else your viewer expects.</li>
+      </ul>
     </section>
   </main>
 
-  <footer class="footer">
-    <small>Required fields: <code>id</code>, <code>case_name</code>, <code>citation</code>, <code>year</code>. Lists are comma-separated in CSV. <code>id</code> = lowercase letters, numbers, hyphens only; <code>year</code> = 4-digit integer.</small>
-  </footer>
-
-  <script src="main.js?v=1"></script>
+  <script src="main.js"></script>
 </body>
 </html>
