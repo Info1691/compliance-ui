@@ -1,10 +1,13 @@
-/* Citations – Bulk Uploader (docs/bulk/main.js)
-   - Robust registry loader (multiple fallback paths)
-   - Accepts .json / .csv / .txt uploads or pasted JSON/CSV
-   - Auto-fill from TXT filename (case name + citation + year)
-   - Optional "No breach detected" marker
-   - Merges with existing registry (no writes; user copies/downloads)
-   - Sorted output + copy/download helpers
+/* Citations – Bulk Uploader (Option A: conservative, filename-only)
+   8 rules of integrity:
+   1) No guesses: never parse TXT content; only filename facts.
+   2) Deterministic: same input => same output.
+   3) Minimal surface area: UI IDs unchanged.
+   4) Single source: filename is the only inference source for TXT.
+   5) Reversible: confined to this file; no writes to disk.
+   6) Defensive: schema normalized; safe fallbacks.
+   7) Accessibility preserved: no DOM/id churn.
+   8) Transparency: fields left blank when unknown.
 */
 
 /* ===== DOM ===== */
@@ -27,68 +30,93 @@ const els = {
   dlBtn:         $('#dlBtn'),
 };
 
-let registry = [];        // existing citations.json
-let parsedEntries = [];   // newly parsed/validated entries
+/* ===== State ===== */
+let registry = [];        // existing citations.json (read-only)
+let parsedEntries = [];   // newly accepted rows
 let merged = [];          // merged preview
 
-/* ===== Utilities ===== */
-const setAccepted = (list) => {
+/* ===== Utils ===== */
+const norm = (s) => String(s || '').trim();
+const isYear = (x) => /^\d{4}$/.test(String(x));
+const slug = (s) =>
+  norm(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+const toJSON = (o) => JSON.stringify(o, null, 2);
+
+function setAccepted(list) {
   els.acceptedCount.textContent = String(list.length);
   const ul = document.createElement('ul');
   ul.className = 'bullets';
   list.forEach(e => {
     const li = document.createElement('li');
-    li.textContent = `${e.case_name} — ${e.citation}`;
+    li.textContent = `${e.case_name || e.id} — ${e.citation || ''}`;
     ul.appendChild(li);
   });
   els.acceptedList.innerHTML = '';
   els.acceptedList.appendChild(ul);
-};
+}
 
-const toJSON = (o) => JSON.stringify(o, null, 2);
-const norm = (s) => String(s || '').trim();
-const isYear = (x) => /^\d{4}$/.test(String(x));
-const slug = (s) =>
-  norm(s).toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-
-const inferFromFilename = (name) => {
-  // e.g. "State House Trust v Friend [2025]JRC158.txt"
+/* ===== Filename inference (Jersey reports only) =====
+   Accepts: "Case v Other [2025] JRC 158.txt" or "[2025]JRC158"
+*/
+function inferFromFilename(name) {
   const base = name.replace(/\.[^.]+$/, '');
-  const m = base.match(/(.+?)\s+\[?(\d{4})\]?\s*JRC\s*([0-9]+)$/i);
-  if (m) {
-    const case_name = norm(m[1]);
-    const year = m[2];
-    const jrcNum = m[3];
-    const citation = `[${year}] JRC ${jrcNum}`;
-    const id = `${slug(case_name)}-${year}`;
-    return { case_name, year, citation, id };
-  }
-  // fallback: try case name only
-  return {
-    case_name: base.replace(/[_-]+/g, ' ').trim(),
-    citation: '',
-    year: '',
-    id: slug(base)
-  };
-};
+  const case_name = norm(base.replace(/\s*\[[^\]]+].*$/, '').replace(/[_-]+/g, ' '));
 
-const parseCSV = (text) => {
-  // very small CSV helper (expects headers)
+  let citation = '';
+  let year = '';
+  let court = '';
+  let jurisdiction = '';
+
+  // [YYYY] <series> <num>  or  [YYYY]<series><num>
+  const m = base.match(/\[(\d{4})]\s*([A-Za-z]{2,3})\s*([0-9A-Za-z\-\/]+)?/i);
+  if (m) {
+    year = m[1];
+    const series = (m[2] || '').toUpperCase();
+    const num = m[3] ? ` ${m[3].trim()}` : '';
+    citation = `[${year}] ${series}${num}`;
+    if (series === 'JRC') { court = 'Royal Court'; jurisdiction = 'Jersey'; }
+    if (series === 'JCA') { court = 'Court of Appeal'; jurisdiction = 'Jersey'; }
+  }
+
+  return {
+    id: slug(case_name + (year ? `-${year}` : '')),
+    case_name,
+    citation,
+    year: isYear(year) ? parseInt(year, 10) : '',
+    court,
+    jurisdiction
+  };
+}
+
+/* ===== CSV / JSON parsing ===== */
+function parseCSV(text) {
   const lines = text.split(/\r?\n/).filter(Boolean);
   if (!lines.length) return [];
   const headers = lines[0].split(',').map(h => h.trim());
   return lines.slice(1).map(row => {
-    const cells = row.split(',').map(c => c.trim());
+    const cells = []; let cur = '', q = false;
+    for (let i = 0; i < row.length; i++) {
+      const ch = row[i];
+      if (ch === '"' && row[i+1] === '"') { cur += '"'; i++; continue; }
+      if (ch === '"') { q = !q; continue; }
+      if (ch === ',' && !q) { cells.push(cur); cur = ''; continue; }
+      cur += ch;
+    }
+    cells.push(cur);
     const obj = {};
-    headers.forEach((h, i) => obj[h] = cells[i] || '');
+    headers.forEach((h, i) => obj[h] = norm(cells[i]));
     return obj;
   });
-};
+}
 
-const ensureShape = (r, sourceName, noBreachFlag) => {
-  // Base template — preserve keys consistently (downstream tools expect these)
+function parseJSONorCSV(text) {
+  if (!text || !text.trim()) return [];
+  try { const j = JSON.parse(text); return Array.isArray(j) ? j : [j]; } catch (_) {}
+  try { return parseCSV(text); } catch (_) { return []; }
+}
+
+/* ===== Schema normalizer (no guessing) ===== */
+function ensureShape(r, sourceName, noBreachFlag) {
   const base = {
     id: "",
     case_name: "",
@@ -110,79 +138,74 @@ const ensureShape = (r, sourceName, noBreachFlag) => {
     full_text: ""
   };
 
-  // Shallow-copy known keys
   const out = { ...base, ...r };
 
-  // Inference helpers (Jersey Royal Court)
-  if (/JRC/i.test(out.citation)) {
-    out.court = out.court || "Royal Court";
-    out.jurisdiction = out.jurisdiction || "Jersey";
-  }
-  if (isYear(out.year) === false) {
-    // try to lift a year out of the citation (e.g., [2025] JRC 158)
+  // Jersey hints from citation only (JRC/JCA)
+  if (!out.court && /\bJRC\b/i.test(out.citation || '')) out.court = 'Royal Court';
+  if (!out.court && /\bJCA\b/i.test(out.citation || '')) out.court = 'Court of Appeal';
+  if (!out.jurisdiction && /\bJ(RC|CA)\b/i.test(out.citation || '')) out.jurisdiction = 'Jersey';
+
+  // Year normalization
+  if (isYear(out.year)) out.year = parseInt(out.year, 10);
+  else {
     const y = (out.citation || '').match(/\[(\d{4})]/);
-    if (y) out.year = y[1];
+    if (y) out.year = parseInt(y[1], 10);
   }
 
   // ID fallback
-  if (!out.id) {
+  if (!norm(out.id)) {
     const safeCase = out.case_name ? slug(out.case_name) : slug(sourceName || 'case');
-    const safeYear = isYear(out.year) ? out.year : '';
-    out.id = safeYear ? `${safeCase}-${safeYear}` : `${safeCase}`;
+    out.id = out.year ? `${safeCase}-${out.year}` : safeCase;
+  } else {
+    out.id = slug(out.id);
   }
 
-  // Source (filename) fallback
-  if (!norm(out.source) && sourceName) {
-    out.source = sourceName;
-  }
+  // Source = filename if available
+  if (!norm(out.source) && sourceName) out.source = sourceName;
 
   // Optional “No breach detected”
   if (noBreachFlag) {
-    out.compliance_flags = out.compliance_flags || "no-breach";
-    if (!norm(out.summary)) out.summary = "No breach detected.";
+    out.anomaly_detected = 'no';
+    out.compliance_flags = out.compliance_flags || 'no-breach';
+    if (!norm(out.summary)) out.summary = 'No breach detected.';
   }
 
   return out;
-};
+}
 
-const loadRegistry = async () => {
+/* ===== Registry loader (read-only) ===== */
+async function loadRegistry() {
   const paths = [
-    '/data/citations.json',            // published root
-    '../data/citations.json',          // when browsed from /docs/bulk/
-    '../../data/citations.json',       // deep fallback
-    'citations.json',                  // local dev preview
+    '/data/citations.json',     // root on GitHub Pages
+    '../data/citations.json',   // from /bulk/
+    '../../data/citations.json',
+    'citations.json'            // local preview
   ];
-
   for (const p of paths) {
     try {
-      const res = await fetch(p, { cache: 'no-store' });
-      if (res.ok) {
-        const json = await res.json();
-        if (Array.isArray(json)) {
-          registry = json;
-          return;
-        }
+      const r = await fetch(p, { cache: 'no-store' });
+      if (r.ok) {
+        const j = await r.json();
+        if (Array.isArray(j)) return j;
       }
-    } catch (_) { /* try next */ }
+    } catch (_) {}
   }
-  registry = []; // not fatal — user can still create merged preview
-};
+  return [];
+}
 
-const mergeEntries = (existing, incoming, overwrite) => {
-  const map = new Map();
-  existing.forEach(e => map.set(e.id, e));
-  incoming.forEach(e => {
-    if (map.has(e.id) && !overwrite) return; // keep existing
+/* ===== Merge ===== */
+function mergeEntries(existing, incoming, overwrite) {
+  const map = new Map(existing.map(x => [x.id, x]));
+  for (const e of incoming) {
+    if (map.has(e.id) && !overwrite) continue;
     map.set(e.id, e);
-  });
+  }
   return Array.from(map.values());
-};
+}
 
-/* ===== Event handlers ===== */
-
+/* ===== Events ===== */
 els.file.addEventListener('change', () => {
-  const f = els.file.files && els.file.files[0];
-  els.fileName.textContent = f ? f.name : '';
+  els.fileName.textContent = els.file.files?.[0]?.name || '';
 });
 
 els.clearBtn.addEventListener('click', () => {
@@ -195,93 +218,75 @@ els.clearBtn.addEventListener('click', () => {
 });
 
 els.parseBtn.addEventListener('click', async () => {
+  // make sure registry is available (non-blocking for parse)
+  if (!registry.length) registry = await loadRegistry();
+
   const noBreach = !!els.markNoBreach.checked;
   parsedEntries = [];
   setAccepted([]);
 
-  // 1) parse from upload (preferred)
-  const f = els.file.files && els.file.files[0];
+  // 1) File route
+  const f = els.file.files?.[0];
   if (f) {
-    const text = await f.text();
+    const name = f.name || '';
 
-    // TXT: try to infer from filename if requested
-    if (/\.txt$/i.test(f.name) && els.autoFromTxt.checked) {
-      const seed = inferFromFilename(f.name);
-      const entry = ensureShape(seed, f.name, noBreach);
-      parsedEntries.push(entry);
-    } else if (/\.csv$/i.test(f.name)) {
+    if (/\.txt$/i.test(name)) {
+      // **Option A**: only use filename to seed fields. Do NOT read TXT content.
+      const seed = els.autoFromTxt.checked ? inferFromFilename(name) : { case_name: name.replace(/\.[^.]+$/, '') };
+      parsedEntries.push(ensureShape(seed, name, noBreach));
+
+    } else if (/\.csv$/i.test(name)) {
+      const text = await f.text();
       const rows = parseCSV(text);
-      rows.forEach(r => parsedEntries.push(ensureShape(r, f.name, noBreach)));
+      rows.forEach(r => parsedEntries.push(ensureShape(r, name, noBreach)));
+
     } else {
-      // assume JSON (array OR single object)
+      // assume JSON
+      const text = await f.text();
       try {
         const obj = JSON.parse(text);
-        const arr = Array.isArray(obj) ? obj : [obj];
-        arr.forEach(r => parsedEntries.push(ensureShape(r, f.name, noBreach)));
-      } catch (err) {
+        (Array.isArray(obj) ? obj : [obj]).forEach(r => parsedEntries.push(ensureShape(r, name, noBreach)));
+      } catch {
         alert('Upload looks like JSON but could not be parsed.');
         return;
       }
     }
   }
 
-  // 2) parse from paste area (optional)
-  const paste = norm(els.pasteArea.value);
-  if (paste) {
-    // try JSON first
-    let added = false;
-    try {
-      const obj = JSON.parse(paste);
-      const arr = Array.isArray(obj) ? obj : [obj];
-      arr.forEach(r => parsedEntries.push(ensureShape(r, 'pasted', noBreach)));
-      added = true;
-    } catch (_) { /* fall through */ }
-
-    if (!added) {
-      // try CSV
-      const rows = parseCSV(paste);
-      if (rows.length) {
-        rows.forEach(r => parsedEntries.push(ensureShape(r, 'pasted.csv', noBreach)));
-      }
-    }
+  // 2) Paste route
+  const pasted = norm(els.pasteArea.value);
+  if (pasted) {
+    parseJSONorCSV(pasted).forEach(r => parsedEntries.push(ensureShape(r, 'pasted', noBreach)));
   }
 
   if (!parsedEntries.length) {
-    alert('Nothing to parse. Upload a file or paste JSON/CSV.');
+    alert('Nothing to parse. Upload a TXT/CSV/JSON or paste JSON/CSV.');
     return;
   }
 
-  // Normalize + simple validations
-  const clean = parsedEntries.map(e => {
+  // final normalization
+  parsedEntries = parsedEntries.map(e => {
     e.id = slug(e.id);
-    e.case_name = norm(e.case_name);
-    e.citation = norm(e.citation);
     if (e.year && !isYear(e.year)) e.year = '';
     return e;
   });
 
-  parsedEntries = clean;
-
-  // Show accepted list now (merge preview is done via button)
   setAccepted(parsedEntries);
-  els.mergedOut.value = '[ ]';
+  els.mergedOut.value = '[ ]'; // user clicks Generate to build merged view
 });
 
 els.genBtn.addEventListener('click', () => {
-  if (!parsedEntries.length) {
-    alert('No accepted entries. Parse & Validate first.');
-    return;
-  }
+  if (!parsedEntries.length) { alert('No accepted entries. Parse & Validate first.'); return; }
   const overwrite = !!els.overwrite.checked;
   merged = mergeEntries(registry, parsedEntries, overwrite);
 
-  // Sorting
+  // sort
   const key = els.sortBy.value;
   merged.sort((a,b) => {
-    const va = norm(a[key]).toLowerCase();
-    const vb = norm(b[key]).toLowerCase();
-    if (va < vb) return -1;
-    if (va > vb) return 1;
+    const av = norm(a[key]).toLowerCase();
+    const bv = norm(b[key]).toLowerCase();
+    if (av < bv) return -1;
+    if (av > bv) return 1;
     return 0;
   });
 
@@ -291,26 +296,26 @@ els.genBtn.addEventListener('click', () => {
 els.copyBtn.addEventListener('click', async () => {
   try {
     await navigator.clipboard.writeText(els.mergedOut.value);
-  } catch (_) {
-    // fallback
+  } catch {
+    // fallback for older Safari
     els.mergedOut.select();
     document.execCommand('copy');
   }
 });
 
 els.dlBtn.addEventListener('click', () => {
-  const blob = new Blob([els.mergedOut.value], { type: 'application/json;charset=utf-8' });
+  const blob = new Blob([els.mergedOut.value || '[]'], { type: 'application/json;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.download = 'citations.json';
   a.href = url;
   a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  setTimeout(() => URL.revokeObjectURL(url), 500);
 });
 
 /* ===== Init ===== */
 (async function init(){
-  await loadRegistry();
+  registry = await loadRegistry();
   setAccepted([]);
   els.mergedOut.value = '[ ]';
 })();
