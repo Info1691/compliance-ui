@@ -1,189 +1,235 @@
+/* eslint-disable no-useless-escape */
 (function () {
-  const $ = (id) => document.getElementById(id);
+  // ---------- DOM ----------
   const els = {
-    fileInput: $('fileInput'), fileName: $('fileName'),
-    parseBtn: $('parseBtn'), clearBtn: $('clearBtn'),
-    autoFromTxt: $('autoFromTxt'), pasteBox: $('pasteBox'),
-    previewBox: $('previewBox'), acceptedList: $('acceptedList'),
-    acceptedCount: $('acceptedCount'), validationLine: $('validationLine'),
-    overwriteChk: $('overwriteChk'), sortBy: $('sortBy'),
-    genBtn: $('genBtn'), copyBtn: $('copyBtn'), dlBtn: $('dlBtn')
+    file:        $('#file'),
+    autoFill:    $('#autofill'),
+    parseBtn:    $('#parseBtn'),
+    clearBtn:    $('#clearBtn'),
+    paste:       $('#paste'),
+    acceptedBox: $('#acceptedList'),
+    acceptedCount: $('#acceptedCount'),
+    mergedOut:   $('#mergedJson'),
+    overwrite:   $('#overwrite'),
+    sortBy:      $('#sortBy'),
+    generateBtn: $('#genBtn'),
+    copyBtn:     $('#copyBtn'),
+    downloadBtn: $('#downloadBtn'),
+    targetHint:  $('#targetHint'),
+    noBreachChk: $('#noBreach'),
   };
 
-  let rawFileText = '';
-  let accepted = [];
+  // ---------- Helpers ----------
+  const text = (el, v) => el.textContent = v;
+  const html = (el, v) => el.innerHTML = v;
+  const val  = (el) => el.value || '';
+  const lines = (s) => s.split(/\r?\n/);
 
-  const escapeHtml = (s='') => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const slug = (s) => s.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'')
-    .replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
-  const setValidation = (m) => els.validationLine.textContent = m;
-  const showPreview = (arr) => { els.previewBox.value = JSON.stringify(arr, null, 2); };
-
-  function toCSVrows(text) {
-    const lines = text.replace(/\r/g,'').split('\n').filter(Boolean);
-    if (!lines.length) return [];
-    const headers = lines[0].split(',').map(h=>h.trim());
-    return lines.slice(1).map(line=>{
-      const cols = line.split(',');
-      const o = {};
-      headers.forEach((h,i)=>o[h]=(cols[i]||'').trim());
-      return o;
-    });
+  function normalise(str) {
+    return (str || '')
+      .replace(/\u00A0/g, ' ')       // NBSP → space
+      .replace(/[ \t]+/g, ' ')       // collapse whitespace
+      .replace(/ *\n */g, '\n')      // trim line ends
+      .trim();
   }
 
-  function setAccepted(list) {
-    accepted = list;
-    els.acceptedCount.textContent = String(list.length);
-    const items = list.slice(0,2).map(e =>
-      `<li>${escapeHtml(e.case_name || e.id || '(no name)')} — <code>${escapeHtml(e.citation||'')}</code></li>`
-    ).join('');
-    els.acceptedList.innerHTML = items || '';
+  function yearFrom(str) {
+    const m = str.match(/\[(\d{4})\]/);
+    return m ? parseInt(m[1], 10) : null;
   }
 
-  function inferFromTxtName(fileName) {
-    const base = fileName.replace(/\.[^.]+$/, '');
-    const yearMatch = base.match(/\[(\d{4})\]/);
-    const year = yearMatch ? +yearMatch[1] : '';
-    const cit = base.match(/\[\d{4}\]\s*[A-Za-z]+[A-Za-z0-9-]*\s*\d+[A-Za-z0-9-]*/);
-    const citation = cit ? cit[0].replace(/\s+/g,' ').trim() : (base.match(/\[.*$/)?.[0] || '').trim();
-    const case_name = base.replace(/\s*\[\d{4}\].*$/,'').replace(/[_\-]+/g,' ').replace(/\s{2,}/g,' ').trim();
-
-    let summary = '';
-    if (rawFileText) {
-      const t = rawFileText.replace(/\s+/g,' ').trim();
-      summary = t.slice(0,250) + (t.length>250 ? '…' : '');
-    }
-
-    return {
-      id: slug(case_name + (year ? '-' + year : '')),
-      case_name, citation, year,
-      court: '', jurisdiction: '',
-      summary, holding: '', source: '',
-      compliance_flags: '', tags: '',
-      observed_conduct: '', anomaly_detected: '',
-      breached_law_or_rule: '', authority_basis: '',
-      canonical_breach_tag: '', case_link: '',
-      full_text: ''
-    };
+  function seriesFrom(str) {
+    // Known Jersey series
+    if (/\bJRC\b/i.test(str)) return 'JRC';
+    if (/\bJCA\b/i.test(str)) return 'JCA';
+    return null;
   }
 
-  function normalise(obj) {
-    const keys = [
-      'id','case_name','citation','year','court','jurisdiction','summary','holding','source',
-      'compliance_flags','tags','observed_conduct','anomaly_detected','breached_law_or_rule',
-      'authority_basis','canonical_breach_tag','case_link','full_text'
+  function numberFrom(str) {
+    // e.g. [2025] JRC 158 => 158
+    const m = str.match(/\[\d{4}\]\s+[A-Z]{3}\s+(\d+)\b/);
+    return m ? m[1] : null;
+  }
+
+  function firstCitationIn(text, fallbackFilename) {
+    const m = text.match(/\[\d{4}\]\s+[A-Z]{3}\s+\d+\b/);
+    if (m) return m[0];
+    // Try from filename if it contains the pattern
+    const n = (fallbackFilename || '').match(/\[\d{4}\]\s+[A-Z]{3}\s+\d+\b/);
+    return n ? n[0] : '';
+  }
+
+  function inferJurisdiction(src) {
+    // Very conservative: only fill when certain
+    if (/\bJRC\b/i.test(src) || /\bJCA\b/i.test(src)) return 'Jersey';
+    return '';
+  }
+
+  function inferCourt(src) {
+    const series = seriesFrom(src);
+    if (series === 'JRC') return 'Royal Court';
+    if (series === 'JCA') return 'Court of Appeal';
+    return '';
+  }
+
+  function caseNameFrom(text, filename) {
+    // try title line: e.g. "State House Trust v Friend"
+    const m = text.match(/^\s*([A-Z0-9].+? v .+?)\s*$/im);
+    if (m) return m[1].trim();
+    // fallback: filename minus bracketed bits and extension
+    return (filename || '')
+      .replace(/\.[^.]+$/, '')
+      .replace(/\[[^\]]+\]/g, '')
+      .replace(/_/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function summaryFrom(text) {
+    // only take explicit outcome phrases
+    const candidates = [
+      /(?:^|\n)\s*Held:\s*(.+?)(?:\n|$)/i,
+      /(?:^|\n)\s*Order:\s*(.+?)(?:\n|$)/i,
+      /(?:^|\n)\s*Result:\s*(.+?)(?:\n|$)/i,
+      /(?:^|\n).{0,40}\b(application|appeal)\b.*?\b(dismissed|allowed|granted|refused)\b.*?(?:\n|$)/i,
+      /(?:^|\n).{0,40}\bclaim\b.*?\b(dismissed|allowed)\b.*?(?:\n|$)/i
     ];
-    const out = {};
-    keys.forEach(k => out[k] = ((obj[k] ?? '') + '').trim());
-    if (/^\d{4}$/.test(String(obj.year))) out.year = +obj.year; else if (!obj.year) out.year = '';
-    return out;
+    for (const rx of candidates) {
+      const m = text.match(rx);
+      if (m) return m[1] ? m[1].trim() : m[0].trim();
+    }
+    return ''; // do not guess
   }
 
-  function validateEntry(e) {
-    const errs = [];
-    if (!e.id || !/^[a-z0-9-]+$/.test(e.id)) errs.push('id must be lowercase letters, numbers, hyphens');
-    if (!e.case_name) errs.push('case_name required');
-    if (!e.citation || !/\[\d{4}\]/.test(e.citation)) errs.push('citation must contain [YYYY]');
-    if (String(e.year||'').length && !/^\d{4}$/.test(String(e.year))) errs.push('year must be 4-digit');
-    return errs;
+  function buildId(caseName, citation, year) {
+    // id must be lowercase letters, numbers, hyphens
+    const base = `${caseName || 'case'}-${citation || ''}-${year || ''}`
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    return base || `entry-${Date.now()}`;
   }
 
-  async function readSelectedFile() {
-    const f = els.fileInput.files && els.fileInput.files[0];
-    if (!f) { els.fileName.textContent = 'No file selected'; return ''; }
-    els.fileName.textContent = f.name;
-    return new Promise((res, rej) => {
-      const r = new FileReader();
-      r.onerror = () => rej(r.error);
-      r.onload = () => res(String(r.result || ''));
-      r.readAsText(f);
-    });
+  // ---------- Core: Parse TXT into one JSON entry ----------
+  function parseTxtToEntry(txt, filename, opts) {
+    const raw = normalise(txt || '');
+    const citation = firstCitationIn(raw, filename);
+    const year = yearFrom(citation) || null;
+
+    const entry = {
+      id:               '',               // filled after case_name/citation/year
+      case_name:        caseNameFrom(raw, filename),
+      citation:         citation,
+      year:             year || '',
+      court:            inferCourt(citation),
+      jurisdiction:     inferJurisdiction(citation),
+      summary:          summaryFrom(raw),
+      source:           '',               // user to fill (e.g. "JRC / Judgments")
+      holding:          '',               // explicit holding, if later curated
+      compliance_flags: [],               // array of short flags
+      tags:             [],               // array of keywords
+      observed_conduct: '',
+      anomaly_detected: '',               // 'Yes'/'No' or ''
+      breached_law_or_rule: '',
+      authority_basis:  '',
+      canonical_breach_tag: '',
+      case_link:        '',
+      full_text:        ''                // leave blank to avoid dumping whole file
+    };
+
+    // Optional explicit no-breach toggle (only if you check it)
+    if (opts && opts.markNoBreach) {
+      entry.anomaly_detected   = 'No';
+      entry.canonical_breach_tag = '';
+      entry.breached_law_or_rule = '';
+      entry.compliance_flags   = [];
+      entry.tags               = [];
+    }
+
+    entry.id = buildId(entry.case_name, entry.citation, entry.year);
+    return entry;
   }
 
-  function parseContent() {
-    let items = [];
-    const pasted = els.pasteBox.value.trim();
+  // ---------- UI wiring ----------
+  function clearAll() {
+    els.paste.value = '';
+    html(els.acceptedBox, '');
+    text(els.acceptedCount, '0');
+    els.mergedOut.value = '[]';
+  }
 
+  els.clearBtn.addEventListener('click', clearAll);
+
+  // Parse & Validate
+  els.parseBtn.addEventListener('click', async () => {
+    // assemble candidate inputs: file (txt), pasted JSON/CSV
+    const file = els.file.files && els.file.files[0];
+    const pasted = val(els.paste).trim();
+
+    const accepted = [];
+    // 1) TXT path (preferred if provided)
+    if (file && /(?:\.txt)$/i.test(file.name)) {
+      const contents = await file.text();
+      const entry = parseTxtToEntry(contents, file.name, {
+        markNoBreach: els.noBreachChk?.checked
+      });
+      accepted.push(entry);
+    }
+
+    // 2) JSON array / CSV (optional)
     if (pasted) {
-      try { const arr = JSON.parse(pasted); if (Array.isArray(arr)) items = arr; }
-      catch { items = toCSVrows(pasted); }
-    } else if (rawFileText) {
-      const name = els.fileInput.files?.[0]?.name || '';
-      const ext = (name.split('.').pop() || '').toLowerCase();
-      if (ext === 'json') {
-        try { const arr = JSON.parse(rawFileText); if (Array.isArray(arr)) items = arr; } catch {}
-      } else if (ext === 'csv') items = toCSVrows(rawFileText);
-      else if (ext === 'txt') {
-        try { const maybe = JSON.parse(rawFileText); if (Array.isArray(maybe)) items = maybe; }
-        catch { if (els.autoFromTxt.checked && name) items = [inferFromTxtName(name)]; }
+      try {
+        let rows = [];
+        if (pasted.trim().startsWith('[')) {
+          rows = JSON.parse(pasted);
+        } else {
+          // minimal CSV support; expect headers matching keys
+          const [hdr, ...data] = lines(pasted);
+          const headers = hdr.split(',').map(h => h.trim());
+          for (const row of data) {
+            if (!row.trim()) continue;
+            const cells = row.split(',').map(c => c.trim());
+            const obj = {};
+            headers.forEach((h, i) => obj[h] = cells[i] || '');
+            rows.push(obj);
+          }
+        }
+        for (const r of rows) {
+          // trust provided JSON/CSV values; just ensure required keys
+          if (!r.id || !r.case_name || !r.citation || !r.year) continue;
+          accepted.push(r);
+        }
+      } catch (e) {
+        alert('Paste parse error: ' + e.message);
       }
     }
 
-    const ok = [], bad = [];
-    items.forEach(it => {
-      const n = normalise(it);
-      (validateEntry(n).length ? bad : ok).push(n);
-    });
-
-    setAccepted(ok);
-    showPreview(ok);
-    if (ok.length && !bad.length) setValidation(`All ${ok.length} entries are valid.`);
-    else if (!ok.length && !bad.length) setValidation('No entries detected. Provide JSON/CSV or enable TXT filename inference.');
-    else setValidation(`Accepted ${ok.length}. Rejected ${bad.length}.`);
-
-    return { ok, bad };
-  }
-
-  function generateMergedJson() {
-    const list = [...accepted];
-    const key = els.sortBy.value;
-    list.sort((a,b)=>{
-      const A=(a[key]??'').toString().toLowerCase(), B=(b[key]??'').toString().toLowerCase();
-      return A<B?-1:A>B?1:0;
-    });
-    showPreview(list);
-    els.previewBox.scrollIntoView({behavior:'smooth', block:'start'});
-  }
-
-  // events
-  els.fileInput.addEventListener('change', async ()=>{
-    rawFileText = await readSelectedFile();
-    setValidation('File loaded. Click “Parse & Validate” or “Generate Merged JSON”.');
+    // update Accepted panel and build merged preview
+    html(els.acceptedBox, accepted.map(a => `<li>${a.case_name} — ${a.citation}</li>`).join(''));
+    text(els.acceptedCount, String(accepted.length));
+    els.mergedOut.value = JSON.stringify(accepted, null, 2);
   });
 
-  els.parseBtn.addEventListener('click', async ()=>{
-    if (els.fileInput.files?.length && !rawFileText) {
-      try { rawFileText = await readSelectedFile(); } catch {}
-    }
-    parseContent();
+  // Generate (copy stays as current preview)
+  els.generateBtn.addEventListener('click', () => {
+    // nothing extra—preview already is the merged JSON
+    if (!els.mergedOut.value.trim()) els.mergedOut.value = '[]';
   });
 
-  els.genBtn.addEventListener('click', async ()=>{
-    if (!accepted.length) {
-      if (els.fileInput.files?.length && !rawFileText) {
-        try { rawFileText = await readSelectedFile(); } catch {}
-      }
-      parseContent();
-    }
-    if (!accepted.length) { setValidation('Nothing to merge yet — provide data or parse first.'); return; }
-    generateMergedJson();
+  els.copyBtn?.addEventListener('click', async () => {
+    await navigator.clipboard.writeText(els.mergedOut.value || '[]');
   });
 
-  els.copyBtn.addEventListener('click', ()=> navigator.clipboard.writeText(els.previewBox.value||'[]'));
-  els.dlBtn.addEventListener('click', ()=>{
-    const blob = new Blob([els.previewBox.value||'[]'],{type:'application/json;charset=utf-8'});
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='citations-merged.json';
-    a.click(); URL.revokeObjectURL(a.href);
+  els.downloadBtn?.addEventListener('click', () => {
+    const blob = new Blob([els.mergedOut.value || '[]'], { type: 'application/json;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'merged-citations.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   });
 
-  els.clearBtn.addEventListener('click', ()=>{
-    els.fileInput.value=''; els.fileName.textContent='No file selected';
-    els.pasteBox.value=''; rawFileText=''; setAccepted([]); showPreview([]); setValidation('Validation: cleared.');
-  });
-
-  try {
-    const saved=localStorage.getItem('bulk:autoFromTxt');
-    if(saved!==null) els.autoFromTxt.checked = saved==='1';
-    els.autoFromTxt.addEventListener('change',()=>localStorage.setItem('bulk:autoFromTxt', els.autoFromTxt.checked?'1':'0'));
-  } catch {}
+  // small convenience: show target file path (manual commit)
+  els.targetHint.textContent = 'Target file: data/citations.json (manual commit)';
 })();
