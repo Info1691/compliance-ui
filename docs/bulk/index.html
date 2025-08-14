@@ -1,78 +1,34 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Citations – Bulk Uploader</title>
-  <link rel="stylesheet" href="style.css?v=12"/>
-</head>
-<body>
-  <header class="app-header">
-    <img src="../logo.png" alt="Logo" class="logo"/>
-    <h1 class="title">Citations – Bulk Uploader</h1>
-  </header>
+<section class="source">
+  <div class="row">
+    <input id="file" type="file" accept=".json,.csv,.txt"/>
+    <button id="parseBtn" class="btn">Parse & Validate</button>
+    <button id="clearBtn" class="btn btn-secondary">Clear</button>
+    <label class="chk"><input id="autofill" type="checkbox" checked disabled/> Auto-fill from TXT filename</label>
+    <label class="chk"><input id="noBreach" type="checkbox"/> Mark “No breach detected”</label>
+  </div>
+  <div class="grid">
+    <textarea id="paste" placeholder='[{"id":"…","case_name":"…","citation":"[2025] JRC 1",…}]  OR CSV with headers'></textarea>
+    <textarea id="mergedJson" aria-label="Merged JSON (preview)">[]</textarea>
+  </div>
+</section>
 
-  <main class="wrap">
-    <section class="grid">
-      <div class="card area-source">
-        <h2 class="card-title">Source input</h2>
-        <div class="toolbar">
-          <label class="btn action file">
-            <input id="fileInput" type="file" accept=".json,.csv,.txt"/>
-            <span>Choose File</span>
-          </label>
-          <span id="fileName" class="file-name">No file selected</span>
-          <button id="parseBtn" class="btn action" type="button">Parse &amp; Validate</button>
-          <button id="clearBtn" class="btn ghost" type="button">Clear</button>
-          <label class="chk">
-            <input id="autoFromTxt" type="checkbox" checked />
-            <span>Auto-fill from TXT filename</span>
-          </label>
-        </div>
-        <label class="lbl">Paste Data (JSON array or CSV)</label>
-        <textarea id="pasteBox" placeholder='[{"id":"...","case_name":"...","citation":"[2025] JRC 1",...}]  OR CSV with headers'></textarea>
-      </div>
+<section class="accepted">
+  <h3>Accepted <span id="acceptedCount">0</span></h3>
+  <ul id="acceptedList"></ul>
+</section>
 
-      <div class="card area-preview">
-        <h2 class="card-title">Merged JSON (preview)</h2>
-        <textarea id="previewBox" aria-label="Merged JSON preview" readonly>[]</textarea>
-      </div>
-
-      <div class="card area-accepted">
-        <div class="row between">
-          <h2 class="card-title">Accepted</h2>
-          <span class="pill" id="acceptedCount">0</span>
-        </div>
-        <ul id="acceptedList" class="list two-line"></ul>
-        <div id="validationLine" class="validation-line">Validation: waiting…</div>
-      </div>
-
-      <div class="card area-merge">
-        <h2 class="card-title">Merge with Existing Citations</h2>
-        <label class="chk">
-          <input id="overwriteChk" type="checkbox"/>
-          <span>Overwrite existing entries on ID conflict (default: keep existing)</span>
-        </label>
-        <div class="row">
-          <label for="sortBy" class="lbl sm">Sort by</label>
-          <select id="sortBy" class="select">
-            <option value="case_name">Case Name</option>
-            <option value="id">ID</option>
-            <option value="year">Year</option>
-          </select>
-          <button id="genBtn" class="btn action" type="button">Generate Merged JSON</button>
-          <button id="copyBtn" class="btn ghost" type="button">Copy</button>
-          <button id="dlBtn" class="btn ghost" type="button">Download</button>
-        </div>
-        <div class="hint">Target file: <code>data/citations.json</code> (manual commit)</div>
-      </div>
-    </section>
-  </main>
-
-  <footer class="footer">
-    <small>This tool never writes files. It validates and prepares a merged JSON preview for manual commit via GitHub.</small>
-  </footer>
-
-  <script src="main.js?v=12"></script>
-</body>
-</html>
+<section class="merge">
+  <h3>Merge with Existing Citations</h3>
+  <label class="chk"><input id="overwrite" type="checkbox"/> Overwrite existing entries on ID conflict (default: keep existing)</label>
+  <div class="row">
+    <label>Sort by</label>
+    <select id="sortBy">
+      <option value="case">Case Name</option>
+      <option value="year">Year</option>
+    </select>
+    <button id="genBtn" class="btn">Generate Merged JSON</button>
+    <button id="copyBtn" class="btn btn-secondary">Copy</button>
+    <button id="downloadBtn" class="btn btn-secondary">Download</button>
+  </div>
+  <small id="targetHint"></small>
+</section>
