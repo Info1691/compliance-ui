@@ -4,67 +4,80 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Citations – Bulk Uploader</title>
-  <link rel="stylesheet" href="style.css?v=base" />
+  <link rel="stylesheet" href="style.css?v=1" />
 </head>
 <body>
-  <header class="bar">
-    <img src="logo.png" class="logo" alt="Logo" />
+  <header class="app-header">
+    <img class="logo" src="/logo.png" alt="Logo"
+         onerror="this.onerror=null;this.src='../logo.png';" />
     <h1>Citations – Bulk Uploader</h1>
   </header>
 
-  <main class="grid">
-    <!-- LEFT COLUMN -->
-    <section class="card">
-      <h2 class="card-title">Source input</h2>
+  <main class="wrap">
+    <!-- ROW 1: source (left) + merged preview (right) -->
+    <section class="panel" aria-labelledby="srcTitle">
+      <h2 id="srcTitle" class="h">Source input</h2>
 
-      <div class="row">
-        <label class="btn">
-          <input id="fileInput" type="file" accept=".json,.csv,.txt" hidden />
-          <span>Choose File</span>
+      <div class="toolbar">
+        <input id="fileInput" type="file" accept=".json,.csv,.txt" />
+        <span id="fileName" class="muted"></span>
+
+        <button id="parseBtn"  class="btn primary" type="button">Parse &amp; Validate</button>
+        <button id="clearBtn"  class="btn"          type="button">Clear</button>
+
+        <label class="ck">
+          <input id="autoFromTxt" type="checkbox" checked />
+          <span>Auto-fill from TXT filename</span>
         </label>
-        <span id="fileName" class="file-name">—</span>
-        <button id="parseBtn" class="btn primary">Parse & Validate</button>
-        <button id="clearBtn" class="btn">Clear</button>
-        <label class="chk"><input id="autoFromTxt" type="checkbox" checked /> Auto-fill from TXT filename</label>
-        <label class="chk"><input id="markNoBreach" type="checkbox" /> Mark “No breach detected”</label>
+
+        <label class="ck">
+          <input id="markNoBreach" type="checkbox" />
+          <span>Mark “No breach detected”</span>
+        </label>
       </div>
 
-      <label class="small">Paste Data (JSON array or CSV)</label>
-      <textarea id="pasteArea" class="mono" rows="6" placeholder='[{"id":"...","case_name":"...","citation":"[2025] JRC 1",...}]  OR CSV with headers'></textarea>
+      <label class="sr-only" for="pasteArea">Paste Data (JSON array or CSV)</label>
+      <textarea id="pasteArea" class="code"
+        placeholder='[{"id":"...","case_name":"...","citation":"[2025] JRC 1",...}]  OR CSV with headers'></textarea>
     </section>
 
-    <!-- RIGHT COLUMN -->
-    <section class="card">
-      <h2 class="card-title">Merged JSON (preview)</h2>
-      <textarea id="mergedOut" class="mono big" aria-label="Merged JSON preview">[]</textarea>
+    <section class="panel" aria-labelledby="mergedTitle">
+      <h2 id="mergedTitle" class="h">Merged JSON (preview)</h2>
+      <label class="sr-only" for="mergedOut">Merged JSON output</label>
+      <textarea id="mergedOut" class="code" readonly>[ ]</textarea>
     </section>
 
-    <!-- BOTTOM LEFT -->
-    <section class="card">
-      <h3 class="card-title">Accepted <span id="acceptedCount">0</span></h3>
-      <ul id="acceptedList" class="list"></ul>
-      <p id="status" class="status" aria-live="polite">Waiting…</p>
+    <!-- ROW 2: accepted (left) + merge tools (right) -->
+    <section class="panel" aria-labelledby="accTitle">
+      <h2 id="accTitle" class="h">Accepted <span id="acceptedCount">0</span></h2>
+      <div id="acceptedList" class="accepted"></div>
     </section>
 
-    <!-- BOTTOM RIGHT -->
-    <section class="card">
-      <h3 class="card-title">Merge with Existing Citations</h3>
-      <label class="chk"><input id="overwrite" type="checkbox" /> Overwrite existing entries on ID conflict (default: keep existing)</label>
+    <section class="panel" aria-labelledby="mergeTitle">
+      <h2 id="mergeTitle" class="h">Merge with Existing Citations</h2>
+
+      <label class="ck">
+        <input id="overwrite" type="checkbox" />
+        <span>Overwrite existing entries on ID conflict (default: keep existing)</span>
+      </label>
+
       <div class="row">
-        <label>Sort by</label>
+        <label for="sortBy" class="mr">Sort by</label>
         <select id="sortBy">
           <option value="case_name">Case Name</option>
           <option value="year">Year</option>
           <option value="id">ID</option>
         </select>
-        <button id="genBtn" class="btn primary">Generate Merged JSON</button>
-        <button id="copyBtn" class="btn">Copy</button>
-        <button id="dlBtn" class="btn">Download</button>
+
+        <button id="genBtn"  class="btn primary ml" type="button">Generate Merged JSON</button>
+        <button id="copyBtn" class="btn"          type="button">Copy</button>
+        <button id="dlBtn"   class="btn"          type="button">Download</button>
       </div>
-      <p class="hint">Target file: <code>data/citations.json</code> (manual commit)</p>
+
+      <p class="muted small">Target file: <code>data/citations.json</code> (manual commit)</p>
     </section>
   </main>
 
-  <script src="main.js?v=base"></script>
+  <script src="main.js?v=1"></script>
 </body>
 </html>
