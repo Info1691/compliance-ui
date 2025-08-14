@@ -4,7 +4,7 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Citations – Bulk Uploader</title>
-  <link rel="stylesheet" href="style.css?v=7"/>
+  <link rel="stylesheet" href="style.css?v=8"/>
 </head>
 <body>
   <header class="app-header">
@@ -28,20 +28,19 @@
             <span>Choose File</span>
           </label>
           <span id="fileName" class="filename" aria-live="polite"></span>
-          <button id="parseBtn" class="btn">Parse &amp; Validate</button>
-          <button id="clearBtn" class="btn btn-light">Clear</button>
-          <label class="chk"><input id="autoFromTxt" type="checkbox" checked/> Auto‑fill from TXT filename</label>
+          <button id="parseBtn" type="button" class="btn">Parse &amp; Validate</button>
+          <button id="clearBtn" type="button" class="btn btn-light">Clear</button>
+          <label class="chk"><input id="autoFromTxt" type="checkbox" checked/> Auto-fill from TXT filename</label>
           <label class="chk"><input id="markNoBreach" type="checkbox"/> Mark “No breach detected”</label>
         </div>
-
         <label class="sr-only" for="pasteArea">Paste Data (JSON array or CSV)</label>
         <textarea id="pasteArea" class="input mono" placeholder='[{"id":"...","case_name":"...","citation":"[2025] JRC 1",...}] OR CSV with headers'></textarea>
       </div>
 
-      <!-- RIGHT – Preview -->
-      <div class="card">
+      <!-- RIGHT – Preview (flex grows to fill) -->
+      <div class="card card-grow">
         <h2 class="card-title">Merged JSON (preview)</h2>
-        <pre id="mergedOut" class="mono fill" aria-live="polite">[]</pre>
+        <pre id="mergedOut" class="mono pre-fill" aria-live="polite">[]</pre>
       </div>
 
       <!-- BOTTOM LEFT – Accepted -->
@@ -65,15 +64,15 @@
             <option value="year">Year</option>
             <option value="id">ID</option>
           </select>
-          <button id="genBtn" class="btn">Generate Merged JSON</button>
-          <button id="copyBtn" class="btn btn-light">Copy</button>
-          <button id="dlBtn" class="btn btn-light">Download</button>
+          <button id="genBtn" type="button" class="btn">Generate Merged JSON</button>
+          <button id="copyBtn" type="button" class="btn btn-light">Copy</button>
+          <button id="dlBtn" type="button" class="btn btn-light">Download</button>
         </div>
         <p class="target">Target file: <code>data/citations.json</code> (manual commit)</p>
       </div>
     </section>
   </main>
 
-  <script src="main.js?v=7"></script>
+  <script src="main.js?v=8"></script>
 </body>
 </html>
