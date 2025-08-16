@@ -4,10 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Compliance Citation Viewer</title>
+
+  <!-- Existing styles -->
   <link rel="stylesheet" href="style.css?v=6"/>
+
+  <!-- Shared Repos Drawer styles -->
+  <link rel="stylesheet" href="drawer.css"/>
 </head>
 <body>
-  <header>
+  <header role="banner">
+    <!-- Single, working trigger for the shared Repos drawer -->
+    <button id="repoBtn" class="btn btn-light" type="button" aria-controls="repo-drawer" aria-expanded="false">Repos</button>
+
     <img src="logo.png" alt="Logo" class="logo"/>
     <h1>Compliance Citation Viewer</h1>
   </header>
@@ -20,11 +28,11 @@
     <a class="link-btn" href="bulk/">Open Bulk Uploader</a>
   </div>
 
-  <main id="citationsContainer">
+  <main id="citationsContainer" aria-live="polite">
     <p>Loading citations…</p>
   </main>
 
-  <!-- Drawer (anchored to right; width unchanged) -->
+  <!-- RIGHT-SIDE citation drawer (unchanged) -->
   <aside id="drawer" class="drawer" aria-hidden="true" aria-label="Citation Entry Panel">
     <div class="drawer-header">
       <h2>Citation Entry</h2>
@@ -61,6 +69,30 @@
     </form>
   </aside>
 
-  <script src="main.js?v=4"></script>
+  <!-- Your existing app logic -->
+  <script src="main.js?v=4" defer></script>
+
+  <!-- Optional: explicit Repos list (omit to use defaults from drawer.js) -->
+  <script>
+    window.REPO_LINKS = [
+      { href: 'https://info1691.github.io/rules-ui/',           label: 'Rules Repository' },
+      { href: 'https://info1691.github.io/laws-ui/',            label: 'Laws Repository' },
+      { href: 'https://info1691.github.io/commentary-ui/',      label: 'Commentary Viewer' },
+      { href: 'https://info1691.github.io/Law-Texts-ui/',       label: 'Trust Law Textbooks' },
+      { href: 'https://info1691.github.io/compliance-ui/',      label: 'Compliance – Citations' },
+      { href: 'https://info1691.github.io/compliance-ui/bulk/', label: 'Citations – Bulk Upload' },
+      { href: 'https://info1691.github.io/breaches-ui/',        label: 'Breaches Manager' }
+    ];
+  </script>
+
+  <!-- Shared Repos Drawer logic -->
+  <script src="drawer.js" defer></script>
+  <script defer>
+    window.addEventListener('DOMContentLoaded', () => {
+      // Initialize the shared Repos drawer with the single header trigger.
+      // Uses its own element id (#repo-drawer) internally so it won't clash with your citation drawer (#drawer).
+      RepoDrawer.init('#repoBtn');
+    });
+  </script>
 </body>
 </html>
